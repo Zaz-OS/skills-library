@@ -2,6 +2,7 @@ node_modules/
 dist/
 chats/
 .astro/
+.wrangler/
 *.tsbuildinfo
 .DS_Store
 .env
