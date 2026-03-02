@@ -1,0 +1,9 @@
+packages:
+  - scripts
+  - site
+  - mcp
+  - mcp-worker
+
+onlyBuiltDependencies:
+  - esbuild
+  - sharp

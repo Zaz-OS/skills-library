@@ -1,0 +1,20 @@
+{
+  "totalSkills": 5959,
+  "totalRepos": 100,
+  "standaloneCount": 2429,
+  "withDepsCount": 3530,
+  "byContentType": {
+    "instructionsOnly": 4507,
+    "withScripts": 442,
+    "withReferences": 1298,
+    "withAssets": 155
+  },
+  "byDependencyType": {
+    "npm": 2123,
+    "service": 2575,
+    "pip": 3732,
+    "system": 1900,
+    "brew": 258
+  },
+  "lastUpdated": "2026-02-28T15:13:04.661Z"
+}

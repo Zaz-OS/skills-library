@@ -1,0 +1,1196 @@
+---
+import Base from "../layouts/Base.astro";
+import { useTranslations, getLocalizedPath } from '../i18n/utils';
+import type { Locale } from '../i18n/translations';
+
+interface Props {
+  lang?: Locale;
+}
+
+const lang: Locale = Astro.props.lang || 'en';
+const t = useTranslations(lang);
+const skillPrefix = lang === 'en' ? '' : `/${lang}`;
+
+let skills: any[] = [];
+let stats: any = { totalSkills: 0, standaloneCount: 0, withDepsCount: 0, totalRepos: 0 };
+
+try {
+  const fs = await import("node:fs");
+  const path = await import("node:path");
+  const dataDir = path.join(process.cwd(), "../data");
+  const skillsPath = path.join(dataDir, "skills.json");
+  if (fs.existsSync(skillsPath)) {
+    skills = JSON.parse(fs.readFileSync(skillsPath, "utf-8"));
+  }
+  const statsPath = path.join(dataDir, "stats.json");
+  if (fs.existsSync(statsPath)) {
+    stats = JSON.parse(fs.readFileSync(statsPath, "utf-8"));
+  }
+} catch {}
+
+const categoryDefs = [
+  {
+    id: "design",
+    label: t.categories.design,
+    emoji: "🎨",
+    description: t.categories.designDesc,
+    color: "coral",
+    pattern: /design|ui[/-]|ux|layout|style|css|tailwind|figma|frontend|web.?design|visual|theme/i,
+  },
+  {
+    id: "writing",
+    label: t.categories.writing,
+    emoji: "✍️",
+    description: t.categories.writingDesc,
+    color: "sky",
+    pattern: /writ|content(?!.?type)|copy(?!right)|blog|article|document|markdown|readme|text|editor|draft|prose|grammar/i,
+  },
+  {
+    id: "marketing",
+    label: t.categories.marketing,
+    emoji: "📈",
+    description: t.categories.marketingDesc,
+    color: "gold",
+    pattern: /market|seo|social|email.?(sequence|campaign|market)|campaign|brand|growth|funnel|pricing|audience|lead|advertis|landing.?page|conversion/i,
+  },
+  {
+    id: "media",
+    label: t.categories.media,
+    emoji: "🖼️",
+    description: t.categories.mediaDesc,
+    color: "plum",
+    pattern: /image.?gen|video.?gen|photo|media|canvas|animation|gif|art(?!i)|illustra|render|dalle|flux|midjourney|stable.?diff/i,
+  },
+  {
+    id: "data",
+    label: t.categories.data,
+    emoji: "📊",
+    description: t.categories.dataDesc,
+    color: "sage",
+    pattern: /data.?analy|spreadsheet|chart|report|monitor|dashboard|metric|visualiz|csv|excel|google.?sheet|bi\b|analytics/i,
+  },
+  {
+    id: "productivity",
+    label: t.categories.productivity,
+    emoji: "⚡️",
+    description: t.categories.productivityDesc,
+    color: "rose",
+    pattern: /brainstorm|plan(?!e)|organiz|workflow|automat|schedul|template|todo|productiv|project.?manag|notion|task/i,
+  },
+];
+
+const TECHNICAL_KEYWORDS =
+  /\b(api|sdk|cli|npm|pip|docker|kubernetes|k8s|terraform|devops|cicd|ci\/cd|backend|database|sql|nosql|graphql|grpc|microservice|deploy|git(?:hub|lab)?|aws|azure|gcloud|serverless|webpack|vite|eslint|prettier|jest|pytest|playwright|cypress|debug|compiler|runtime|binary|middleware|oauth|jwt|endpoint|webhook|localhost|daemon|container|ssh|ssl|tls|nginx|apache|redis|postgres|mysql|mongodb|kafka|elasticsearch|cron|bash|shell|powershell|regex|refactor|linting|typescript|javascript|python|rust|golang|kotlin|swift|flutter|react|nextjs|next\.js|vue|angular|svelte|nuxt|remix|astro|node\.js|deno|bun|express|fastapi|django|flask|rails|laravel|spring|supabase|prisma|drizzle|sequelize|mongoose|tailwindcss|sass|webpack|rollup|turbopack|storybook|nx|monorepo|ci|cd|yaml|json|xml|csv|protobuf|websocket|tcp|udp|http|rest|soap|rpc|ssr|ssg|hydration|jsx|tsx|component|hook|state.?management|routing|orm|migration|schema|query|index|cache|cdn|load.?balanc|proxy|gateway|queue|pub.?sub|event.?driven|hexagonal|clean.?arch|solid|design.?pattern|unit.?test|e2e|integration.?test|mock|stub|fixture|assertion|benchmark|profil|heap|stack|thread|async|promise|callback|observable|stream|buffer|pipe|stdin|stdout|stderr|env|dotenv|config|secret|token|credential|certificate|key.?pair|encrypt|decrypt|hash|salt|bcrypt|argon|crypto|solidity|smart.?contract|blockchain|web3|ethers|hardhat|foundry|truffle|openzeppelin|erc20|erc721|nft|defi|dapp|logging|log.?level|syslog|logger|observability|tracing|jaeger|datadog|grafana|prometheus|sentry|kibana|splunk|logstash|fluentd|alerting|incident|on.?call|pager|runbook|terraform|ansible|puppet|chef|vagrant|infra|iac|helm|argo|istio|envoy|consul|vault|nomad)\b/i;
+
+function isNonDev(s: any): boolean {
+  if (!s.standalone) return false;
+  if (s.contentType.hasScripts) return false;
+  const text = s.name + " " + (s.description || "");
+  return !TECHNICAL_KEYWORDS.test(text);
+}
+
+const categorized = categoryDefs.map(cat => {
+  const matched = skills.filter(s => cat.pattern.test(s.name + ' ' + (s.description || '')));
+  matched.sort((a: any, b: any) => b.installs - a.installs);
+  const friendly = matched.filter(s => isNonDev(s));
+  const preview = friendly.length >= 3 ? friendly.slice(0, 3) : friendly.concat(matched.filter(s => !isNonDev(s))).slice(0, 3);
+  return { ...cat, skills: matched, preview, count: matched.length };
+});
+
+const popular = skills.filter((s: any) => isNonDev(s)).slice(0, 12);
+
+const recentlyAdded = skills
+  .filter((s: any) => isNonDev(s) && s.standalone && !s.contentType.hasScripts)
+  .sort((a: any, b: any) => {
+    const dateCompare = new Date(b.firstSeen).getTime() - new Date(a.firstSeen).getTime();
+    if (dateCompare !== 0) return dateCompare;
+    return a.installs - b.installs;
+  })
+  .slice(0, 12);
+const recentlyAddedTotal = skills.filter((s: any) => isNonDev(s) && s.standalone && !s.contentType.hasScripts).length;
+
+function formatInstalls(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  return String(n);
+}
+
+function humanName(name: string): string {
+  return name
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .replace(/\bAi\b/g, 'AI')
+    .replace(/\bUi\b/g, 'UI')
+    .replace(/\bUx\b/g, 'UX')
+    .replace(/\bSeo\b/g, 'SEO')
+    .replace(/\bApi\b/g, 'API')
+    .replace(/\bCss\b/g, 'CSS')
+    .replace(/\bSql\b/g, 'SQL');
+}
+
+const colorMap: Record<string, {bg: string, border: string, text: string, dot: string, hover: string}> = {
+  coral:  { bg: "bg-blue-50",    border: "border-blue-200/60",    text: "text-accent-coral",  dot: "bg-accent-coral",  hover: "hover:border-blue-300" },
+  sky:    { bg: "bg-sky-50",     border: "border-sky-200/60",     text: "text-accent-sky",    dot: "bg-accent-sky",    hover: "hover:border-sky-300" },
+  gold:   { bg: "bg-amber-50",   border: "border-amber-200/60",   text: "text-accent-gold",   dot: "bg-accent-gold",   hover: "hover:border-amber-300" },
+  plum:   { bg: "bg-violet-50",  border: "border-violet-200/60",  text: "text-accent-plum",   dot: "bg-accent-plum",   hover: "hover:border-violet-300" },
+  sage:   { bg: "bg-emerald-50", border: "border-emerald-200/60", text: "text-accent-sage",   dot: "bg-accent-sage",   hover: "hover:border-emerald-300" },
+  rose:   { bg: "bg-rose-50",    border: "border-rose-200/60",    text: "text-accent-rose",   dot: "bg-accent-rose",   hover: "hover:border-rose-300" },
+};
+
+const clientTranslations = {
+  card: {
+    copyPaste: t.card.copyPaste,
+    readyToUse: t.card.readyToUse,
+    needsSetup: t.card.needsSetup,
+    by: t.card.by,
+  },
+  search: {
+    back: t.search.back,
+    result: t.search.result,
+    results: t.search.results,
+    clearAll: t.search.clearAll,
+    noResults: t.search.noResults,
+    noResultsSub: t.search.noResultsSub,
+    showMore: t.search.showMore,
+    showResults: t.search.showResults,
+  },
+  chip: {
+    nonDev: t.chip.nonDev,
+    copyPaste: t.chip.copyPaste,
+    not: t.chip.not,
+    installs: t.chip.installs,
+    installs100k: t.chip.installs100k,
+    installs10k: t.chip.installs10k,
+    installs1k: t.chip.installs1k,
+    installs100: t.chip.installs100,
+  },
+  filterLabels: t.filterLabels,
+  categories: {
+    design: t.categories.design,
+    writing: t.categories.writing,
+    marketing: t.categories.marketing,
+    media: t.categories.media,
+    data: t.categories.data,
+    productivity: t.categories.productivity,
+    copyready: t.hero.copyReady,
+  },
+};
+
+const pageTitle = `${t.header.brand} — ${t.hero.titleStart} ${t.hero.titleHighlight} ${t.hero.titleEnd}`;
+---
+
+<Base title={pageTitle} lang={lang}>
+  <!-- Hero -->
+  <section class="relative" id="hero-section">
+    <div id="hero-full" class="relative max-w-3xl mx-auto px-5 pt-16 pb-14 text-center">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sand-100 border border-sand-200 text-xs font-mono text-sand-500 mb-6">
+        <span class="w-2 h-2 rounded-full bg-accent-coral animate-pulse"></span>
+        {stats.totalSkills.toLocaleString()} {t.hero.badge}
+      </div>
+      <h1 class="font-display text-4xl sm:text-5xl font-bold leading-[1.15] tracking-tight text-ink mb-5">
+        {t.hero.titleStart}<br class="hidden sm:block" />
+        <span class="text-accent-coral">{t.hero.titleHighlight}</span> {t.hero.titleEnd}
+      </h1>
+      <p class="text-lg text-sand-600 max-w-xl mx-auto leading-relaxed mb-10 font-body">
+        {t.hero.subtitle}
+      </p>
+
+      <!-- Search -->
+      <div class="max-w-xl mx-auto relative group">
+        <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+          <svg class="w-5 h-5 text-sand-400 transition-colors group-focus-within:text-accent-coral" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+          </svg>
+        </div>
+        <input
+          id="search-input"
+          type="text"
+          placeholder={t.hero.searchPlaceholder}
+          class="w-full pl-14 pr-5 py-4 bg-white rounded-lg border border-sand-200 text-ink placeholder-sand-400 text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-accent-coral/20 focus:border-accent-coral transition-all font-mono"
+          autocomplete="off"
+        />
+      </div>
+
+      <!-- Quick filters -->
+      <div class="flex flex-wrap justify-center gap-2 mt-5">
+        <button data-quick="copyready" class="quick-filter px-3 py-1.5 text-xs font-mono rounded-md border border-sand-200 bg-white text-sand-600 hover:border-accent-sage hover:text-accent-sage transition-all cursor-pointer">
+          <span class="mr-1">📋</span>{t.hero.copyReady}
+        </button>
+        {categoryDefs.map(cat => (
+          <button data-quick={cat.id} class={`quick-filter px-3 py-1.5 text-xs font-mono rounded-md border border-sand-200 bg-white text-sand-600 transition-all cursor-pointer ${colorMap[cat.color].hover}`}>
+            <span class="mr-1">{cat.emoji}</span>{cat.label}
+          </button>
+        ))}
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ====== ADVANCED RESULTS VIEW (hidden by default) ====== -->
+  <section id="advanced-section" class="hidden">
+    <div id="home-root" class="max-w-6xl mx-auto px-5 pb-16" data-i18n={JSON.stringify(clientTranslations)} data-skill-prefix={skillPrefix}>
+      <!-- Toolbar -->
+      <div class="sticky top-[61px] z-40 bg-sand-50/95 backdrop-blur-sm -mx-5 px-5 pt-4 pb-4 border-b border-sand-200 mb-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3 min-w-0">
+            <button id="back-browse" class="shrink-0 flex items-center gap-1.5 text-sm text-sand-500 hover:text-accent-coral transition-colors cursor-pointer group font-mono">
+              <svg class="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+              {t.search.back}
+            </button>
+            <span class="w-px h-4 bg-sand-200"></span>
+            <h2 id="adv-title" class="font-display text-lg font-semibold text-ink truncate"></h2>
+            <span id="adv-count" class="shrink-0 text-sm text-sand-400 tabular-nums font-mono"></span>
+          </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <div class="relative group flex-1 sm:w-64">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="w-4 h-4 text-sand-400 transition-colors group-focus-within:text-accent-coral" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
+              </div>
+              <input
+                id="search-input-compact"
+                type="text"
+                placeholder={t.search.searchPlaceholder}
+                class="w-full pl-9 pr-3 py-1.5 bg-white rounded-md border border-sand-200 text-ink placeholder-sand-400 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-accent-coral/20 focus:border-accent-coral transition-all font-mono"
+                autocomplete="off"
+              />
+            </div>
+            <button id="filter-toggle-mobile" class="lg:hidden shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border border-sand-200 bg-white text-sand-600 hover:border-sand-300 transition-all cursor-pointer font-mono" type="button">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" /></svg>
+              {t.search.filters}
+              <span id="filter-count-badge" class="hidden min-w-[18px] h-[18px] text-[10px] font-bold bg-accent-coral text-white rounded-full px-1 leading-[18px] text-center">0</span>
+            </button>
+            <select id="sort-select" class="shrink-0 text-sm bg-white border border-sand-200 rounded-md px-3 py-1.5 text-ink cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent-coral/20 focus:border-accent-coral appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20d%3D%22M19.5%208.25l-7.5%207.5-7.5-7.5%22%20%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_8px_center] bg-no-repeat pr-8 font-mono hidden sm:block">
+              <option value="installs">{t.search.sortPopular}</option>
+              <option value="name">{t.search.sortName}</option>
+              <option value="stars">{t.search.sortStars}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active filter chips -->
+      <div id="active-chips" class="flex flex-wrap items-center gap-1.5 mb-4 empty:hidden"></div>
+
+      <!-- Two-column: sidebar + grid -->
+      <div class="flex gap-8">
+        <!-- Filter sidebar (desktop) -->
+        <aside id="sidebar-container" class="hidden lg:block w-[260px] shrink-0">
+          <div class="sticky top-[65px] max-h-[calc(100vh-80px)] overflow-y-auto pr-2 -mr-2">
+            <div id="filter-content" class="space-y-6 pb-8">
+
+              <!-- For you -->
+              <div>
+                <h3 class="text-xs font-semibold text-sand-400 uppercase tracking-wider mb-3 font-mono">{t.filterLabels.forYou}</h3>
+                <div class="space-y-1">
+                  <label class="flex items-center gap-2.5 px-3 py-2 rounded-md hover:bg-sand-100/50 cursor-pointer transition-colors">
+                    <input type="checkbox" data-toggle="nonDev" class="w-4 h-4 rounded border-sand-300 text-accent-sage focus:ring-accent-sage/30 cursor-pointer" />
+                    <span class="text-sm text-sand-700 font-mono">{t.filterLabels.nonDev}</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 px-3 py-2 rounded-md hover:bg-sand-100/50 cursor-pointer transition-colors">
+                    <input type="checkbox" data-toggle="copyReady" class="w-4 h-4 rounded border-sand-300 text-accent-sage focus:ring-accent-sage/30 cursor-pointer" />
+                    <span class="text-sm text-sand-700 font-mono">{t.filterLabels.copyReady}</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- What's included -->
+              <div>
+                <h3 class="text-xs font-semibold text-sand-400 uppercase tracking-wider mb-3 font-mono">{t.filterLabels.whatsIncluded}</h3>
+                <div class="space-y-1">
+                  <button data-tri="scripts" data-state="off" class="tri-pill" type="button">
+                    <span class="tri-icon shrink-0"></span>
+                    <span class="tri-label">{t.filterLabels.scripts}</span>
+                  </button>
+                  <button data-tri="references" data-state="off" class="tri-pill" type="button">
+                    <span class="tri-icon shrink-0"></span>
+                    <span class="tri-label">{t.filterLabels.references}</span>
+                  </button>
+                  <button data-tri="assets" data-state="off" class="tri-pill" type="button">
+                    <span class="tri-icon shrink-0"></span>
+                    <span class="tri-label">{t.filterLabels.assets}</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Setup needs -->
+              <div>
+                <h3 class="text-xs font-semibold text-sand-400 uppercase tracking-wider mb-3 font-mono">{t.filterLabels.setupNeeds}</h3>
+                <div class="space-y-1">
+                  <button data-tri="standalone" data-state="off" class="tri-pill" type="button">
+                    <span class="tri-icon shrink-0"></span>
+                    <span class="tri-label">{t.filterLabels.noSetup}</span>
+                  </button>
+                  <button data-tri="needsNpm" data-state="off" class="tri-pill" type="button">
+                    <span class="tri-icon shrink-0"></span>
+                    <span class="tri-label">{t.filterLabels.npm}</span>
+                  </button>
+                  <button data-tri="needsPip" data-state="off" class="tri-pill" type="button">
+                    <span class="tri-icon shrink-0"></span>
+                    <span class="tri-label">{t.filterLabels.pip}</span>
+                  </button>
+                  <button data-tri="needsBrew" data-state="off" class="tri-pill" type="button">
+                    <span class="tri-icon shrink-0"></span>
+                    <span class="tri-label">{t.filterLabels.brew}</span>
+                  </button>
+                  <button data-tri="needsSystem" data-state="off" class="tri-pill" type="button">
+                    <span class="tri-icon shrink-0"></span>
+                    <span class="tri-label">{t.filterLabels.system}</span>
+                  </button>
+                  <button data-tri="needsService" data-state="off" class="tri-pill" type="button">
+                    <span class="tri-icon shrink-0"></span>
+                    <span class="tri-label">{t.filterLabels.service}</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Category -->
+              <div>
+                <h3 class="text-xs font-semibold text-sand-400 uppercase tracking-wider mb-3 font-mono">{t.filterLabels.category}</h3>
+                <div class="flex flex-wrap gap-1.5">
+                  <button data-cat="design" class="cat-pill" type="button">🎨 {t.categories.design}</button>
+                  <button data-cat="writing" class="cat-pill" type="button">✍️ {t.categories.writing}</button>
+                  <button data-cat="marketing" class="cat-pill" type="button">📈 {t.categories.marketing}</button>
+                  <button data-cat="media" class="cat-pill" type="button">🖼️ {t.categories.media}</button>
+                  <button data-cat="data" class="cat-pill" type="button">📊 {t.categories.data}</button>
+                  <button data-cat="productivity" class="cat-pill" type="button">⚡️ {t.categories.productivity}</button>
+                </div>
+              </div>
+
+              <!-- Popularity -->
+              <div>
+                <h3 class="text-xs font-semibold text-sand-400 uppercase tracking-wider mb-3 font-mono">{t.filterLabels.popularity}</h3>
+                <div class="space-y-1">
+                  <label class="flex items-center gap-2.5 px-3 py-1.5 rounded-md hover:bg-sand-100/50 cursor-pointer transition-colors">
+                    <input type="radio" name="popularity" value="0" checked class="w-4 h-4 border-sand-300 text-accent-coral focus:ring-accent-coral/30 cursor-pointer" />
+                    <span class="text-sm text-sand-700 font-mono">{t.filterLabels.any}</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 px-3 py-1.5 rounded-md hover:bg-sand-100/50 cursor-pointer transition-colors">
+                    <input type="radio" name="popularity" value="100" class="w-4 h-4 border-sand-300 text-accent-coral focus:ring-accent-coral/30 cursor-pointer" />
+                    <span class="text-sm text-sand-700 font-mono">{t.filterLabels.installs100}</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 px-3 py-1.5 rounded-md hover:bg-sand-100/50 cursor-pointer transition-colors">
+                    <input type="radio" name="popularity" value="1000" class="w-4 h-4 border-sand-300 text-accent-coral focus:ring-accent-coral/30 cursor-pointer" />
+                    <span class="text-sm text-sand-700 font-mono">{t.filterLabels.installs1k}</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 px-3 py-1.5 rounded-md hover:bg-sand-100/50 cursor-pointer transition-colors">
+                    <input type="radio" name="popularity" value="10000" class="w-4 h-4 border-sand-300 text-accent-coral focus:ring-accent-coral/30 cursor-pointer" />
+                    <span class="text-sm text-sand-700 font-mono">{t.filterLabels.installs10k}</span>
+                  </label>
+                  <label class="flex items-center gap-2.5 px-3 py-1.5 rounded-md hover:bg-sand-100/50 cursor-pointer transition-colors">
+                    <input type="radio" name="popularity" value="100000" class="w-4 h-4 border-sand-300 text-accent-coral focus:ring-accent-coral/30 cursor-pointer" />
+                    <span class="text-sm text-sand-700 font-mono">{t.filterLabels.installs100k}</span>
+                  </label>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </aside>
+
+        <!-- Results -->
+        <div class="flex-1 min-w-0">
+          <div id="adv-grid" class="grid gap-3 sm:grid-cols-2"></div>
+          <div id="adv-empty" class="hidden text-center py-16 bg-white border border-sand-200 border-dashed rounded-lg">
+            <p class="font-display text-xl text-sand-500 mb-2">{t.search.noResults}</p>
+            <p class="text-sand-400 font-body">{t.search.noResultsSub}</p>
+          </div>
+          <button id="adv-more" class="hidden mt-8 mx-auto block px-6 py-2.5 text-sm font-medium rounded-md border border-sand-200 bg-white text-sand-600 hover:border-sand-300 hover:text-ink transition-all cursor-pointer font-mono">
+            {t.search.showMore}
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mobile filter drawer -->
+  <div id="filter-overlay" class="fixed inset-0 bg-black/40 z-50 hidden"></div>
+  <div id="filter-drawer" class="fixed inset-x-0 bottom-0 z-50 bg-sand-50 rounded-t-2xl max-h-[85vh] shadow-2xl translate-y-full transition-transform duration-300 ease-out hidden">
+    <div class="flex items-center justify-between px-5 pt-4 pb-3 border-b border-sand-200/50">
+      <h3 class="font-display font-semibold text-ink">{t.search.filters}</h3>
+      <button id="close-drawer" class="w-8 h-8 flex items-center justify-center rounded-md text-sand-400 hover:text-ink hover:bg-sand-100 transition-colors cursor-pointer" type="button">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
+    <div id="drawer-content" class="overflow-y-auto px-5 py-4 max-h-[calc(85vh-120px)]"></div>
+    <div class="px-5 py-3 border-t border-sand-200/50 bg-sand-50">
+      <button id="drawer-show-results" class="w-full bg-accent-coral text-white rounded-md py-3 font-medium text-sm cursor-pointer hover:bg-accent-coral/90 transition-colors font-mono" type="button">
+        {t.search.showResults} <span id="drawer-result-count">0</span> {t.search.results}
+      </button>
+    </div>
+  </div>
+
+  <!-- ====== DISCOVERY VIEW (hidden when in advanced mode) ====== -->
+  <div id="discovery">
+    <!-- Browse by category -->
+    <section id="browse-section" class="max-w-6xl mx-auto px-5 pb-16">
+      <h2 class="font-display text-2xl font-semibold text-ink mb-2">{t.categories.title}</h2>
+      <p class="text-sand-500 mb-8 font-body">{t.categories.subtitle}</p>
+
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {categorized.map(cat => {
+          const c = colorMap[cat.color];
+          return (
+            <a href={`#${cat.id}`} data-category-card={cat.id}
+               class={`group block bg-white border border-sand-200 rounded-lg p-5 transition-all duration-200 hover:border-sand-300 hover:shadow-sm cursor-pointer`}>
+              <div class="flex items-start justify-between mb-3">
+                <span class="text-2xl">{cat.emoji}</span>
+                <span class={`text-xs font-medium ${c.text} ${c.bg} px-2.5 py-1 rounded font-mono`}>
+                  {cat.count} {t.categories.skillsCount}
+                </span>
+              </div>
+              <h3 class="font-display font-semibold text-ink text-lg mb-1">{cat.label}</h3>
+              <p class="text-sm text-sand-500 leading-relaxed font-body">{cat.description}</p>
+              <div class="mt-4 flex flex-wrap gap-1.5">
+                {cat.preview.map((s: any) => (
+                  <span class="text-xs px-2 py-1 rounded bg-sand-50 border border-sand-100 text-sand-600 truncate max-w-[140px] font-mono">
+                    {humanName(s.name)}
+                  </span>
+                ))}
+              </div>
+            </a>
+          );
+        })}
+      </div>
+    </section>
+
+    <!-- Popular skills -->
+    <section class="max-w-6xl mx-auto px-5 pb-16">
+      <div class="flex items-end justify-between mb-6">
+        <div>
+          <h2 class="font-display text-2xl font-semibold text-ink mb-1">{t.popular.title}</h2>
+          <p class="text-sand-500">{t.popular.subtitle}</p>
+        </div>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {popular.map((skill: any, i: number) => (
+          <a href={getLocalizedPath(`/skill/${skill.id}`, lang)}
+             class="group flex items-start gap-4 bg-white border border-sand-200 rounded-lg p-4 hover:border-sand-300 hover:shadow-sm transition-all">
+            <span class="shrink-0 w-8 h-8 rounded bg-sand-100 flex items-center justify-center text-sm font-mono text-sand-500 font-medium group-hover:bg-accent-coral/10 group-hover:text-accent-coral transition-colors">
+              {i + 1}
+            </span>
+            <div class="min-w-0 flex-1">
+              <h3 class="font-medium text-ink truncate group-hover:text-accent-coral transition-colors font-display">
+                {humanName(skill.name)}
+              </h3>
+              {skill.description ? (
+                <p class="text-sm text-sand-500 mt-0.5 line-clamp-2 leading-relaxed font-body">{skill.description}</p>
+              ) : (
+                <p class="text-sm text-sand-400 mt-0.5 italic font-body">{t.card.by} {skill.source.split('/')[0]}</p>
+              )}
+              <div class="flex items-center gap-3 mt-3 text-xs text-sand-400 font-mono">
+                <span class="flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                  {formatInstalls(skill.installs)}
+                </span>
+                {(skill.standalone && !skill.contentType.hasScripts) && (
+                  <span class="flex items-center gap-1 text-accent-sage bg-accent-sage/10 px-1.5 py-0.5 rounded">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    {t.popular.copyPaste}
+                  </span>
+                )}
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- Recently added -->
+    <section class="max-w-6xl mx-auto px-5 pb-16">
+      <div class="flex items-end justify-between mb-6">
+        <div>
+          <h2 class="font-display text-2xl font-semibold text-ink mb-1">{t.recent.title}</h2>
+          <p class="text-sand-500">{t.recent.subtitle}</p>
+        </div>
+        <span class="text-sm text-sand-400 hidden sm:block font-mono">{recentlyAddedTotal.toLocaleString()} {t.categories.skillsCount}</span>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {recentlyAdded.map((skill: any) => (
+          <a href={getLocalizedPath(`/skill/${skill.id}`, lang)}
+             class="group block bg-white border border-sand-200 rounded-lg p-4 hover:border-accent-sage/40 hover:shadow-sm transition-all">
+            <div class="flex items-center gap-1.5 mb-2">
+              <span class="flex items-center gap-1 text-xs text-accent-sage font-mono bg-accent-sage/10 px-1.5 py-0.5 rounded">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                {t.recent.copyPaste}
+              </span>
+            </div>
+            <h3 class="font-medium text-ink text-sm truncate group-hover:text-accent-sage transition-colors font-display">
+              {humanName(skill.name)}
+            </h3>
+            <p class="text-xs text-sand-400 mt-2 truncate font-mono">{formatInstalls(skill.installs)} {t.recent.installs}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="max-w-6xl mx-auto px-5 pb-20">
+      <div class="bg-white border border-sand-200 rounded-lg p-8 sm:p-10 shadow-sm">
+        <h2 class="font-display text-2xl font-semibold text-ink mb-8 text-center">{t.howItWorks.title}</h2>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-0">
+          <div class="text-center flex-1 max-w-[200px]">
+            <div class="text-3xl mb-3">🔍</div>
+            <h3 class="font-medium text-ink mb-1 font-display">{t.howItWorks.step1Title}</h3>
+            <p class="text-sm text-sand-500 leading-relaxed font-body">{t.howItWorks.step1Desc}</p>
+          </div>
+          <div class="text-2xl text-sand-300 hidden sm:block px-4 font-mono">→</div>
+          <div class="text-xl text-sand-300 sm:hidden font-mono">↓</div>
+          <div class="text-center flex-1 max-w-[200px]">
+            <div class="text-3xl mb-3">📋</div>
+            <h3 class="font-medium text-ink mb-1 font-display">{t.howItWorks.step2Title}</h3>
+            <p class="text-sm text-sand-500 leading-relaxed font-body">{t.howItWorks.step2Desc}</p>
+          </div>
+          <div class="text-2xl text-sand-300 hidden sm:block px-4 font-mono">→</div>
+          <div class="text-xl text-sand-300 sm:hidden font-mono">↓</div>
+          <div class="text-center flex-1 max-w-[200px]">
+            <div class="text-3xl mb-3">✨</div>
+            <h3 class="font-medium text-ink mb-1 font-display">{t.howItWorks.step3Title}</h3>
+            <p class="text-sm text-sand-500 leading-relaxed font-body">{t.howItWorks.step3Desc}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    import Fuse from "fuse.js";
+
+    interface SkillItem {
+      id: string;
+      name: string;
+      description: string;
+      source: string;
+      skillId: string;
+      installs: number;
+      stars: number;
+      standalone: boolean;
+      deps: string;
+      depTypes: string;
+      content: string;
+      nonDev: boolean;
+    }
+
+    type TriState = 'off' | 'include' | 'exclude';
+
+    interface FilterStore {
+      nonDev: boolean;
+      copyReady: boolean;
+      scripts: TriState;
+      references: TriState;
+      assets: TriState;
+      standalone: TriState;
+      needsNpm: TriState;
+      needsPip: TriState;
+      needsBrew: TriState;
+      needsSystem: TriState;
+      needsService: TriState;
+      categories: Set<string>;
+      minInstalls: number;
+      sortBy: string;
+    }
+
+    const homeRoot = document.getElementById('home-root');
+    const clientT = JSON.parse(homeRoot?.dataset.i18n || '{}');
+    const skillPrefix = homeRoot?.dataset.skillPrefix || '';
+
+    let fuse: Fuse<SkillItem>;
+    let allItems: SkillItem[] = [];
+    let baseResults: SkillItem[] = [];
+    let filteredResults: SkillItem[] = [];
+    let displayCount = 24;
+    let currentTitle = '';
+    let filters: FilterStore = getDefaultFilters();
+
+    function getDefaultFilters(): FilterStore {
+      return {
+        nonDev: false,
+        copyReady: false,
+        scripts: 'off',
+        references: 'off',
+        assets: 'off',
+        standalone: 'off',
+        needsNpm: 'off',
+        needsPip: 'off',
+        needsBrew: 'off',
+        needsSystem: 'off',
+        needsService: 'off',
+        categories: new Set(),
+        minInstalls: 0,
+        sortBy: 'installs',
+      };
+    }
+
+    const categoryPatterns: Record<string, RegExp> = {
+      design: /design|ui[/-]|ux|layout|style|css|tailwind|figma|frontend|web.?design|visual|theme/i,
+      writing: /writ|content(?!.?type)|copy(?!right)|blog|article|document|markdown|readme|text|editor|draft|prose|grammar/i,
+      marketing: /market|seo|social|email.?(sequence|campaign|market)|campaign|brand|growth|funnel|pricing|audience|lead|advertis|landing.?page|conversion/i,
+      media: /image.?gen|video.?gen|photo|media|canvas|animation|gif|art(?!i)|illustra|render|dalle|flux|midjourney|stable.?diff/i,
+      data: /data.?analy|spreadsheet|chart|report|monitor|dashboard|metric|visualiz|csv|excel|google.?sheet|bi\b|analytics/i,
+      productivity: /brainstorm|plan(?!e)|organiz|workflow|automat|schedul|template|todo|productiv|project.?manag|notion|task/i,
+    };
+
+    const categoryLabels: Record<string, string> = clientT.categories || {
+      design: "Design & UI",
+      writing: "Writing & Docs",
+      marketing: "Marketing & SEO",
+      media: "Images & Video",
+      data: "Data & Analytics",
+      productivity: "Productivity",
+      copyready: "Copy & paste ready",
+    };
+
+    const triFilterLabels: Record<string, string> = {
+      scripts: clientT.filterLabels?.scripts || 'Scripts',
+      references: clientT.filterLabels?.references || 'References',
+      assets: clientT.filterLabels?.assets || 'Assets',
+      standalone: clientT.filterLabels?.noSetup || 'No setup',
+      needsNpm: clientT.filterLabels?.npm || 'npm',
+      needsPip: clientT.filterLabels?.pip || 'Python',
+      needsBrew: clientT.filterLabels?.brew || 'Homebrew',
+      needsSystem: clientT.filterLabels?.system || 'System tools',
+      needsService: clientT.filterLabels?.service || 'Services',
+    };
+
+    const TRI_ICONS = {
+      off: `<svg class="w-4 h-4 text-[#c9bfae]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9" /></svg>`,
+      include: `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`,
+      exclude: `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`,
+    };
+
+    function humanName(name: string): string {
+      return name
+        .replace(/[-_]/g, ' ')
+        .replace(/\b\w/g, (c: string) => c.toUpperCase())
+        .replace(/\bAi\b/g, 'AI').replace(/\bUi\b/g, 'UI').replace(/\bUx\b/g, 'UX')
+        .replace(/\bSeo\b/g, 'SEO').replace(/\bApi\b/g, 'API').replace(/\bCss\b/g, 'CSS').replace(/\bSql\b/g, 'SQL');
+    }
+
+    function formatInstalls(n: number): string {
+      if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+      if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+      return String(n);
+    }
+
+    function escapeHtml(str: string): string {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function isCopyReady(s: SkillItem): boolean {
+      return s.standalone && !s.content.includes('scripts');
+    }
+
+    function renderCard(s: SkillItem): string {
+      const copyReady = isCopyReady(s);
+      const cardT = clientT.card || {};
+      const badge = copyReady
+        ? `<span class="flex items-center gap-1 text-xs text-[#059669] font-mono bg-[#f0fdf4] px-1.5 py-0.5 rounded">
+             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+             ${escapeHtml(cardT.copyPaste || 'Copy & paste')}
+           </span>`
+        : s.standalone
+          ? `<span class="text-xs text-[#0284c7] font-mono bg-[#f0f9ff] px-1.5 py-0.5 rounded">${escapeHtml(cardT.readyToUse || 'Ready to use')}</span>`
+          : `<span class="text-xs text-[#d97706] font-mono bg-[#fffbeb] px-1.5 py-0.5 rounded">${escapeHtml(cardT.needsSetup || 'Needs setup')}</span>`;
+
+      const desc = s.description
+        ? `<p class="text-sm text-[#475569] mt-1 line-clamp-2 leading-relaxed font-body">${escapeHtml(s.description)}</p>`
+        : `<p class="text-sm text-[#94a3b8] mt-1 italic font-body">${escapeHtml(cardT.by || 'by')} ${escapeHtml(s.source.split('/')[0])}</p>`;
+
+      return `
+        <a href="${skillPrefix}/skill/${s.id}" class="group flex items-start gap-3.5 bg-white border border-[#e2e8f0] rounded-lg p-4 hover:border-[#cbd5e1] hover:shadow-sm transition-all">
+          <div class="min-w-0 flex-1">
+            <h3 class="font-medium text-[#0f172a] truncate group-hover:text-[#2563eb] transition-colors font-display">${escapeHtml(humanName(s.name))}</h3>
+            ${desc}
+            <div class="flex items-center gap-3 mt-3 text-xs text-[#64748b] font-mono">
+              <span class="flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                ${formatInstalls(s.installs)}
+              </span>
+              ${s.stars > 0 ? `<span class="flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>${formatInstalls(s.stars)}</span>` : ''}
+              ${badge}
+            </div>
+          </div>
+        </a>`;
+    }
+
+    function matchesFilters(s: SkillItem): boolean {
+      const f = filters;
+
+      if (f.nonDev && !s.nonDev) return false;
+      if (f.copyReady && !isCopyReady(s)) return false;
+
+      if (f.scripts === 'include' && !s.content.includes('scripts')) return false;
+      if (f.scripts === 'exclude' && s.content.includes('scripts')) return false;
+      if (f.references === 'include' && !s.content.includes('references')) return false;
+      if (f.references === 'exclude' && s.content.includes('references')) return false;
+      if (f.assets === 'include' && !s.content.includes('assets')) return false;
+      if (f.assets === 'exclude' && s.content.includes('assets')) return false;
+
+      if (f.standalone === 'include' && !s.standalone) return false;
+      if (f.standalone === 'exclude' && s.standalone) return false;
+      if (f.needsNpm === 'include' && !s.depTypes.includes('npm')) return false;
+      if (f.needsNpm === 'exclude' && s.depTypes.includes('npm')) return false;
+      if (f.needsPip === 'include' && !s.depTypes.includes('pip')) return false;
+      if (f.needsPip === 'exclude' && s.depTypes.includes('pip')) return false;
+      if (f.needsBrew === 'include' && !s.depTypes.includes('brew')) return false;
+      if (f.needsBrew === 'exclude' && s.depTypes.includes('brew')) return false;
+      if (f.needsSystem === 'include' && !s.depTypes.includes('system')) return false;
+      if (f.needsSystem === 'exclude' && s.depTypes.includes('system')) return false;
+      if (f.needsService === 'include' && !s.depTypes.includes('service')) return false;
+      if (f.needsService === 'exclude' && s.depTypes.includes('service')) return false;
+
+      if (f.categories.size > 0) {
+        const text = s.name + ' ' + s.description;
+        const matchesCat = [...f.categories].some(cat => categoryPatterns[cat]?.test(text));
+        if (!matchesCat) return false;
+      }
+
+      if (s.installs < f.minInstalls) return false;
+
+      return true;
+    }
+
+    function countActiveFilters(): number {
+      let count = 0;
+      if (filters.nonDev) count++;
+      if (filters.copyReady) count++;
+      const triKeys: (keyof FilterStore)[] = ['scripts', 'references', 'assets', 'standalone', 'needsNpm', 'needsPip', 'needsBrew', 'needsSystem', 'needsService'];
+      for (const key of triKeys) {
+        if (filters[key] !== 'off') count++;
+      }
+      count += filters.categories.size;
+      if (filters.minInstalls > 0) count++;
+      return count;
+    }
+
+    const catEmojis: Record<string, string> = {
+      design: '🎨', writing: '✍️', marketing: '📈',
+      media: '🖼️', data: '📊', productivity: '⚡️',
+    };
+
+    function renderChips() {
+      const container = document.getElementById('active-chips')!;
+      const chips: string[] = [];
+      const chipT = clientT.chip || {};
+      const searchT = clientT.search || {};
+
+      if (filters.nonDev) chips.push(makeChip(chipT.nonDev || 'Non-developer', 'toggle', 'nonDev', 'sage'));
+      if (filters.copyReady) chips.push(makeChip(chipT.copyPaste || 'Copy & paste', 'toggle', 'copyReady', 'sage'));
+
+      for (const [key, label] of Object.entries(triFilterLabels)) {
+        const val = (filters as any)[key];
+        if (val === 'include') chips.push(makeChip(label, 'tri', key, 'sage'));
+        else if (val === 'exclude') chips.push(makeChip(`${chipT.not || 'NOT:'} ${label}`, 'tri', key, 'rose'));
+      }
+
+      for (const cat of filters.categories) {
+        chips.push(makeChip(`${catEmojis[cat] || ''} ${categoryLabels[cat] || cat}`, 'cat', cat, 'coral'));
+      }
+
+      if (filters.minInstalls > 0) {
+        const label = filters.minInstalls >= 100000 ? (chipT.installs100k || '100k+')
+          : filters.minInstalls >= 10000 ? (chipT.installs10k || '10k+')
+          : filters.minInstalls >= 1000 ? (chipT.installs1k || '1k+')
+          : (chipT.installs100 || '100+');
+        chips.push(makeChip(`${label} ${chipT.installs || 'installs'}`, 'pop', '0', 'gold'));
+      }
+
+      if (chips.length > 0) {
+        chips.push(`<button id="clear-all-btn" class="text-xs text-[#a99e8e] hover:text-[#e8613c] transition-colors ml-1 cursor-pointer" type="button">${escapeHtml(searchT.clearAll || 'Clear all')}</button>`);
+      }
+
+      container.innerHTML = chips.join('');
+
+      document.getElementById('clear-all-btn')?.addEventListener('click', () => {
+        resetFilters();
+        syncFilterUI();
+        applyFiltersAndSort();
+      });
+
+      container.querySelectorAll('[data-remove-chip]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const el = btn as HTMLElement;
+          const type = el.dataset.chipType!;
+          const key = el.dataset.removeChip!;
+          if (type === 'toggle') (filters as any)[key] = false;
+          else if (type === 'tri') (filters as any)[key] = 'off';
+          else if (type === 'cat') filters.categories.delete(key);
+          else if (type === 'pop') filters.minInstalls = 0;
+          syncFilterUI();
+          applyFiltersAndSort();
+        });
+      });
+
+      const badge = document.getElementById('filter-count-badge');
+      const count = countActiveFilters();
+      if (badge) {
+        badge.textContent = String(count);
+        badge.classList.toggle('hidden', count === 0);
+      }
+    }
+
+    function makeChip(label: string, type: string, key: string, color: string): string {
+      const colors: Record<string, { bg: string; text: string; border: string }> = {
+        sage: { bg: '#f0fdf4', text: '#059669', border: '#bbf7d0' },
+        rose: { bg: '#fff1f2', text: '#e11d48', border: '#fecdd3' },
+        coral: { bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe' },
+        gold: { bg: '#fffbeb', text: '#d97706', border: '#fde68a' },
+      };
+      const c = colors[color] || colors.sage;
+      return `<span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-md font-mono" style="background:${c.bg};color:${c.text};border:1px solid ${c.border}">
+        ${escapeHtml(label)}
+        <button data-remove-chip="${key}" data-chip-type="${type}" class="hover:opacity-70 cursor-pointer ml-0.5" type="button">&times;</button>
+      </span>`;
+    }
+
+    function updateTriPill(btn: HTMLElement) {
+      const state = (btn.dataset.state || 'off') as TriState;
+      const icon = btn.querySelector('.tri-icon');
+      const label = btn.querySelector('.tri-label');
+      if (icon) icon.innerHTML = TRI_ICONS[state];
+      if (label) {
+        if (state === 'exclude') label.classList.add('line-through');
+        else label.classList.remove('line-through');
+      }
+    }
+
+    function cycleTriState(current: TriState): TriState {
+      if (current === 'off') return 'include';
+      if (current === 'include') return 'exclude';
+      return 'off';
+    }
+
+    function resetFilters() {
+      filters = getDefaultFilters();
+    }
+
+    function syncFilterUI() {
+      document.querySelectorAll<HTMLInputElement>('[data-toggle]').forEach(cb => {
+        cb.checked = !!(filters as any)[cb.dataset.toggle!];
+      });
+      document.querySelectorAll<HTMLElement>('[data-tri]').forEach(btn => {
+        btn.dataset.state = (filters as any)[btn.dataset.tri!] || 'off';
+        updateTriPill(btn);
+      });
+      document.querySelectorAll<HTMLElement>('[data-cat]').forEach(btn => {
+        if (filters.categories.has(btn.dataset.cat!)) btn.dataset.active = 'true';
+        else delete btn.dataset.active;
+      });
+      document.querySelectorAll<HTMLInputElement>('input[name="popularity"]').forEach(r => {
+        r.checked = Number(r.value) === filters.minInstalls;
+      });
+      (document.getElementById('sort-select') as HTMLSelectElement).value = filters.sortBy;
+    }
+
+    function applyFiltersAndSort() {
+      let items = baseResults.filter(matchesFilters);
+
+      if (filters.sortBy === 'installs') items.sort((a, b) => b.installs - a.installs);
+      else if (filters.sortBy === 'name') items.sort((a, b) => a.name.localeCompare(b.name));
+      else if (filters.sortBy === 'stars') items.sort((a, b) => b.stars - a.stars);
+
+      filteredResults = items;
+      displayCount = 24;
+      renderGrid();
+      renderChips();
+
+      const drawerCount = document.getElementById('drawer-result-count');
+      if (drawerCount) drawerCount.textContent = String(filteredResults.length);
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('adv-grid')!;
+      const empty = document.getElementById('adv-empty')!;
+      const more = document.getElementById('adv-more')!;
+      const count = document.getElementById('adv-count')!;
+
+      const searchT = clientT.search || {};
+      const resultWord = filteredResults.length !== 1 ? (searchT.results || 'results') : (searchT.result || 'result');
+      count.textContent = `${filteredResults.length} ${resultWord}`;
+
+      if (filteredResults.length === 0) {
+        grid.innerHTML = '';
+        empty.classList.remove('hidden');
+        more.classList.add('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      grid.innerHTML = filteredResults.slice(0, displayCount).map(renderCard).join('');
+      more.classList.toggle('hidden', filteredResults.length <= displayCount);
+    }
+
+    function openDrawer() {
+      const filterContent = document.getElementById('filter-content')!;
+      const drawerContent = document.getElementById('drawer-content')!;
+      const overlay = document.getElementById('filter-overlay')!;
+      const drawer = document.getElementById('filter-drawer')!;
+
+      drawerContent.appendChild(filterContent);
+      overlay.classList.remove('hidden');
+      drawer.classList.remove('hidden');
+      requestAnimationFrame(() => drawer.classList.remove('translate-y-full'));
+      document.body.style.overflow = 'hidden';
+
+      const dc = document.getElementById('drawer-result-count');
+      if (dc) dc.textContent = String(filteredResults.length);
+    }
+
+    function closeDrawer() {
+      const filterContent = document.getElementById('filter-content')!;
+      const sidebarSticky = document.querySelector('#sidebar-container > div')!;
+      const overlay = document.getElementById('filter-overlay')!;
+      const drawer = document.getElementById('filter-drawer')!;
+
+      drawer.classList.add('translate-y-full');
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+        drawer.classList.add('hidden');
+        sidebarSticky.appendChild(filterContent);
+      }, 300);
+      document.body.style.overflow = '';
+    }
+
+    function enterAdvancedMode(results: SkillItem[], title: string) {
+      baseResults = results;
+      currentTitle = title;
+      document.getElementById('adv-title')!.textContent = title;
+
+      resetFilters();
+      syncFilterUI();
+
+      document.getElementById('hero-full')!.classList.add('hidden');
+      document.getElementById('advanced-section')!.classList.remove('hidden');
+      document.getElementById('discovery')!.classList.add('hidden');
+
+      const mainInput = document.getElementById('search-input') as HTMLInputElement;
+      const compactInput = document.getElementById('search-input-compact') as HTMLInputElement;
+      compactInput.value = mainInput.value;
+
+      applyFiltersAndSort();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function exitAdvancedMode() {
+      document.getElementById('hero-full')!.classList.remove('hidden');
+      document.getElementById('advanced-section')!.classList.add('hidden');
+      document.getElementById('discovery')!.classList.remove('hidden');
+
+      (document.getElementById('search-input') as HTMLInputElement).value = '';
+      (document.getElementById('search-input-compact') as HTMLInputElement).value = '';
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function init() {
+      try {
+        const res = await fetch("/api/search-index.json");
+        if (!res.ok) return;
+        allItems = await res.json();
+
+        fuse = new Fuse(allItems, {
+          keys: [
+            { name: "name", weight: 2 },
+            { name: "description", weight: 1.5 },
+            { name: "deps", weight: 0.5 },
+            { name: "source", weight: 0.3 },
+          ],
+          threshold: 0.35,
+          includeScore: true,
+        });
+
+        document.querySelectorAll<HTMLElement>('[data-tri]').forEach(updateTriPill);
+
+        const searchInput = document.getElementById('search-input') as HTMLInputElement;
+        const compactInput = document.getElementById('search-input-compact') as HTMLInputElement;
+
+        searchInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            const q = searchInput.value.trim();
+            if (!q) return;
+            enterAdvancedMode(fuse.search(q).map(r => r.item), `"${q}"`);
+          }
+        });
+
+        compactInput.addEventListener('input', () => {
+          const q = compactInput.value.trim();
+          if (!q) {
+            exitAdvancedMode();
+            return;
+          }
+          baseResults = fuse.search(q).map(r => r.item);
+          document.getElementById('adv-title')!.textContent = `"${q}"`;
+          applyFiltersAndSort();
+        });
+
+        compactInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+          }
+        });
+
+        document.querySelectorAll('.quick-filter').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const filterId = (btn as HTMLElement).dataset.quick!;
+            let results: SkillItem[];
+            let title: string;
+            if (filterId === 'copyready') {
+              results = allItems.filter(s => isCopyReady(s));
+              results.sort((a, b) => b.installs - a.installs);
+              title = categoryLabels['copyready'] || 'Copy & paste ready';
+            } else {
+              const pattern = categoryPatterns[filterId];
+              results = allItems.filter(s => pattern.test(s.name + ' ' + s.description));
+              results.sort((a, b) => b.installs - a.installs);
+              title = categoryLabels[filterId] || filterId;
+            }
+            enterAdvancedMode(results, title);
+          });
+        });
+
+        document.querySelectorAll('[data-category-card]').forEach(card => {
+          card.addEventListener('click', (e) => {
+            e.preventDefault();
+            const catId = (card as HTMLElement).dataset.categoryCard!;
+            const pattern = categoryPatterns[catId];
+            const results = allItems.filter(s => pattern.test(s.name + ' ' + s.description));
+            results.sort((a, b) => b.installs - a.installs);
+            enterAdvancedMode(results, categoryLabels[catId] || catId);
+          });
+        });
+
+        document.getElementById('back-browse')?.addEventListener('click', exitAdvancedMode);
+
+        document.getElementById('sort-select')?.addEventListener('change', (e) => {
+          filters.sortBy = (e.target as HTMLSelectElement).value;
+          applyFiltersAndSort();
+        });
+
+        document.querySelectorAll<HTMLInputElement>('[data-toggle]').forEach(cb => {
+          cb.addEventListener('change', () => {
+            (filters as any)[cb.dataset.toggle!] = cb.checked;
+            applyFiltersAndSort();
+          });
+        });
+
+        document.querySelectorAll<HTMLElement>('[data-tri]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const key = btn.dataset.tri!;
+            const current = (filters as any)[key] as TriState;
+            const next = cycleTriState(current);
+            (filters as any)[key] = next;
+            btn.dataset.state = next;
+            updateTriPill(btn);
+            applyFiltersAndSort();
+          });
+        });
+
+        document.querySelectorAll<HTMLElement>('[data-cat]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const cat = btn.dataset.cat!;
+            if (filters.categories.has(cat)) {
+              filters.categories.delete(cat);
+              delete btn.dataset.active;
+            } else {
+              filters.categories.add(cat);
+              btn.dataset.active = 'true';
+            }
+            applyFiltersAndSort();
+          });
+        });
+
+        document.querySelectorAll<HTMLInputElement>('input[name="popularity"]').forEach(r => {
+          r.addEventListener('change', () => {
+            filters.minInstalls = Number(r.value);
+            applyFiltersAndSort();
+          });
+        });
+
+        document.getElementById('filter-toggle-mobile')?.addEventListener('click', openDrawer);
+        document.getElementById('close-drawer')?.addEventListener('click', closeDrawer);
+        document.getElementById('filter-overlay')?.addEventListener('click', closeDrawer);
+        document.getElementById('drawer-show-results')?.addEventListener('click', closeDrawer);
+
+        document.getElementById('adv-more')?.addEventListener('click', () => {
+          displayCount += 24;
+          const grid = document.getElementById('adv-grid')!;
+          const more = document.getElementById('adv-more')!;
+          grid.insertAdjacentHTML('beforeend', filteredResults.slice(displayCount - 24, displayCount).map(renderCard).join(''));
+          more.classList.toggle('hidden', filteredResults.length <= displayCount);
+        });
+
+      } catch {
+        // Search index not available
+      }
+    }
+
+    init();
+  </script>
+</Base>
+
+<style>
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  #discovery > section {
+    animation: fade-in-up 0.5s ease-out both;
+  }
+
+  #discovery > section:nth-child(2) { animation-delay: 0.05s; }
+  #discovery > section:nth-child(3) { animation-delay: 0.1s; }
+  #discovery > section:nth-child(4) { animation-delay: 0.15s; }
+
+  .tri-pill {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 0.375rem;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #475569;
+    cursor: pointer;
+    transition: all 150ms;
+    text-align: left;
+    font-family: "Inter", sans-serif;
+  }
+
+  .tri-pill:hover { border-color: #cbd5e1; }
+
+  .tri-pill[data-state="include"] {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+    color: #059669;
+  }
+
+  .tri-pill[data-state="exclude"] {
+    border-color: #fecdd3;
+    background: #fff1f2;
+    color: #e11d48;
+  }
+
+  .cat-pill {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #475569;
+    cursor: pointer;
+    transition: all 150ms;
+    font-family: "Inter", sans-serif;
+  }
+
+  .cat-pill:hover { border-color: #cbd5e1; }
+
+  .cat-pill[data-active="true"] {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: #2563eb;
+  }
+</style>

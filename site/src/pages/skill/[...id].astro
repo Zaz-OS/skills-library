@@ -1,0 +1,40 @@
+---
+import SkillPage from '../../components/SkillPage.astro';
+
+export async function getStaticPaths() {
+  let skills: any[] = [];
+  const contentMap = new Map<string, string>();
+  try {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const dataDir = path.join(process.cwd(), "../data");
+    const skillsPath = path.join(dataDir, "skills.json");
+    if (fs.existsSync(skillsPath)) {
+      skills = JSON.parse(fs.readFileSync(skillsPath, "utf-8"));
+    }
+
+    const reposDir = path.join(dataDir, "raw/repos");
+    if (fs.existsSync(reposDir)) {
+      for (const file of fs.readdirSync(reposDir)) {
+        if (!file.endsWith(".json")) continue;
+        try {
+          const repo = JSON.parse(fs.readFileSync(path.join(reposDir, file), "utf-8"));
+          for (const s of repo.skills || []) {
+            if (s.parsed?.body) {
+              contentMap.set(`${repo.source}/${s.skillId}`, s.parsed.body);
+            }
+          }
+        } catch {}
+      }
+    }
+  } catch {}
+
+  return skills.map((skill: any) => ({
+    params: { id: skill.id },
+    props: { skill, skillBody: contentMap.get(skill.id) || "" },
+  }));
+}
+
+const { skill, skillBody } = Astro.props;
+---
+<SkillPage lang="en" skill={skill} skillBody={skillBody} />

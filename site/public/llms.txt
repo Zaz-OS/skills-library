@@ -1,0 +1,17 @@
+# skills-library
+
+> Searchable catalog of AI agent skills from skills.sh with dependency mapping and content classification.
+
+## Skills Catalog
+- [Full JSON catalog](/api/skills.json): Complete skills data with dependencies, content types, installs, and GitHub stars
+- [Dependencies index](/api/deps.json): Skills grouped by dependency type and package
+
+## MCP Server
+- [MCP setup instructions](/mcp): Connect your AI tool to the skills catalog via MCP (Model Context Protocol)
+- Endpoint: `https://mcp.skills-library.com/mcp` (Streamable HTTP)
+
+## Documentation
+- [About this project](/about): How skills-library works and how to contribute
+
+## Optional
+- [Extended catalog](/llms-full.txt): Full descriptions of all skills in plain text

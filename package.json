@@ -1,0 +1,17 @@
+{
+  "name": "skills-library",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Enriched, searchable catalog of AI agent skills from skills.sh",
+  "type": "module",
+  "scripts": {
+    "pipeline": "pnpm --filter scripts start",
+    "dev:site": "pnpm --filter site dev",
+    "dev:mcp": "pnpm --filter mcp dev",
+    "dev:mcp-worker": "pnpm --filter skills-library-mcp-worker dev",
+    "build": "pnpm --filter scripts build && pnpm --filter site build && pnpm --filter mcp build"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

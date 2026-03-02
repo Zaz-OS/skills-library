@@ -1,0 +1,24 @@
+{
+  "name": "@skills-library/scripts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsx src/pipeline.ts",
+    "scrape": "tsx src/scrape-skills-sh.ts",
+    "process": "tsx src/process-repos.ts",
+    "enrich": "tsx src/enrich.ts",
+    "build-catalog": "tsx src/build-catalog.ts"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "node-html-parser": "^6.1.13",
+    "octokit": "^4.1.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0"
+  }
+}

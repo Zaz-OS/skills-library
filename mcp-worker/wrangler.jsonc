@@ -1,0 +1,9 @@
+{
+  "name": "skills-library-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-03-10",
+  "compatibility_flags": ["nodejs_compat"],
+  "routes": [
+    { "pattern": "mcp.skills-library.com", "custom_domain": true }
+  ]
+}

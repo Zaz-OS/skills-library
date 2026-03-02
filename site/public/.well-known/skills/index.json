@@ -1,0 +1,12 @@
+{
+  "name": "skills-library",
+  "description": "Searchable catalog of AI agent skills from skills.sh with dependency mapping and content classification",
+  "endpoints": {
+    "catalog": "/api/skills.json",
+    "dependencies": "/api/deps.json",
+    "stats": "/api/stats.json",
+    "search_index": "/api/search-index.json",
+    "llms_txt": "/llms.txt",
+    "llms_full_txt": "/llms-full.txt"
+  }
+}

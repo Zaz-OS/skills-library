@@ -1,0 +1,62 @@
+---
+
+---
+
+<aside id="filter-panel" class="space-y-6">
+  <!-- Standalone filter -->
+  <div>
+    <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-3">Dependencies</h3>
+    <div class="space-y-2">
+      <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-400 hover:text-gray-200">
+        <input type="radio" name="dep-filter" value="all" checked class="text-brand-500 focus:ring-brand-500 bg-gray-800 border-gray-600" />
+        All skills
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-400 hover:text-gray-200">
+        <input type="radio" name="dep-filter" value="standalone" class="text-brand-500 focus:ring-brand-500 bg-gray-800 border-gray-600" />
+        Standalone only
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-400 hover:text-gray-200">
+        <input type="radio" name="dep-filter" value="with-deps" class="text-brand-500 focus:ring-brand-500 bg-gray-800 border-gray-600" />
+        Requires setup
+      </label>
+    </div>
+  </div>
+
+  <!-- Content type filter -->
+  <div>
+    <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-3">Content Type</h3>
+    <div class="space-y-2">
+      <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-400 hover:text-gray-200">
+        <input type="checkbox" data-content-filter="hasScripts" class="rounded text-brand-500 focus:ring-brand-500 bg-gray-800 border-gray-600" />
+        Has scripts
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-400 hover:text-gray-200">
+        <input type="checkbox" data-content-filter="hasReferences" class="rounded text-brand-500 focus:ring-brand-500 bg-gray-800 border-gray-600" />
+        Has references
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-400 hover:text-gray-200">
+        <input type="checkbox" data-content-filter="hasAssets" class="rounded text-brand-500 focus:ring-brand-500 bg-gray-800 border-gray-600" />
+        Has assets
+      </label>
+    </div>
+  </div>
+
+  <!-- Sort -->
+  <div>
+    <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-3">Sort By</h3>
+    <select id="sort-select" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500">
+      <option value="installs">Installs</option>
+      <option value="stars">GitHub Stars</option>
+      <option value="name">Name</option>
+      <option value="firstSeen">Newest First</option>
+    </select>
+  </div>
+
+  <!-- Dependency tree -->
+  <div id="dep-tree">
+    <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-3">Dependency Tree</h3>
+    <div id="dep-tree-content" class="space-y-1 text-sm">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+</aside>

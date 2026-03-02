@@ -1,0 +1,145 @@
+---
+import Base from '../layouts/Base.astro';
+import { useTranslations, getLocalizedPath } from '../i18n/utils';
+import type { Locale } from '../i18n/translations';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const m = t.mcp;
+---
+
+<Base title={`MCP Server — Skills Library`} lang={lang}>
+  <div class="max-w-3xl mx-auto px-5 py-16">
+
+    <!-- Header -->
+    <div class="mb-12">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="px-2.5 py-1 rounded-md bg-accent-plum/10 text-accent-plum text-xs font-mono font-semibold">{m.badge}</span>
+      </div>
+      <h1 class="font-display text-3xl sm:text-4xl font-bold tracking-tight mb-4">{m.title}</h1>
+      <p class="text-ink-muted text-lg leading-relaxed">{m.subtitle}</p>
+    </div>
+
+    <!-- What is MCP -->
+    <section class="mb-12">
+      <h2 class="font-display text-xl font-semibold tracking-tight mb-3">{m.whatIsTitle}</h2>
+      <p class="text-ink-muted leading-relaxed">{m.whatIsDesc}</p>
+    </section>
+
+    <!-- Quick Start -->
+    <section class="mb-12">
+      <h2 class="font-display text-xl font-semibold tracking-tight mb-6">{m.quickStartTitle}</h2>
+
+      <!-- Step 1 -->
+      <div class="mb-8">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="flex items-center justify-center w-7 h-7 rounded-full bg-accent-coral text-white text-xs font-mono font-bold">1</span>
+          <h3 class="font-display font-semibold">{m.step1Title}</h3>
+        </div>
+        <p class="text-ink-muted text-sm mb-3 ml-10">{m.step1Desc}</p>
+        <div class="ml-10 relative group">
+          <pre class="bg-sand-800 text-sand-100 rounded-lg px-4 py-3 text-sm font-mono overflow-x-auto"><code>{m.step1Cmd}</code></pre>
+          <button data-copy={m.step1Cmd} class="copy-btn absolute top-2 right-2 px-2 py-1 rounded bg-sand-700 text-sand-300 text-xs font-mono opacity-0 group-hover:opacity-100 transition-opacity hover:bg-sand-600">{t.skill.copy}</button>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="mb-8">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="flex items-center justify-center w-7 h-7 rounded-full bg-accent-coral text-white text-xs font-mono font-bold">2</span>
+          <h3 class="font-display font-semibold">{m.step2Title}</h3>
+        </div>
+        <p class="text-ink-muted text-sm ml-10">{m.step2Desc}</p>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="mb-8">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="flex items-center justify-center w-7 h-7 rounded-full bg-accent-coral text-white text-xs font-mono font-bold">3</span>
+          <h3 class="font-display font-semibold">{m.step3Title}</h3>
+        </div>
+        <p class="text-ink-muted text-sm ml-10">{m.step3Desc}</p>
+      </div>
+    </section>
+
+    <!-- Clients -->
+    <section class="mb-12">
+      <h2 class="font-display text-xl font-semibold tracking-tight mb-6">{m.clientsTitle}</h2>
+
+      <div class="space-y-4">
+        {([
+          { name: 'Claude Code', cmd: m.cmdClaudeCode },
+          { name: 'Claude Desktop', cmd: m.cmdClaudeDesktop, note: m.noteClaudeDesktop },
+          { name: 'Cursor', cmd: m.cmdCursor, note: m.noteCursor },
+        ] as { name: string; cmd: string; note?: string }[]).map((client) => (
+          <div class="border border-sand-200 rounded-lg bg-white p-4">
+            <h3 class="font-display font-semibold text-sm mb-2">{client.name}</h3>
+            <div class="relative group">
+              <pre class="bg-sand-800 text-sand-100 rounded-lg px-4 py-3 text-sm font-mono overflow-x-auto whitespace-pre-wrap"><code>{client.cmd}</code></pre>
+              <button data-copy={client.cmd} class="copy-btn absolute top-2 right-2 px-2 py-1 rounded bg-sand-700 text-sand-300 text-xs font-mono opacity-0 group-hover:opacity-100 transition-opacity hover:bg-sand-600">{t.skill.copy}</button>
+            </div>
+            {client.note && <p class="text-sand-500 text-xs mt-2 font-mono">{client.note}</p>}
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Available Tools -->
+    <section class="mb-12">
+      <h2 class="font-display text-xl font-semibold tracking-tight mb-6">{m.toolsTitle}</h2>
+
+      <div class="space-y-3">
+        {([
+          { name: 'search_skills', desc: m.toolSearch },
+          { name: 'get_skill', desc: m.toolGet },
+          { name: 'list_by_dependency', desc: m.toolDep },
+          { name: 'list_standalone', desc: m.toolStandalone },
+          { name: 'get_dependency_tree', desc: m.toolTree },
+          { name: 'get_stats', desc: m.toolStats },
+        ] as { name: string; desc: string }[]).map((tool) => (
+          <div class="flex gap-4 items-start border border-sand-200 rounded-lg bg-white px-4 py-3">
+            <code class="font-mono text-sm text-accent-plum font-semibold whitespace-nowrap pt-0.5">{tool.name}</code>
+            <p class="text-ink-muted text-sm">{tool.desc}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Example -->
+    <section class="mb-12">
+      <h2 class="font-display text-xl font-semibold tracking-tight mb-4">{m.exampleTitle}</h2>
+      <p class="text-ink-muted text-sm mb-4">{m.exampleDesc}</p>
+      <div class="relative group">
+        <pre class="bg-sand-800 text-sand-100 rounded-lg px-4 py-3 text-sm font-mono overflow-x-auto whitespace-pre-wrap"><code>{m.examplePrompt}</code></pre>
+      </div>
+    </section>
+
+    <!-- JSON API note -->
+    <section class="border border-sand-200 rounded-lg bg-white p-5">
+      <h2 class="font-display text-base font-semibold tracking-tight mb-2">{m.jsonTitle}</h2>
+      <p class="text-ink-muted text-sm leading-relaxed">{m.jsonDesc}</p>
+      <div class="flex flex-wrap gap-2 mt-3">
+        <a href="/api/skills.json" class="px-2.5 py-1 rounded-md border border-sand-200 text-xs font-mono text-sand-600 hover:border-sand-300 hover:text-ink transition-colors">skills.json</a>
+        <a href="/api/deps.json" class="px-2.5 py-1 rounded-md border border-sand-200 text-xs font-mono text-sand-600 hover:border-sand-300 hover:text-ink transition-colors">deps.json</a>
+        <a href="/api/stats.json" class="px-2.5 py-1 rounded-md border border-sand-200 text-xs font-mono text-sand-600 hover:border-sand-300 hover:text-ink transition-colors">stats.json</a>
+      </div>
+    </section>
+
+  </div>
+</Base>
+
+<script>
+  document.querySelectorAll('.copy-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const text = (btn as HTMLElement).dataset.copy || '';
+      await navigator.clipboard.writeText(text);
+      const original = btn.textContent;
+      btn.textContent = btn.closest('[data-lang="pt-br"]') ? 'Copiado!' : 'Copied!';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    });
+  });
+</script>
