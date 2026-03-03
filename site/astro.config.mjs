@@ -14,6 +14,7 @@ try {
 } catch {}
 
 export default defineConfig({
+  site: "https://skills-library.com",
   integrations: [tailwind()],
   output: "static",
   i18n: {
