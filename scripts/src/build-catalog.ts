@@ -116,6 +116,15 @@ export function buildCatalog(
     }
   }
 
+  // Preserve skills from previous catalog that weren't found in this run
+  // (scraper results vary between runs; don't lose previously discovered skills)
+  const currentIds = new Set(skills.map((s) => s.id));
+  for (const prev of existing) {
+    if (!currentIds.has(prev.id)) {
+      skills.push(prev);
+    }
+  }
+
   // Sort by installs descending
   skills.sort((a, b) => b.installs - a.installs);
 
