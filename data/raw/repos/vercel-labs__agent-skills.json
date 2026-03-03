@@ -1,0 +1,185 @@
+{
+  "source": "vercel-labs/agent-skills",
+  "repoUrl": "https://github.com/vercel-labs/agent-skills",
+  "skills": [
+    {
+      "skillId": "vercel-deploy-claimable",
+      "parsed": {
+        "name": "vercel-deploy",
+        "description": "Deploy applications and websites to Vercel. Use this skill when the user requests deployment actions such as \"Deploy my app\", \"Deploy this to production\", \"Create a preview deployment\", \"Deploy and give me the link\", or \"Push this live\". No authentication required - returns preview URL and claimable deployment link.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Vercel Deploy\n\nDeploy any project to Vercel instantly. No authentication required.\n\n## How It Works\n\n1. Packages your project into a tarball (excludes `node_modules` and `.git`)\n2. Auto-detects framework from `package.json`\n3. Uploads to deployment service\n4. Returns **Preview URL** (live site) and **Claim URL** (transfer to your Vercel account)\n\n## Usage\n\n```bash\nbash /mnt/skills/user/vercel-deploy/scripts/deploy.sh [path]\n```\n\n**Arguments:**\n- `path` - Directory to deploy, or a `.tgz` file (defaults to current directory)\n\n**Examples:**\n\n```bash\n# Deploy current directory\nbash /mnt/skills/user/vercel-deploy/scripts/deploy.sh\n\n# Deploy specific project\nbash /mnt/skills/user/vercel-deploy/scripts/deploy.sh /path/to/project\n\n# Deploy existing tarball\nbash /mnt/skills/user/vercel-deploy/scripts/deploy.sh /path/to/project.tgz\n```\n\n## Output\n\n```\nPreparing deployment...\nDetected framework: nextjs\nCreating deployment package...\nDeploying...\n✓ Deployment successful!\n\nPreview URL: https://skill-deploy-abc123.vercel.app\nClaim URL:   https://vercel.com/claim-deployment?code=...\n```\n\nThe script also outputs JSON to stdout for programmatic use:\n\n```json\n{\n  \"previewUrl\": \"https://skill-deploy-abc123.vercel.app\",\n  \"claimUrl\": \"https://vercel.com/claim-deployment?code=...\",\n  \"deploymentId\": \"dpl_...\",\n  \"projectId\": \"prj_...\"\n}\n```\n\n## Framework Detection\n\nThe script auto-detects frameworks from `package.json`. Supported frameworks include:\n\n- **React**: Next.js, Gatsby, Create React App, Remix, React Router\n- **Vue**: Nuxt, Vitepress, Vuepress, Gridsome\n- **Svelte**: SvelteKit, Svelte, Sapper\n- **Other Frontend**: Astro, Solid Start, Angular, Ember, Preact, Docusaurus\n- **Backend**: Express, Hono, Fastify, NestJS, Elysia, h3, Nitro\n- **Build Tools**: Vite, Parcel\n- **And more**: Blitz, Hydrogen, RedwoodJS, Storybook, Sanity, etc.\n\nFor static HTML projects (no `package.json`), framework is set to `null`.\n\n## Static HTML Projects\n\nFor projects without a `package.json`:\n- If there's a single `.html` file not named `index.html`, it gets renamed automatically\n- This ensures the page is served at the root URL (`/`)\n\n## Present Results to User\n\nAlways show both URLs:\n\n```\n✓ Deployment successful!\n\nPreview URL: https://skill-deploy-abc123.vercel.app\nClaim URL:   https://vercel.com/claim-deployment?code=...\n\nView your site at the Preview URL.\nTo transfer this deployment to your Vercel account, visit the Claim URL.\n```\n\n## Troubleshooting\n\n### Network Egress Error\n\nIf deployment fails due to network restrictions (common on claude.ai), tell the user:\n\n```\nDeployment failed due to network restrictions. To fix this:\n\n1. Go to https://claude.ai/settings/capabilities\n2. Add *.vercel.com to the allowed domains\n3. Try deploying again\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "composition-patterns",
+      "parsed": {
+        "name": "vercel-composition-patterns",
+        "description": "React composition patterns that scale. Use when refactoring components with boolean prop proliferation, building flexible component libraries, or designing reusable APIs. Triggers on tasks involving compound components, render props, context providers, or component architecture. Includes React 19 API changes.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# React Composition Patterns\n\nComposition patterns for building flexible, maintainable React components. Avoid\nboolean prop proliferation by using compound components, lifting state, and\ncomposing internals. These patterns make codebases easier for both humans and AI\nagents to work with as they scale.\n\n## When to Apply\n\nReference these guidelines when:\n\n- Refactoring components with many boolean props\n- Building reusable component libraries\n- Designing flexible component APIs\n- Reviewing component architecture\n- Working with compound components or context providers\n\n## Rule Categories by Priority\n\n| Priority | Category                | Impact | Prefix          |\n| -------- | ----------------------- | ------ | --------------- |\n| 1        | Component Architecture  | HIGH   | `architecture-` |\n| 2        | State Management        | MEDIUM | `state-`        |\n| 3        | Implementation Patterns | MEDIUM | `patterns-`     |\n| 4        | React 19 APIs           | MEDIUM | `react19-`      |\n\n## Quick Reference\n\n### 1. Component Architecture (HIGH)\n\n- `architecture-avoid-boolean-props` - Don't add boolean props to customize\n  behavior; use composition\n- `architecture-compound-components` - Structure complex components with shared\n  context\n\n### 2. State Management (MEDIUM)\n\n- `state-decouple-implementation` - Provider is the only place that knows how\n  state is managed\n- `state-context-interface` - Define generic interface with state, actions, meta\n  for dependency injection\n- `state-lift-state` - Move state into provider components for sibling access\n\n### 3. Implementation Patterns (MEDIUM)\n\n- `patterns-explicit-variants` - Create explicit variant components instead of\n  boolean modes\n- `patterns-children-over-render-props` - Use children for composition instead\n  of renderX props\n\n### 4. React 19 APIs (MEDIUM)\n\n> **⚠️ React 19+ only.** Skip this section if using React 18 or earlier.\n\n- `react19-no-forwardref` - Don't use `forwardRef`; use `use()` instead of `useContext()`\n\n## How to Use\n\nRead individual rule files for detailed explanations and code examples:\n\n```\nrules/architecture-avoid-boolean-props.md\nrules/state-context-interface.md\n```\n\nEach rule file contains:\n\n- Brief explanation of why it matters\n- Incorrect code example with explanation\n- Correct code example with explanation\n- Additional context and references\n\n## Full Compiled Document\n\nFor the complete guide with all rules expanded: `AGENTS.md`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "react-best-practices",
+      "parsed": {
+        "name": "vercel-react-best-practices",
+        "description": "React and Next.js performance optimization guidelines from Vercel Engineering. This skill should be used when writing, reviewing, or refactoring React/Next.js code to ensure optimal performance patterns. Triggers on tasks involving React components, Next.js pages, data fetching, bundle optimization, or performance improvements.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Vercel React Best Practices\n\nComprehensive performance optimization guide for React and Next.js applications, maintained by Vercel. Contains 58 rules across 8 categories, prioritized by impact to guide automated refactoring and code generation.\n\n## When to Apply\n\nReference these guidelines when:\n- Writing new React components or Next.js pages\n- Implementing data fetching (client or server-side)\n- Reviewing code for performance issues\n- Refactoring existing React/Next.js code\n- Optimizing bundle size or load times\n\n## Rule Categories by Priority\n\n| Priority | Category | Impact | Prefix |\n|----------|----------|--------|--------|\n| 1 | Eliminating Waterfalls | CRITICAL | `async-` |\n| 2 | Bundle Size Optimization | CRITICAL | `bundle-` |\n| 3 | Server-Side Performance | HIGH | `server-` |\n| 4 | Client-Side Data Fetching | MEDIUM-HIGH | `client-` |\n| 5 | Re-render Optimization | MEDIUM | `rerender-` |\n| 6 | Rendering Performance | MEDIUM | `rendering-` |\n| 7 | JavaScript Performance | LOW-MEDIUM | `js-` |\n| 8 | Advanced Patterns | LOW | `advanced-` |\n\n## Quick Reference\n\n### 1. Eliminating Waterfalls (CRITICAL)\n\n- `async-defer-await` - Move await into branches where actually used\n- `async-parallel` - Use Promise.all() for independent operations\n- `async-dependencies` - Use better-all for partial dependencies\n- `async-api-routes` - Start promises early, await late in API routes\n- `async-suspense-boundaries` - Use Suspense to stream content\n\n### 2. Bundle Size Optimization (CRITICAL)\n\n- `bundle-barrel-imports` - Import directly, avoid barrel files\n- `bundle-dynamic-imports` - Use next/dynamic for heavy components\n- `bundle-defer-third-party` - Load analytics/logging after hydration\n- `bundle-conditional` - Load modules only when feature is activated\n- `bundle-preload` - Preload on hover/focus for perceived speed\n\n### 3. Server-Side Performance (HIGH)\n\n- `server-auth-actions` - Authenticate server actions like API routes\n- `server-cache-react` - Use React.cache() for per-request deduplication\n- `server-cache-lru` - Use LRU cache for cross-request caching\n- `server-dedup-props` - Avoid duplicate serialization in RSC props\n- `server-hoist-static-io` - Hoist static I/O (fonts, logos) to module level\n- `server-serialization` - Minimize data passed to client components\n- `server-parallel-fetching` - Restructure components to parallelize fetches\n- `server-after-nonblocking` - Use after() for non-blocking operations\n\n### 4. Client-Side Data Fetching (MEDIUM-HIGH)\n\n- `client-swr-dedup` - Use SWR for automatic request deduplication\n- `client-event-listeners` - Deduplicate global event listeners\n- `client-passive-event-listeners` - Use passive listeners for scroll\n- `client-localstorage-schema` - Version and minimize localStorage data\n\n### 5. Re-render Optimization (MEDIUM)\n\n- `rerender-defer-reads` - Don't subscribe to state only used in callbacks\n- `rerender-memo` - Extract expensive work into memoized components\n- `rerender-memo-with-default-value` - Hoist default non-primitive props\n- `rerender-dependencies` - Use primitive dependencies in effects\n- `rerender-derived-state` - Subscribe to derived booleans, not raw values\n- `rerender-derived-state-no-effect` - Derive state during render, not effects\n- `rerender-functional-setstate` - Use functional setState for stable callbacks\n- `rerender-lazy-state-init` - Pass function to useState for expensive values\n- `rerender-simple-expression-in-memo` - Avoid memo for simple primitives\n- `rerender-move-effect-to-event` - Put interaction logic in event handlers\n- `rerender-transitions` - Use startTransition for non-urgent updates\n- `rerender-use-ref-transient-values` - Use refs for transient frequent values\n\n### 6. Rendering Performance (MEDIUM)\n\n- `rendering-animate-svg-wrapper` - Animate div wrapper, not SVG element\n- `rendering-content-visibility` - Use content-visibility for long lists\n- `rendering-hoist-jsx` - Extract static JSX outside components\n- `rendering-svg-precision` - Reduce SVG coordinate precision\n- `rendering-hydration-no-flicker` - Use inline script for client-only data\n- `rendering-hydration-suppress-warning` - Suppress expected mismatches\n- `rendering-activity` - Use Activity component for show/hide\n- `rendering-conditional-render` - Use ternary, not && for conditionals\n- `rendering-usetransition-loading` - Prefer useTransition for loading state\n\n### 7. JavaScript Performance (LOW-MEDIUM)\n\n- `js-batch-dom-css` - Group CSS changes via classes or cssText\n- `js-index-maps` - Build Map for repeated lookups\n- `js-cache-property-access` - Cache object properties in loops\n- `js-cache-function-results` - Cache function results in module-level Map\n- `js-cache-storage` - Cache localStorage/sessionStorage reads\n- `js-combine-iterations` - Combine multiple filter/map into one loop\n- `js-length-check-first` - Check array length before expensive comparison\n- `js-early-exit` - Return early from functions\n- `js-hoist-regexp` - Hoist RegExp creation outside loops\n- `js-min-max-loop` - Use loop for min/max instead of sort\n- `js-set-map-lookups` - Use Set/Map for O(1) lookups\n- `js-tosorted-immutable` - Use toSorted() for immutability\n\n### 8. Advanced Patterns (LOW)\n\n- `advanced-event-handler-refs` - Store event handlers in refs\n- `advanced-init-once` - Initialize app once per app load\n- `advanced-use-latest` - useLatest for stable callback refs\n\n## How to Use\n\nRead individual rule files for detailed explanations and code examples:\n\n```\nrules/async-parallel.md\nrules/bundle-barrel-imports.md\n```\n\nEach rule file contains:\n- Brief explanation of why it matters\n- Incorrect code example with explanation\n- Correct code example with explanation\n- Additional context and references\n\n## Full Compiled Document\n\nFor the complete guide with all rules expanded: `AGENTS.md`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "react-native-skills",
+      "parsed": {
+        "name": "vercel-react-native-skills",
+        "description": "React Native and Expo best practices for building performant mobile apps. Use when building React Native components, optimizing list performance, implementing animations, or working with native modules. Triggers on tasks involving React Native, Expo, mobile performance, or native platform APIs.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# React Native Skills\n\nComprehensive best practices for React Native and Expo applications. Contains\nrules across multiple categories covering performance, animations, UI patterns,\nand platform-specific optimizations.\n\n## When to Apply\n\nReference these guidelines when:\n\n- Building React Native or Expo apps\n- Optimizing list and scroll performance\n- Implementing animations with Reanimated\n- Working with images and media\n- Configuring native modules or fonts\n- Structuring monorepo projects with native dependencies\n\n## Rule Categories by Priority\n\n| Priority | Category         | Impact   | Prefix               |\n| -------- | ---------------- | -------- | -------------------- |\n| 1        | List Performance | CRITICAL | `list-performance-`  |\n| 2        | Animation        | HIGH     | `animation-`         |\n| 3        | Navigation       | HIGH     | `navigation-`        |\n| 4        | UI Patterns      | HIGH     | `ui-`                |\n| 5        | State Management | MEDIUM   | `react-state-`       |\n| 6        | Rendering        | MEDIUM   | `rendering-`         |\n| 7        | Monorepo         | MEDIUM   | `monorepo-`          |\n| 8        | Configuration    | LOW      | `fonts-`, `imports-` |\n\n## Quick Reference\n\n### 1. List Performance (CRITICAL)\n\n- `list-performance-virtualize` - Use FlashList for large lists\n- `list-performance-item-memo` - Memoize list item components\n- `list-performance-callbacks` - Stabilize callback references\n- `list-performance-inline-objects` - Avoid inline style objects\n- `list-performance-function-references` - Extract functions outside render\n- `list-performance-images` - Optimize images in lists\n- `list-performance-item-expensive` - Move expensive work outside items\n- `list-performance-item-types` - Use item types for heterogeneous lists\n\n### 2. Animation (HIGH)\n\n- `animation-gpu-properties` - Animate only transform and opacity\n- `animation-derived-value` - Use useDerivedValue for computed animations\n- `animation-gesture-detector-press` - Use Gesture.Tap instead of Pressable\n\n### 3. Navigation (HIGH)\n\n- `navigation-native-navigators` - Use native stack and native tabs over JS navigators\n\n### 4. UI Patterns (HIGH)\n\n- `ui-expo-image` - Use expo-image for all images\n- `ui-image-gallery` - Use Galeria for image lightboxes\n- `ui-pressable` - Use Pressable over TouchableOpacity\n- `ui-safe-area-scroll` - Handle safe areas in ScrollViews\n- `ui-scrollview-content-inset` - Use contentInset for headers\n- `ui-menus` - Use native context menus\n- `ui-native-modals` - Use native modals when possible\n- `ui-measure-views` - Use onLayout, not measure()\n- `ui-styling` - Use StyleSheet.create or Nativewind\n\n### 5. State Management (MEDIUM)\n\n- `react-state-minimize` - Minimize state subscriptions\n- `react-state-dispatcher` - Use dispatcher pattern for callbacks\n- `react-state-fallback` - Show fallback on first render\n- `react-compiler-destructure-functions` - Destructure for React Compiler\n- `react-compiler-reanimated-shared-values` - Handle shared values with compiler\n\n### 6. Rendering (MEDIUM)\n\n- `rendering-text-in-text-component` - Wrap text in Text components\n- `rendering-no-falsy-and` - Avoid falsy && for conditional rendering\n\n### 7. Monorepo (MEDIUM)\n\n- `monorepo-native-deps-in-app` - Keep native dependencies in app package\n- `monorepo-single-dependency-versions` - Use single versions across packages\n\n### 8. Configuration (LOW)\n\n- `fonts-config-plugin` - Use config plugins for custom fonts\n- `imports-design-system-folder` - Organize design system imports\n- `js-hoist-intl` - Hoist Intl object creation\n\n## How to Use\n\nRead individual rule files for detailed explanations and code examples:\n\n```\nrules/list-performance-virtualize.md\nrules/animation-gpu-properties.md\n```\n\nEach rule file contains:\n\n- Brief explanation of why it matters\n- Incorrect code example with explanation\n- Correct code example with explanation\n- Additional context and references\n\n## Full Compiled Document\n\nFor the complete guide with all rules expanded: `AGENTS.md`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "web-design-guidelines",
+      "parsed": {
+        "name": "web-design-guidelines",
+        "description": "Review UI code for Web Interface Guidelines compliance. Use when asked to \"review my UI\", \"check accessibility\", \"audit design\", \"review UX\", or \"check my site against best practices\".",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Web Interface Guidelines\n\nReview files for compliance with Web Interface Guidelines.\n\n## How It Works\n\n1. Fetch the latest guidelines from the source URL below\n2. Read the specified files (or prompt user for files/pattern)\n3. Check against all rules in the fetched guidelines\n4. Output findings in the terse `file:line` format\n\n## Guidelines Source\n\nFetch fresh guidelines before each review:\n\n```\nhttps://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md\n```\n\nUse WebFetch to retrieve the latest rules. The fetched content contains all the rules and output format instructions.\n\n## Usage\n\nWhen a user provides a file or pattern argument:\n1. Fetch guidelines from the source URL above\n2. Read the specified files\n3. Apply all rules from the fetched guidelines\n4. Output findings using the format specified in the guidelines\n\nIf no files specified, ask the user which files to review."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "vercel-react-best-practices",
+      "parsed": {
+        "name": "vercel-react-best-practices",
+        "description": "",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": ""
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "vercel-composition-patterns",
+      "parsed": {
+        "name": "vercel-composition-patterns",
+        "description": "",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": ""
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "vercel-react-native-skills",
+      "parsed": {
+        "name": "vercel-react-native-skills",
+        "description": "",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": ""
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    }
+  ]
+}

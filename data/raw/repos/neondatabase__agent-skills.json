@@ -1,0 +1,130 @@
+{
+  "source": "neondatabase/agent-skills",
+  "repoUrl": "https://github.com/neondatabase/agent-skills",
+  "skills": [
+    {
+      "skillId": "claimable-postgres",
+      "parsed": {
+        "name": "claimable-postgres",
+        "description": "Provision instant temporary Postgres databases via Claimable Postgres by Neon (pg.new) with no login, signup, or credit card. Supports REST API, CLI, and SDK. Use when users ask for a quick Postgres environment, a throwaway DATABASE_URL for prototyping/tests, or \"just give me a DB now\". Triggers include: \"quick postgres\", \"temporary postgres\", \"no signup database\", \"no credit card database\", \"instant DATABASE_URL\", \"npx get-db\", \"pg.new\", \"pg.new API\", \"claimable postgres API\".",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Claimable Postgres\n\nInstant Postgres databases for local development, demos, prototyping, and test environments. No account required. Databases expire after 72 hours unless claimed to a Neon account.\n\n## Quick Start\n\n```bash\ncurl -s -X POST \"https://pg.new/api/v1/database\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"ref\": \"agent-skills\"}'\n```\n\nParse `connection_string` and `claim_url` from the JSON response. Write `connection_string` to the project's `.env` as `DATABASE_URL`.\n\nFor other methods (CLI, SDK, Vite plugin), see [Which Method?](#which-method) below.\n\n## Which Method?\n\n- **REST API**: Returns structured JSON. No runtime dependency beyond `curl`. Preferred when the agent needs predictable output and error handling.\n- **CLI** (`npx get-db@latest --yes`): Provisions and writes `.env` in one command. Convenient when Node.js is available and the user wants a simple setup.\n- **SDK** (`get-db/sdk`): Scripts or programmatic provisioning in Node.js.\n- **Vite plugin** (`vite-plugin-db`): Auto-provisions on `vite dev` if `DATABASE_URL` is missing. Use when the user has a Vite project.\n- **Browser**: User cannot run CLI or API. Direct to https://pg.new.\n\n## REST API\n\n**Base URL:** `https://pg.new/api/v1`\n\n### Create a database\n\n```bash\ncurl -s -X POST \"https://pg.new/api/v1/database\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"ref\": \"agent-skills\"}'\n```\n\n| Parameter | Required | Description |\n|-----------|----------|-------------|\n| `ref` | Yes | Tracking tag that identifies who provisioned the database. Use `\"agent-skills\"` when provisioning through this skill. |\n| `enable_logical_replication` | No | Enable logical replication (default: false, cannot be disabled once enabled) |\n\nThe `connection_string` returned by the API is a pooled connection URL. For a direct (non-pooled) connection (e.g. Prisma migrations), remove `-pooler` from the hostname. The CLI writes both pooled and direct URLs automatically.\n\n**Response:**\n\n```json\n{\n  \"id\": \"019beb39-37fb-709d-87ac-7ad6198b89f7\",\n  \"status\": \"UNCLAIMED\",\n  \"neon_project_id\": \"gentle-scene-06438508\",\n  \"connection_string\": \"postgresql://...\",\n  \"claim_url\": \"https://pg.new/claim/019beb39-...\",\n  \"expires_at\": \"2026-01-26T14:19:14.580Z\",\n  \"created_at\": \"2026-01-23T14:19:14.580Z\",\n  \"updated_at\": \"2026-01-23T14:19:14.580Z\"\n}\n```\n\n### Check status\n\n```bash\ncurl -s \"https://pg.new/api/v1/database/{id}\"\n```\n\nReturns the same response shape. Status transitions: `UNCLAIMED` -> `CLAIMING` -> `CLAIMED`. After the database is claimed, `connection_string` returns `null`.\n\n### Error responses\n\n| Condition | HTTP | Message |\n|-----------|------|---------|\n| Missing or empty `ref` | 400 | `Missing referrer` |\n| Invalid database ID | 400 | `Database not found` |\n| Invalid JSON body | 500 | `Failed to create the database.` |\n\n## CLI\n\n```bash\nnpx get-db@latest --yes\n```\n\nProvisions a database and writes the connection string to `.env` in one step. Always use `@latest` and `--yes` (skips interactive prompts that would stall the agent).\n\n### Pre-run Check\n\nCheck if `DATABASE_URL` (or the chosen key) already exists in the target `.env`. The CLI exits without provisioning if it finds the key.\n\nIf the key exists, offer the user three options:\n\n1. Remove or comment out the existing line, then rerun.\n2. Use `--env` to write to a different file (e.g. `--env .env.local`).\n3. Use `--key` to write under a different variable name.\n\nGet confirmation before proceeding.\n\n### Options\n\n| Option | Alias | Description | Default |\n|--------|-------|-------------|---------|\n| `--yes` | `-y` | Skip prompts, use defaults | `false` |\n| `--env` | `-e` | .env file path | `./.env` |\n| `--key` | `-k` | Connection string env var key | `DATABASE_URL` |\n| `--prefix` | `-p` | Prefix for generated public env vars | `PUBLIC_` |\n| `--seed` | `-s` | Path to seed SQL file | none |\n| `--logical-replication` | `-L` | Enable logical replication | `false` |\n| `--ref` | `-r` | Referrer id (use `agent-skills` when provisioning through this skill) | none |\n\nAlternative package managers: `yarn dlx get-db@latest`, `pnpm dlx get-db@latest`, `bunx get-db@latest`, `deno run -A get-db@latest`.\n\n### Output\n\nThe CLI writes to the target `.env`:\n\n```\nDATABASE_URL=postgresql://...              # pooled (use for application queries)\nDATABASE_URL_DIRECT=postgresql://...       # direct (use for migrations, e.g. Prisma)\nPUBLIC_POSTGRES_CLAIM_URL=https://pg.new/claim/...\n```\n\n## SDK\n\nUse for scripts and programmatic provisioning flows.\n\n```typescript\nimport { instantPostgres } from 'get-db';\n\nconst { databaseUrl, databaseUrlDirect, claimUrl, claimExpiresAt } = await instantPostgres({\n  referrer: 'agent-skills',\n  seed: { type: 'sql-script', path: './init.sql' },\n});\n```\n\nReturns `databaseUrl` (pooled), `databaseUrlDirect` (direct, for migrations), `claimUrl`, and `claimExpiresAt` (Date object). The `referrer` parameter is required.\n\n## Vite Plugin\n\nFor Vite projects, `vite-plugin-db` auto-provisions a database on `vite dev` if `DATABASE_URL` is missing. Install with `npm install -D vite-plugin-db`. See the [Claimable Postgres docs](https://neon.com/docs/reference/claimable-postgres#vite-plugin) for configuration.\n\n## Agent Workflow\n\n### API path\n\n1. **Confirm intent:** If the request is ambiguous, confirm the user wants a temporary, no-signup database. Skip this if they explicitly asked for a quick or temporary database.\n2. **Provision:** POST to `https://pg.new/api/v1/database` with `{\"ref\": \"agent-skills\"}`.\n3. **Parse response:** Extract `connection_string`, `claim_url`, and `expires_at` from the JSON response.\n4. **Write .env:** Write `DATABASE_URL=<connection_string>` to the project's `.env` (or the user's preferred file and key). Do not overwrite an existing key without confirmation.\n5. **Seed (if needed):** If the user has a seed SQL file, run it against the new database:\n   ```bash\n   psql \"$DATABASE_URL\" -f seed.sql\n   ```\n6. **Report:** Tell the user where the connection string was written, which key was used, and share the claim URL. Remind them: the database works now; claim within 72 hours to keep it permanently.\n7. **Optional:** Offer a quick connection test (e.g. `SELECT 1`).\n\n### CLI path\n\n1. **Check .env:** Check the target `.env` for an existing `DATABASE_URL` (or chosen key). If present, do not run. Offer remove, `--env`, or `--key` and get confirmation.\n2. **Confirm intent:** If the request is ambiguous, confirm the user wants a temporary, no-signup database. Skip this if they explicitly asked for a quick or temporary database.\n3. **Gather options:** Use defaults unless context suggests otherwise (e.g., user mentions a custom env file, seed SQL, or logical replication).\n4. **Run:** Execute with `@latest --yes` plus the confirmed options. Always use `@latest` to avoid stale cached versions. `--yes` skips interactive prompts that would stall the agent.\n   ```bash\n   npx get-db@latest --yes --ref agent-skills --env .env.local --seed ./schema.sql\n   ```\n5. **Verify:** Confirm the connection string was written to the intended file.\n6. **Report:** Tell the user where the connection string was written, which key was used, and that a claim URL is in the env file. Remind them: the database works now; claim within 72 hours to keep it permanently.\n7. **Optional:** Offer a quick connection test (e.g. `SELECT 1`).\n\n### Output Checklist\n\nAlways report:\n\n- Where the connection string was written (e.g. `.env`)\n- Which variable key was used (`DATABASE_URL` or custom key)\n- The claim URL (from `.env` or API response)\n- That unclaimed databases are temporary (72 hours)\n\n## Claiming\n\nClaiming is optional. The database works immediately without it. To optionally claim, the user opens the claim URL in a browser, where they sign in or create a Neon account to claim the database.\n\n- **API/SDK:** Give the user the `claim_url` from the create response.\n- **CLI:** `npx get-db@latest claim` reads the claim URL from `.env` and opens the browser automatically.\n\nUsers cannot claim into Vercel-linked orgs; they must choose another Neon org.\n\n## Defaults and Limits\n\n| Parameter | Value |\n|-----------|-------|\n| Provider | AWS |\n| Region | us-east-2 |\n| Postgres | 17 |\n\nRegion cannot be changed for claimable databases. Unclaimed databases have stricter quotas. Claiming resets limits to free plan defaults.\n\n| | Unclaimed | Claimed (Free plan) |\n|---|-----------|---------------------|\n| Storage | 100 MB | 512 MB |\n| Transfer | 1 GB | ~5 GB |\n| Branches | No | Yes |\n| Expiration | 72 hours | None |\n\n## Auto-provisioning\n\nIf the agent needs a database to fulfill a task (e.g. \"build me a todo app with a real database\") and the user has not provided a connection string, provision one via the API and inform the user. Include the claim URL so they can keep it.\n\n## Safety and UX Notes\n\n- Do not overwrite existing env vars. Check first, then use `--env` or `--key` (CLI) or skip writing (API) to avoid conflicts.\n- Ask before running destructive seed SQL (`DROP`, `TRUNCATE`, mass `DELETE`).\n- For production workloads, recommend standard Neon provisioning instead of temporary claimable databases.\n- If users need long-term persistence, instruct them to open the claim URL right away.\n- After writing credentials to an .env file, check that it's covered by .gitignore. If not, warn the user. Do not modify `.gitignore` without confirmation."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "aws",
+          "name": "aws-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "deno",
+          "name": "deno",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "get-db@latest",
+          "name": "get-db@latest",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "vite-plugin-db",
+          "name": "vite-plugin-db",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "neon-postgres",
+      "parsed": {
+        "name": "neon-postgres",
+        "description": "Guides and best practices for working with Neon Serverless Postgres. Covers getting started, local development with Neon, choosing a connection method, Neon features, authentication (@neondatabase/auth), PostgREST-style data API (@neondatabase/neon-js), Neon CLI, and Neon's Platform API/SDKs. Use for any Neon-related questions.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Neon Serverless Postgres\n\nNeon is a serverless Postgres platform that separates compute and storage to offer autoscaling, branching, instant restore, and scale-to-zero. It's fully compatible with Postgres and works with any language, framework, or ORM that supports Postgres.\n\n## Neon Documentation\n\nThe Neon documentation is the source of truth for all Neon-related information. Always verify claims against the official docs before responding. Neon features and APIs evolve, so prefer fetching current docs over relying on training data.\n\n### Fetching Docs as Markdown\n\nAny Neon doc page can be fetched as markdown in two ways:\n\n1. **Append `.md` to the URL** (simplest): https://neon.com/docs/introduction/branching.md\n2. **Request `text/markdown`** on the standard URL: `curl -H \"Accept: text/markdown\" https://neon.com/docs/introduction/branching`\n\nBoth return the same markdown content. Use whichever method your tools support.\n\n### Finding the Right Page\n\nThe docs index lists every available page with its URL and a short description:\n\n```\nhttps://neon.com/docs/llms.txt\n```\n\nCommon doc URLs are organized in the topic links below. If you need a page not listed here, search the docs index: https://neon.com/docs/llms.txt — don't guess URLs.\n\n## What Is Neon\n\nUse this for architecture explanations and terminology (organizations, projects, branches, endpoints) before giving implementation advice.\n\nLink: https://neon.com/docs/ai/skills/neon-postgres/references/what-is-neon.md\n\n## Getting Started\n\nUse this for first-time setup: org/project selection, connection strings, driver installation, optional auth, and initial schema setup.\n\nLink: https://neon.com/docs/ai/skills/neon-postgres/references/getting-started.md\n\n## Connection Methods & Drivers\n\nUse this when you need to pick the correct transport and driver based on runtime constraints (TCP, HTTP, WebSocket, edge, serverless, long-running).\n\nLink: https://neon.com/docs/ai/skills/neon-postgres/references/connection-methods.md\n\n### Serverless Driver\n\nUse this for `@neondatabase/serverless` patterns, including HTTP queries, WebSocket transactions, and runtime-specific optimizations.\n\nLink: https://neon.com/docs/ai/skills/neon-postgres/references/neon-serverless.md\n\n### Neon JS SDK\n\nUse this for combined Neon Auth + Data API workflows with PostgREST-style querying and typed client setup.\n\nLink: https://neon.com/docs/ai/skills/neon-postgres/references/neon-js.md\n\n## Developer Tools\n\nUse this for local development enablement with `npx neonctl@latest init`, VSCode extension setup, and Neon MCP server configuration.\n\nLink: https://neon.com/docs/ai/skills/neon-postgres/references/devtools.md\n\n### Neon CLI\n\nUse this for terminal-first workflows, scripts, and CI/CD automation with `neonctl`.\n\nLink: https://neon.com/docs/ai/skills/neon-postgres/references/neon-cli.md\n\n## Neon Admin API\n\nThe Neon Admin API can be used to manage Neon resources programmatically. It is used behind the scenes by the Neon CLI and MCP server, but can also be used directly for more complex automation workflows or when embedding Neon in other applications.\n\n### Neon REST API\n\nUse this for direct HTTP automation, endpoint-level control, API key auth, rate-limit handling, and operation polling.\n\nLink: https://neon.com/docs/ai/skills/neon-postgres/references/neon-rest-api.md\n\n### Neon TypeScript SDK\n\nUse this when implementing typed programmatic control of Neon resources in TypeScript via `@neondatabase/api-client`.\n\nLink: https://neon.com/docs/ai/skills/neon-postgres/references/neon-typescript-sdk.md\n\n### Neon Python SDK\n\nUse this when implementing programmatic Neon management in Python with the `neon-api` package.\n\nLink: https://neon.com/docs/ai/skills/neon-postgres/references/neon-python-sdk.md\n\n## Neon Auth\n\nUse this for managed user authentication setup, UI components, auth methods, and Neon Auth integration pitfalls in Next.js and React apps.\n\nLink: https://neon.com/docs/ai/skills/neon-postgres/references/neon-auth.md\n\nNeon Auth is also embedded in the Neon JS SDK - so depending on your use case, you may want to use the Neon JS SDK instead of Neon Auth. See https://neon.com/docs/ai/skills/neon-postgres/references/connection-methods.md for more details.\n\n## Branching\n\nUse this when the user is planning isolated environments, schema migration testing, preview deployments, or branch lifecycle automation.\n\nKey points:\n\n- Branches are instant, copy-on-write clones (no full data copy).\n- Each branch has its own compute endpoint.\n- Use the neonctl CLI or MCP server to create, inspect, and compare branches.\n\nLink: https://neon.com/docs/ai/skills/neon-postgres/references/branching.md\n\n## Autoscaling\n\nUse this when the user needs compute to scale automatically with workload and wants guidance on CU sizing and runtime behavior.\n\nLink: https://neon.com/docs/introduction/autoscaling.md\n\n## Scale to Zero\n\nUse this when optimizing idle costs and discussing suspend/resume behavior, including cold-start trade-offs.\n\nKey points:\n\n- Idle computes suspend automatically (default 5 minutes, configurable) (unless disabled - launch & scale plan only)\n- First query after suspend typically has a cold-start penalty (around hundreds of ms)\n- Storage remains active while compute is suspended.\n\nLink: https://neon.com/docs/introduction/scale-to-zero.md\n\n## Instant Restore\n\nUse this when the user needs point-in-time recovery or wants to restore data state without traditional backup restore workflows.\n\nKey points:\n\n- Restore windows depend on plan limits.\n- Users can create branches from historical points-in-time.\n- Time Travel queries can be used for historical inspection workflows.\n\nLink: https://neon.com/docs/introduction/branch-restore.md\n\n## Read Replicas\n\nUse this for read-heavy workloads where the user needs dedicated read-only compute without duplicating storage.\n\nKey points:\n\n- Replicas are read-only compute endpoints sharing the same storage.\n- Creation is fast and scaling is independent from primary compute.\n- Typical use cases: analytics, reporting, and read-heavy APIs.\n\nLink: https://neon.com/docs/introduction/read-replicas.md\n\n## Connection Pooling\n\nUse this when the user is in serverless or high-concurrency environments and needs safe, scalable Postgres connection management.\n\nKey points:\n\n- Neon pooling uses PgBouncer.\n- Add `-pooler` to endpoint hostnames to use pooled connections.\n- Pooling is especially important in serverless runtimes with bursty concurrency.\n\nLink: https://neon.com/docs/connect/connection-pooling.md\n\n## IP Allow Lists\n\nUse this when the user needs to restrict database access by trusted networks, IPs, or CIDR ranges.\n\nLink: https://neon.com/docs/introduction/ip-allow.md\n\n## Logical Replication\n\nUse this when integrating CDC pipelines, external Postgres sync, or replication-based data movement.\n\nKey points:\n\n- Neon supports native logical replication workflows.\n- Useful for replicating to/from external Postgres systems.\n\nLink: https://neon.com/docs/guides/logical-replication-guide.md"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "neonctl@latest",
+          "name": "neonctl@latest",
+          "detectedFrom": "instructions"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "source": "upstash/context7",
+  "repoUrl": "https://github.com/upstash/context7",
+  "skills": [
+    {
+      "skillId": "documentation-lookup",
+      "parsed": {
+        "name": "documentation-lookup",
+        "description": "This skill should be used when the user asks about libraries, frameworks, API references, or needs code examples. Activates for setup questions, code generation involving libraries, or mentions of specific frameworks like React, Vue, Next.js, Prisma, Supabase, etc.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "When the user asks about libraries, frameworks, or needs code examples, use Context7 to fetch current documentation instead of relying on training data.\n\n## When to Use This Skill\n\nActivate this skill when the user:\n\n- Asks setup or configuration questions (\"How do I configure Next.js middleware?\")\n- Requests code involving libraries (\"Write a Prisma query for...\")\n- Needs API references (\"What are the Supabase auth methods?\")\n- Mentions specific frameworks (React, Vue, Svelte, Express, Tailwind, etc.)\n\n## How to Fetch Documentation\n\n### Step 1: Resolve the Library ID\n\nCall `resolve-library-id` with:\n\n- `libraryName`: The library name extracted from the user's question\n- `query`: The user's full question (improves relevance ranking)\n\n### Step 2: Select the Best Match\n\nFrom the resolution results, choose based on:\n\n- Exact or closest name match to what the user asked for\n- Higher benchmark scores indicate better documentation quality\n- If the user mentioned a version (e.g., \"React 19\"), prefer version-specific IDs\n\n### Step 3: Fetch the Documentation\n\nCall `query-docs` with:\n\n- `libraryId`: The selected Context7 library ID (e.g., `/vercel/next.js`)\n- `query`: The user's specific question\n\n### Step 4: Use the Documentation\n\nIncorporate the fetched documentation into your response:\n\n- Answer the user's question using current, accurate information\n- Include relevant code examples from the docs\n- Cite the library version when relevant\n\n## Guidelines\n\n- **Be specific**: Pass the user's full question as the query for better results\n- **Version awareness**: When users mention versions (\"Next.js 15\", \"React 19\"), use version-specific library IDs if available from the resolution step\n- **Prefer official sources**: When multiple matches exist, prefer official/primary packages over community forks"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "supabase",
+          "name": "supabase",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "context7-docs-lookup",
+      "parsed": {
+        "name": "context7-docs-lookup",
+        "description": "Use Context7 to fetch up-to-date library documentation. Activates when the user asks about libraries, frameworks, API references, or needs code examples — especially for setup questions, code generation, or mentions of specific frameworks like React, Vue, Next.js, Prisma, Supabase, etc.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "When the user asks about libraries, frameworks, or needs code examples, use Context7 to fetch current documentation instead of relying on training data.\n\n## When to Use This Skill\n\nActivate this skill when the user:\n\n- Asks setup or configuration questions (\"How do I configure Next.js middleware?\")\n- Requests code involving libraries (\"Write a Prisma query for...\")\n- Needs API references (\"What are the Supabase auth methods?\")\n- Mentions specific frameworks (React, Vue, Svelte, Express, Tailwind, etc.)\n\n## How to Fetch Documentation\n\n### Step 1: Resolve the Library ID\n\nCall `resolve-library-id` with:\n\n- `libraryName`: The library name extracted from the user's question\n- `query`: The user's full question (improves relevance ranking)\n\n### Step 2: Select the Best Match\n\nFrom the resolution results, choose based on:\n\n- Exact or closest name match to what the user asked for\n- Higher benchmark scores indicate better documentation quality\n- If the user mentioned a version (e.g., \"React 19\"), prefer version-specific IDs\n\n### Step 3: Fetch the Documentation\n\nCall `query-docs` with:\n\n- `libraryId`: The selected Context7 library ID (e.g., `/vercel/next.js`)\n- `query`: The user's specific question\n\n### Step 4: Use the Documentation\n\nIncorporate the fetched documentation into your response:\n\n- Answer the user's question using current, accurate information\n- Include relevant code examples from the docs\n- Cite the library version when relevant\n\n## Guidelines\n\n- **Be specific**: Pass the user's full question as the query for better results\n- **Version awareness**: When users mention versions (\"Next.js 15\", \"React 19\"), use version-specific library IDs if available from the resolution step\n- **Prefer official sources**: When multiple matches exist, prefer official/primary packages over community forks"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "supabase",
+          "name": "supabase",
+          "detectedFrom": "instructions"
+        }
+      ]
+    }
+  ]
+}

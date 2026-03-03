@@ -1,0 +1,498 @@
+{
+  "source": "pluginagentmarketplace/custom-plugin-java",
+  "repoUrl": "https://github.com/pluginagentmarketplace/custom-plugin-java",
+  "skills": [
+    {
+      "skillId": "java-concurrency",
+      "parsed": {
+        "name": "java-concurrency",
+        "description": "Master Java concurrency - threads, executors, locks, CompletableFuture, virtual threads",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "sasmp_version": "1.3.0",
+          "version": "3.0.0",
+          "bonded_agent": "02-java-advanced",
+          "bond_type": "PRIMARY_BOND",
+          "allowed-tools": "Read, Write, Bash, Glob, Grep"
+        },
+        "body": "# Java Concurrency Skill\n\nMaster Java concurrency patterns for thread-safe applications.\n\n## Overview\n\nThis skill covers concurrency from basic threads to virtual threads (Java 21+), including thread pools, synchronization, and CompletableFuture.\n\n## When to Use This Skill\n\nUse when you need to:\n- Write thread-safe code\n- Implement parallel processing\n- Use async programming patterns\n- Tune thread pools\n- Debug concurrency issues\n\n## Topics Covered\n\n### Thread Management\n- Thread lifecycle and states\n- Daemon vs user threads\n- Interrupt handling\n\n### Synchronization\n- synchronized, volatile\n- Lock interfaces (ReentrantLock)\n- Atomic operations\n\n### Executors\n- ThreadPoolExecutor configuration\n- ForkJoinPool\n- Virtual Threads (Java 21+)\n\n### CompletableFuture\n- Async execution\n- Chaining and composition\n- Exception handling\n\n## Quick Reference\n\n```java\n// Virtual Threads (Java 21+)\ntry (var executor = Executors.newVirtualThreadPerTaskExecutor()) {\n    IntStream.range(0, 10_000).forEach(i ->\n        executor.submit(() -> processRequest(i)));\n}\n\n// CompletableFuture composition\nCompletableFuture<Result> result = fetchUser(id)\n    .thenCompose(user -> fetchOrders(user.id()))\n    .thenApply(orders -> processOrders(orders))\n    .exceptionally(ex -> handleError(ex))\n    .orTimeout(5, TimeUnit.SECONDS);\n\n// Thread pool configuration\nThreadPoolExecutor executor = new ThreadPoolExecutor(\n    10, 50, 60L, TimeUnit.SECONDS,\n    new ArrayBlockingQueue<>(1000),\n    new ThreadPoolExecutor.CallerRunsPolicy()\n);\n\n// Lock with timeout\nReentrantLock lock = new ReentrantLock();\nif (lock.tryLock(1, TimeUnit.SECONDS)) {\n    try {\n        // critical section\n    } finally {\n        lock.unlock();\n    }\n}\n```\n\n## Thread Pool Sizing\n\n| Workload | Formula | Example |\n|----------|---------|---------|\n| CPU-bound | cores | 8 threads |\n| I/O-bound | cores * (1 + wait/compute) | 80 threads |\n\n## Troubleshooting\n\n| Problem | Cause | Solution |\n|---------|-------|----------|\n| Deadlock | Circular lock | Lock ordering, tryLock |\n| Race condition | Missing sync | Add locks/atomics |\n| Thread starvation | Unfair scheduling | Fair locks |\n\n### Debug Commands\n```bash\njstack -l <pid> > threaddump.txt\njcmd <pid> Thread.print\n```\n\n## Usage\n\n```\nSkill(\"java-concurrency\")\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": true
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "java-docker",
+      "parsed": {
+        "name": "java-docker",
+        "description": "Containerize Java applications - Dockerfile optimization, JVM settings, security",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "sasmp_version": "1.3.0",
+          "version": "3.0.0",
+          "bonded_agent": "08-java-devops",
+          "bond_type": "PRIMARY_BOND",
+          "allowed-tools": "Read, Write, Bash, Glob, Grep"
+        },
+        "body": "# Java Docker Skill\n\nContainerize Java applications with optimized Dockerfiles and JVM settings.\n\n## Overview\n\nThis skill covers Docker best practices for Java including multi-stage builds, JVM container settings, security hardening, and layer optimization.\n\n## When to Use This Skill\n\nUse when you need to:\n- Create optimized Java Dockerfiles\n- Configure JVM for containers\n- Implement security best practices\n- Reduce image size\n- Set up health checks\n\n## Topics Covered\n\n### Dockerfile Optimization\n- Multi-stage builds\n- Layer caching strategy\n- Spring Boot layered JARs\n- Dependency caching\n\n### JVM Container Settings\n- UseContainerSupport\n- MaxRAMPercentage\n- GC selection\n- Exit on OOM\n\n### Security\n- Non-root users\n- Read-only filesystem\n- Vulnerability scanning\n- Secrets handling\n\n## Quick Reference\n\n```dockerfile\n# Multi-stage optimized Dockerfile\nFROM eclipse-temurin:21-jdk-alpine AS builder\n\nWORKDIR /app\n\n# Cache dependencies\nCOPY pom.xml .\nCOPY .mvn .mvn\nRUN mvn dependency:go-offline -B\n\n# Build and extract layers\nCOPY src ./src\nRUN mvn package -DskipTests && \\\n    java -Djarmode=layertools -jar target/*.jar extract\n\n# Runtime stage\nFROM eclipse-temurin:21-jre-alpine\n\n# Security: non-root user\nRUN addgroup -S app && adduser -S app -G app\nUSER app\n\nWORKDIR /app\n\n# Copy layers in order of change frequency\nCOPY --from=builder /app/dependencies/ ./\nCOPY --from=builder /app/spring-boot-loader/ ./\nCOPY --from=builder /app/snapshot-dependencies/ ./\nCOPY --from=builder /app/application/ ./\n\n# JVM container settings\nENV JAVA_OPTS=\"-XX:+UseContainerSupport \\\n    -XX:MaxRAMPercentage=75.0 \\\n    -XX:+ExitOnOutOfMemoryError \\\n    -XX:+UseG1GC\"\n\nEXPOSE 8080\n\nHEALTHCHECK --interval=30s --timeout=3s --start-period=30s \\\n    CMD wget -qO- http://localhost:8080/actuator/health/liveness || exit 1\n\nENTRYPOINT [\"sh\", \"-c\", \"java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher\"]\n```\n\n## JVM Container Flags\n\n```bash\n# Recommended production settings\nJAVA_OPTS=\"\n  -XX:+UseContainerSupport\n  -XX:MaxRAMPercentage=75.0\n  -XX:InitialRAMPercentage=50.0\n  -XX:+ExitOnOutOfMemoryError\n  -XX:+HeapDumpOnOutOfMemoryError\n  -XX:HeapDumpPath=/tmp/heapdump.hprof\n  -XX:+UseG1GC\n  -Djava.security.egd=file:/dev/./urandom\n\"\n```\n\n## Base Image Comparison\n\n| Image | Size | Security | Use Case |\n|-------|------|----------|----------|\n| temurin:21-jre | ~200MB | Good | General use |\n| temurin:21-jre-alpine | ~100MB | Good | Size-optimized |\n| distroless/java21 | ~80MB | Best | Production |\n\n## Security Best Practices\n\n```dockerfile\n# Non-root user\nRUN addgroup -S app && adduser -S app -G app\nUSER app\n\n# Read-only filesystem\n# (Configure at runtime with --read-only)\n\n# No shell access with distroless\nFROM gcr.io/distroless/java21-debian12\n\n# Health check\nHEALTHCHECK --interval=30s --timeout=3s \\\n    CMD wget -qO- localhost:8080/actuator/health || exit 1\n```\n\n## Troubleshooting\n\n### Common Issues\n\n| Problem | Cause | Solution |\n|---------|-------|----------|\n| OOMKilled | Heap > limit | Set MaxRAMPercentage |\n| Slow startup | Large image | Multi-stage build |\n| Permission denied | Root required | Fix file permissions |\n| No memory info | Old JVM | Update to Java 11+ |\n\n### Debug Checklist\n```\n□ Check container memory limits\n□ Verify JVM sees container limits\n□ Review health check configuration\n□ Scan image for vulnerabilities\n□ Test with resource constraints\n```\n\n## Usage\n\n```\nSkill(\"java-docker\")\n```\n\n## Related Skills\n- `java-maven-gradle` - Build integration\n- `java-microservices` - K8s deployment"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": true
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "docker",
+          "name": "docker",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "wget",
+          "name": "wget",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "java-fundamentals",
+      "parsed": {
+        "name": "java-fundamentals",
+        "description": "Master core Java programming - syntax, OOP, collections, streams, and exception handling",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "sasmp_version": "1.3.0",
+          "version": "3.0.0",
+          "bonded_agent": "01-java-fundamentals",
+          "bond_type": "PRIMARY_BOND",
+          "allowed-tools": "Read, Write, Bash, Glob, Grep"
+        },
+        "body": "# Java Fundamentals Skill\n\nMaster core Java programming with production-quality patterns.\n\n## Overview\n\nThis skill covers Java fundamentals including syntax, OOP, collections, streams API, and exception handling for Java 8-21.\n\n## When to Use This Skill\n\nUse when you need to:\n- Write clean, idiomatic Java code\n- Design classes following OOP principles\n- Choose appropriate collection types\n- Implement functional programming patterns\n- Handle exceptions properly\n\n## Topics Covered\n\n### Core Syntax (Java 8-21)\n- Variables, data types, operators\n- Control flow, methods, classes\n- Records (Java 16+), sealed classes (Java 17+)\n- Pattern matching (Java 21)\n\n### Object-Oriented Programming\n- Classes, inheritance, polymorphism\n- Interfaces and abstract classes\n- SOLID principles\n\n### Collections Framework\n- List: ArrayList, LinkedList\n- Set: HashSet, TreeSet\n- Map: HashMap, ConcurrentHashMap\n- Queue: ArrayDeque, PriorityQueue\n\n### Streams API\n- filter, map, flatMap, reduce, collect\n- Optional handling\n- Parallel streams\n\n### Exception Handling\n- Checked vs unchecked exceptions\n- Try-with-resources\n- Custom exceptions\n\n## Quick Reference\n\n```java\n// Record (Java 16+)\npublic record User(String name, String email) {}\n\n// Pattern matching (Java 21)\nString format(Object obj) {\n    return switch (obj) {\n        case Integer i -> \"Int: %d\".formatted(i);\n        case String s -> \"String: %s\".formatted(s);\n        default -> obj.toString();\n    };\n}\n\n// Stream operations\nList<String> names = users.stream()\n    .filter(User::isActive)\n    .map(User::getName)\n    .sorted()\n    .toList();\n\n// Optional handling\nString name = Optional.ofNullable(user)\n    .map(User::getName)\n    .orElse(\"Unknown\");\n```\n\n## Collection Selection\n\n| Need | Use | Reason |\n|------|-----|--------|\n| Indexed access | ArrayList | O(1) random access |\n| Unique elements | HashSet | O(1) contains |\n| Sorted unique | TreeSet | O(log n) sorted |\n| Key-value pairs | HashMap | O(1) get/put |\n\n## Troubleshooting\n\n| Problem | Cause | Solution |\n|---------|-------|----------|\n| NullPointerException | Null reference | Use Optional |\n| ConcurrentModificationException | Modify during iteration | Iterator.remove() |\n| ClassCastException | Wrong type | Use generics |\n\n## Usage\n\n```\nSkill(\"java-fundamentals\")\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": true
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "java-gradle",
+      "parsed": {
+        "name": "java-gradle",
+        "description": "Master Gradle - Kotlin DSL, task configuration, build optimization, caching",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "sasmp_version": "1.3.0",
+          "version": "3.0.0",
+          "bonded_agent": "05-java-build-tools",
+          "bond_type": "SECONDARY_BOND",
+          "allowed-tools": "Read, Write, Bash, Glob, Grep"
+        },
+        "body": "# Java Gradle Skill\n\nMaster Gradle build tool with Kotlin DSL for Java projects.\n\n## Overview\n\nThis skill covers Gradle configuration with Kotlin DSL including task configuration, dependency management with catalogs, build cache optimization, and CI/CD integration.\n\n## When to Use This Skill\n\nUse when you need to:\n- Configure Gradle builds (Kotlin DSL)\n- Manage dependencies with catalogs\n- Optimize build performance\n- Set up build cache\n- Create custom tasks\n\n## Quick Reference\n\n```kotlin\n// build.gradle.kts\nplugins {\n    java\n    id(\"org.springframework.boot\") version \"3.2.1\"\n    id(\"io.spring.dependency-management\") version \"1.1.4\"\n}\n\njava {\n    toolchain {\n        languageVersion = JavaLanguageVersion.of(21)\n    }\n}\n\nrepositories {\n    mavenCentral()\n}\n\ndependencies {\n    implementation(\"org.springframework.boot:spring-boot-starter-web\")\n    testImplementation(\"org.springframework.boot:spring-boot-starter-test\")\n}\n\ntasks.withType<JavaCompile> {\n    options.compilerArgs.addAll(listOf(\"-parameters\", \"-Xlint:all\"))\n    options.isFork = true\n    options.isIncremental = true\n}\n\ntasks.test {\n    useJUnitPlatform()\n    maxParallelForks = Runtime.getRuntime().availableProcessors() / 2\n}\n```\n\n## Version Catalog\n\n```toml\n# gradle/libs.versions.toml\n[versions]\nspring-boot = \"3.2.1\"\n\n[libraries]\nspring-boot-web = { module = \"org.springframework.boot:spring-boot-starter-web\", version.ref = \"spring-boot\" }\n\n[plugins]\nspring-boot = { id = \"org.springframework.boot\", version.ref = \"spring-boot\" }\n```\n\n## Useful Commands\n\n```bash\ngradle dependencies              # View dependencies\ngradle dependencyInsight --dependency log4j  # Analyze dep\ngradle build --scan              # Build scan\ngradle build --build-cache       # Use cache\ngradle wrapper --gradle-version 8.5  # Update wrapper\n```\n\n## Build Optimization\n\n```kotlin\n// settings.gradle.kts\nenableFeaturePreview(\"STABLE_CONFIGURATION_CACHE\")\n\n// Enable parallel and caching\norg.gradle.parallel=true\norg.gradle.caching=true\n```\n\n## Troubleshooting\n\n| Problem | Solution |\n|---------|----------|\n| Slow builds | Enable --build-cache |\n| Version conflict | Use platform() or constraints |\n| Cache issues | gradle --refresh-dependencies |\n\n## Usage\n\n```\nSkill(\"java-gradle\")\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": true
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "java-jpa-hibernate",
+      "parsed": {
+        "name": "java-jpa-hibernate",
+        "description": "Master JPA/Hibernate - entity design, queries, transactions, performance optimization",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "sasmp_version": "1.3.0",
+          "version": "3.0.0",
+          "bonded_agent": "06-java-persistence",
+          "bond_type": "PRIMARY_BOND",
+          "allowed-tools": "Read, Write, Bash, Glob, Grep"
+        },
+        "body": "# Java JPA Hibernate Skill\n\nMaster data persistence with JPA and Hibernate for production applications.\n\n## Overview\n\nThis skill covers JPA entity design, Hibernate optimization, Spring Data repositories, query strategies, and caching. Focuses on preventing N+1 queries and building high-performance persistence layers.\n\n## When to Use This Skill\n\nUse when you need to:\n- Design JPA entities with relationships\n- Optimize database queries\n- Configure Hibernate for performance\n- Implement caching strategies\n- Debug persistence issues\n\n## Topics Covered\n\n### Entity Design\n- Entity mapping annotations\n- Relationship types (1:1, 1:N, N:M)\n- Inheritance strategies\n- Lifecycle callbacks\n- Auditing\n\n### Query Optimization\n- N+1 problem prevention\n- JOIN FETCH vs EntityGraph\n- Batch fetching\n- Projections and DTOs\n\n### Transactions\n- @Transactional configuration\n- Propagation and isolation\n- Optimistic vs pessimistic locking\n- Deadlock prevention\n\n### Caching\n- First and second level cache\n- Query cache\n- Cache invalidation\n- Redis integration\n\n## Quick Reference\n\n```java\n// Entity with relationships\n@Entity\n@Table(name = \"orders\")\npublic class Order {\n\n    @Id\n    @GeneratedValue(strategy = GenerationType.IDENTITY)\n    private Long id;\n\n    @ManyToOne(fetch = FetchType.LAZY)\n    @JoinColumn(name = \"customer_id\", nullable = false)\n    private Customer customer;\n\n    @OneToMany(mappedBy = \"order\", cascade = CascadeType.ALL, orphanRemoval = true)\n    @BatchSize(size = 20)\n    private List<OrderItem> items = new ArrayList<>();\n\n    @Version\n    private Long version;\n\n    // Bidirectional helper\n    public void addItem(OrderItem item) {\n        items.add(item);\n        item.setOrder(this);\n    }\n}\n\n// Auditing base class\n@MappedSuperclass\n@EntityListeners(AuditingEntityListener.class)\npublic abstract class Auditable {\n    @CreatedDate\n    @Column(updatable = false)\n    private Instant createdAt;\n\n    @LastModifiedDate\n    private Instant updatedAt;\n}\n\n// Repository with query optimization\npublic interface OrderRepository extends JpaRepository<Order, Long> {\n\n    // JOIN FETCH to prevent N+1\n    @Query(\"SELECT DISTINCT o FROM Order o JOIN FETCH o.items WHERE o.status = :status\")\n    List<Order> findByStatusWithItems(@Param(\"status\") Status status);\n\n    // EntityGraph alternative\n    @EntityGraph(attributePaths = {\"items\", \"customer\"})\n    Optional<Order> findById(Long id);\n\n    // DTO Projection\n    @Query(\"SELECT new com.example.OrderSummary(o.id, o.status, c.name) \" +\n           \"FROM Order o JOIN o.customer c WHERE o.id = :id\")\n    Optional<OrderSummary> findSummaryById(@Param(\"id\") Long id);\n}\n```\n\n## N+1 Prevention Strategies\n\n| Strategy | Use When | Example |\n|----------|----------|---------|\n| JOIN FETCH | Always need relation | `JOIN FETCH o.items` |\n| EntityGraph | Dynamic fetching | `@EntityGraph(attributePaths)` |\n| @BatchSize | Collection access | `@BatchSize(size = 20)` |\n| DTO Projection | Read-only queries | `new OrderSummary(...)` |\n\n## Hibernate Configuration\n\n```yaml\nspring:\n  jpa:\n    open-in-view: false  # Critical!\n    properties:\n      hibernate:\n        jdbc.batch_size: 50\n        order_inserts: true\n        order_updates: true\n        default_batch_fetch_size: 20\n        generate_statistics: ${HIBERNATE_STATS:false}\n\n  datasource:\n    hikari:\n      maximum-pool-size: 20\n      minimum-idle: 5\n      leak-detection-threshold: 60000\n```\n\n## Troubleshooting\n\n### Common Issues\n\n| Problem | Cause | Solution |\n|---------|-------|----------|\n| N+1 queries | Lazy in loop | JOIN FETCH, EntityGraph |\n| LazyInitException | Session closed | DTO projection |\n| Slow queries | Missing index | EXPLAIN ANALYZE |\n| Connection leak | No @Transactional | Add annotation |\n\n### Debug Properties\n```properties\nspring.jpa.show-sql=true\nlogging.level.org.hibernate.SQL=DEBUG\nlogging.level.org.hibernate.orm.jdbc.bind=TRACE\nhibernate.generate_statistics=true\n```\n\n### Debug Checklist\n```\n□ Enable SQL logging\n□ Check query count per request\n□ Verify fetch strategies\n□ Review @Transactional\n□ Check connection pool\n```\n\n## Usage\n\n```\nSkill(\"java-jpa-hibernate\")\n```\n\n## Related Skills\n- `java-performance` - Query optimization\n- `java-spring-boot` - Spring Data"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": true
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "redis",
+          "name": "redis",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "java-maven",
+      "parsed": {
+        "name": "java-maven",
+        "description": "Master Apache Maven - POM configuration, plugins, lifecycle, dependency management",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "sasmp_version": "1.3.0",
+          "version": "3.0.0",
+          "bonded_agent": "05-java-build-tools",
+          "bond_type": "SECONDARY_BOND",
+          "allowed-tools": "Read, Write, Bash, Glob, Grep"
+        },
+        "body": "# Java Maven Skill\n\nMaster Apache Maven for Java project builds and dependency management.\n\n## Overview\n\nThis skill covers Maven configuration including POM structure, lifecycle phases, plugin configuration, dependency management with BOMs, and multi-module projects.\n\n## When to Use This Skill\n\nUse when you need to:\n- Configure Maven POM files\n- Manage dependencies with BOMs\n- Set up build plugins\n- Create multi-module projects\n- Troubleshoot build issues\n\n## Quick Reference\n\n```xml\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project xmlns=\"http://maven.apache.org/POM/4.0.0\">\n    <modelVersion>4.0.0</modelVersion>\n\n    <groupId>com.example</groupId>\n    <artifactId>my-app</artifactId>\n    <version>1.0.0-SNAPSHOT</version>\n\n    <properties>\n        <java.version>21</java.version>\n        <maven.compiler.source>${java.version}</maven.compiler.source>\n        <maven.compiler.target>${java.version}</maven.compiler.target>\n    </properties>\n\n    <dependencyManagement>\n        <dependencies>\n            <dependency>\n                <groupId>org.springframework.boot</groupId>\n                <artifactId>spring-boot-dependencies</artifactId>\n                <version>3.2.1</version>\n                <type>pom</type>\n                <scope>import</scope>\n            </dependency>\n        </dependencies>\n    </dependencyManagement>\n\n    <build>\n        <plugins>\n            <plugin>\n                <groupId>org.apache.maven.plugins</groupId>\n                <artifactId>maven-enforcer-plugin</artifactId>\n                <version>3.4.1</version>\n            </plugin>\n        </plugins>\n    </build>\n</project>\n```\n\n## Lifecycle Phases\n\n```\nvalidate → compile → test → package → verify → install → deploy\n```\n\n## Useful Commands\n\n```bash\nmvn dependency:tree                    # View dependencies\nmvn dependency:analyze                 # Find unused/undeclared\nmvn versions:display-dependency-updates  # Check updates\nmvn help:effective-pom                 # View effective POM\nmvn -B verify                          # Batch mode build\n```\n\n## Troubleshooting\n\n| Problem | Solution |\n|---------|----------|\n| Dependency not found | Check repository, version |\n| Version conflict | Use BOM or enforcer |\n| Build OOM | Set MAVEN_OPTS=-Xmx1g |\n\n## Usage\n\n```\nSkill(\"java-maven\")\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": true
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "java-maven-gradle",
+      "parsed": {
+        "name": "java-maven-gradle",
+        "description": "Master Maven and Gradle - build configuration, dependencies, plugins, CI/CD",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "sasmp_version": "1.3.0",
+          "version": "3.0.0",
+          "bonded_agent": "05-java-build-tools",
+          "bond_type": "PRIMARY_BOND",
+          "allowed-tools": "Read, Write, Bash, Glob, Grep"
+        },
+        "body": "# Java Maven Gradle Skill\n\nMaster Java build tools for efficient project management and CI/CD integration.\n\n## Overview\n\nThis skill covers Maven and Gradle configuration including dependency management, plugin setup, multi-module projects, and CI/CD pipeline integration. Follows 2024-2025 best practices for both tools.\n\n## When to Use This Skill\n\nUse when you need to:\n- Set up Maven/Gradle projects\n- Manage dependencies with BOMs\n- Configure build plugins\n- Optimize build performance\n- Set up CI/CD pipelines\n\n## Topics Covered\n\n### Maven\n- POM structure and inheritance\n- Dependency management with BOMs\n- Plugin configuration\n- Profiles and properties\n- Multi-module projects\n\n### Gradle\n- Kotlin DSL (build.gradle.kts)\n- Dependency catalogs\n- Task configuration\n- Build cache optimization\n- Composite builds\n\n### CI/CD Integration\n- GitHub Actions workflows\n- Dependency caching\n- Matrix builds\n- Artifact publishing\n\n## Quick Reference\n\n### Maven POM\n```xml\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project xmlns=\"http://maven.apache.org/POM/4.0.0\">\n    <modelVersion>4.0.0</modelVersion>\n\n    <groupId>com.example</groupId>\n    <artifactId>my-app</artifactId>\n    <version>1.0.0-SNAPSHOT</version>\n\n    <properties>\n        <java.version>21</java.version>\n        <maven.compiler.source>${java.version}</maven.compiler.source>\n        <maven.compiler.target>${java.version}</maven.compiler.target>\n        <spring-boot.version>3.2.1</spring-boot.version>\n    </properties>\n\n    <dependencyManagement>\n        <dependencies>\n            <dependency>\n                <groupId>org.springframework.boot</groupId>\n                <artifactId>spring-boot-dependencies</artifactId>\n                <version>${spring-boot.version}</version>\n                <type>pom</type>\n                <scope>import</scope>\n            </dependency>\n        </dependencies>\n    </dependencyManagement>\n\n    <build>\n        <plugins>\n            <plugin>\n                <groupId>org.apache.maven.plugins</groupId>\n                <artifactId>maven-enforcer-plugin</artifactId>\n                <version>3.4.1</version>\n            </plugin>\n        </plugins>\n    </build>\n</project>\n```\n\n### Gradle Kotlin DSL\n```kotlin\n// build.gradle.kts\nplugins {\n    java\n    id(\"org.springframework.boot\") version \"3.2.1\"\n    id(\"io.spring.dependency-management\") version \"1.1.4\"\n}\n\njava {\n    toolchain {\n        languageVersion = JavaLanguageVersion.of(21)\n    }\n}\n\ndependencies {\n    implementation(\"org.springframework.boot:spring-boot-starter-web\")\n    testImplementation(\"org.springframework.boot:spring-boot-starter-test\")\n}\n\ntasks.test {\n    useJUnitPlatform()\n    maxParallelForks = Runtime.getRuntime().availableProcessors() / 2\n}\n```\n\n### Version Catalog (libs.versions.toml)\n```toml\n[versions]\nspring-boot = \"3.2.1\"\njunit = \"5.10.1\"\n\n[libraries]\nspring-boot-starter-web = { module = \"org.springframework.boot:spring-boot-starter-web\", version.ref = \"spring-boot\" }\njunit-jupiter = { module = \"org.junit.jupiter:junit-jupiter\", version.ref = \"junit\" }\n\n[plugins]\nspring-boot = { id = \"org.springframework.boot\", version.ref = \"spring-boot\" }\n```\n\n## CI/CD Templates\n\n```yaml\n# .github/workflows/ci.yml\nname: CI\non: [push, pull_request]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-java@v4\n        with:\n          java-version: '21'\n          distribution: 'temurin'\n          cache: 'maven'  # or 'gradle'\n      - run: ./mvnw -B verify\n```\n\n## Useful Commands\n\n```bash\n# Maven\nmvn dependency:tree\nmvn versions:display-dependency-updates\nmvn help:effective-pom\n\n# Gradle\ngradle dependencies\ngradle dependencyInsight --dependency log4j\ngradle build --scan\n```\n\n## Troubleshooting\n\n### Common Issues\n\n| Problem | Cause | Solution |\n|---------|-------|----------|\n| Dependency not found | Wrong version | Check Maven Central |\n| Version conflict | Transitive deps | Use BOM or enforcer |\n| Build OOM | Heap too small | Set MAVEN_OPTS |\n| Slow builds | No caching | Enable build cache |\n\n### Debug Checklist\n```\n□ Check effective POM/build\n□ Analyze dependency tree\n□ Verify repository order\n□ Check plugin versions\n□ Review build cache\n```\n\n## Usage\n\n```\nSkill(\"java-maven-gradle\")\n```\n\n## Related Skills\n- `java-maven` - Maven specific\n- `java-gradle` - Gradle specific"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": true
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "java-microservices",
+      "parsed": {
+        "name": "java-microservices",
+        "description": "Build microservices - Spring Cloud, service mesh, event-driven, resilience patterns",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "sasmp_version": "1.3.0",
+          "version": "3.0.0",
+          "bonded_agent": "07-java-microservices",
+          "bond_type": "PRIMARY_BOND",
+          "allowed-tools": "Read, Write, Bash, Glob, Grep"
+        },
+        "body": "# Java Microservices Skill\n\nBuild production microservices with Spring Cloud and distributed system patterns.\n\n## Overview\n\nThis skill covers microservices architecture with Spring Cloud including service discovery, API gateway, circuit breakers, event-driven communication, and distributed tracing.\n\n## When to Use This Skill\n\nUse when you need to:\n- Design microservices architecture\n- Implement service-to-service communication\n- Configure resilience patterns\n- Set up event-driven messaging\n- Add distributed tracing\n\n## Topics Covered\n\n### Spring Cloud Components\n- Config Server (centralized config)\n- Service Discovery (Eureka, Consul)\n- API Gateway (Spring Cloud Gateway)\n- Load Balancing (Spring Cloud LoadBalancer)\n\n### Resilience Patterns\n- Circuit Breaker (Resilience4j)\n- Retry with backoff\n- Bulkhead isolation\n- Rate limiting\n\n### Event-Driven Architecture\n- Apache Kafka integration\n- Spring Cloud Stream\n- Saga pattern\n- Event sourcing basics\n\n### Observability\n- Distributed tracing (Micrometer)\n- Metrics (Prometheus)\n- Log correlation\n\n## Quick Reference\n\n```java\n// Saga with Choreography\n@Component\npublic class OrderSagaListener {\n\n    @KafkaListener(topics = \"order.created\")\n    public void handleOrderCreated(OrderCreatedEvent event) {\n        inventoryService.reserve(event.getItems());\n    }\n\n    @KafkaListener(topics = \"payment.failed\")\n    public void handlePaymentFailed(PaymentFailedEvent event) {\n        // Compensating transaction\n        inventoryService.release(event.getOrderId());\n        orderService.cancel(event.getOrderId());\n    }\n}\n\n// Circuit Breaker Configuration\n@Configuration\npublic class ResilienceConfig {\n\n    @Bean\n    public Customizer<Resilience4JCircuitBreakerFactory> cbCustomizer() {\n        return factory -> factory.configureDefault(id ->\n            new Resilience4JConfigBuilder(id)\n                .circuitBreakerConfig(CircuitBreakerConfig.custom()\n                    .failureRateThreshold(50)\n                    .waitDurationInOpenState(Duration.ofSeconds(30))\n                    .slidingWindowSize(10)\n                    .build())\n                .build());\n    }\n}\n\n// API Gateway Routes\n@Configuration\npublic class GatewayConfig {\n\n    @Bean\n    public RouteLocator routes(RouteLocatorBuilder builder) {\n        return builder.routes()\n            .route(\"orders\", r -> r\n                .path(\"/api/orders/**\")\n                .filters(f -> f\n                    .stripPrefix(1)\n                    .circuitBreaker(c -> c.setName(\"order-cb\"))\n                    .retry(retry -> retry.setRetries(3)))\n                .uri(\"lb://order-service\"))\n            .build();\n    }\n}\n```\n\n## Observability Configuration\n\n```yaml\nmanagement:\n  tracing:\n    sampling:\n      probability: 1.0\n  endpoints:\n    web:\n      exposure:\n        include: health,info,metrics,prometheus\n\nlogging:\n  pattern:\n    level: \"%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]\"\n```\n\n## Common Patterns\n\n### Saga Pattern\n```\nOrder → Inventory → Payment → (Success | Compensate)\n```\n\n### Circuit Breaker States\n```\nCLOSED → (failures exceed threshold) → OPEN\nOPEN → (wait duration) → HALF_OPEN\nHALF_OPEN → (success) → CLOSED\nHALF_OPEN → (failure) → OPEN\n```\n\n## Troubleshooting\n\n### Common Issues\n\n| Problem | Cause | Solution |\n|---------|-------|----------|\n| Cascade failure | No circuit breaker | Add Resilience4j |\n| Message lost | No ack | Enable manual ack |\n| Inconsistent data | No compensation | Implement saga |\n| Service not found | Discovery delay | Tune heartbeat |\n\n### Debug Checklist\n```\n□ Trace request (traceId)\n□ Check circuit breaker state\n□ Verify Kafka consumer lag\n□ Review gateway routes\n□ Monitor retry counts\n```\n\n## Usage\n\n```\nSkill(\"java-microservices\")\n```\n\n## Related Skills\n- `java-spring-boot` - Spring Cloud\n- `java-docker` - Containerization"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": true
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "docker",
+          "name": "docker",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "java-performance",
+      "parsed": {
+        "name": "java-performance",
+        "description": "JVM performance tuning - GC optimization, profiling, memory analysis, benchmarking",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "sasmp_version": "1.3.0",
+          "version": "3.0.0",
+          "bonded_agent": "02-java-advanced",
+          "bond_type": "SECONDARY_BOND",
+          "allowed-tools": "Read, Write, Bash, Glob, Grep"
+        },
+        "body": "# Java Performance Skill\n\nOptimize JVM performance through profiling, GC tuning, and memory analysis.\n\n## Overview\n\nThis skill covers JVM performance optimization including garbage collection tuning, memory analysis, CPU profiling, and benchmarking with JMH.\n\n## When to Use This Skill\n\nUse when you need to:\n- Tune GC for low latency or throughput\n- Profile CPU hotspots\n- Analyze memory leaks\n- Benchmark code performance\n- Optimize container settings\n\n## Quick Reference\n\n### GC Presets\n\n```bash\n# High-throughput\n-XX:+UseG1GC\n-XX:MaxGCPauseMillis=200\n-Xms4g -Xmx4g\n-XX:+AlwaysPreTouch\n\n# Low-latency\n-XX:+UseZGC\n-XX:+ZGenerational\n-Xms8g -Xmx8g\n\n# Memory-constrained\n-XX:+UseSerialGC\n-Xms512m -Xmx512m\n-XX:+UseCompressedOops\n\n# Container-optimized\n-XX:+UseContainerSupport\n-XX:MaxRAMPercentage=75.0\n-XX:+ExitOnOutOfMemoryError\n```\n\n### Profiling Commands\n\n```bash\n# Thread dump\njstack -l <pid> > threaddump.txt\n\n# Heap dump\njmap -dump:format=b,file=heap.hprof <pid>\n\n# GC analysis\njstat -gcutil <pid> 1000 10\n\n# Flight recording\njcmd <pid> JFR.start duration=60s filename=app.jfr\n\n# Async profiler\n./profiler.sh -d 30 -f profile.html <pid>\n```\n\n### JMH Benchmark\n\n```java\n@BenchmarkMode(Mode.Throughput)\n@Warmup(iterations = 3, time = 1)\n@Measurement(iterations = 5, time = 1)\n@State(Scope.Benchmark)\npublic class MyBenchmark {\n\n    @Benchmark\n    public void testMethod(Blackhole bh) {\n        bh.consume(compute());\n    }\n}\n```\n\n## GC Comparison\n\n| GC | Latency | Throughput | Heap Size |\n|----|---------|------------|-----------|\n| G1 | Medium | High | 4-32GB |\n| ZGC | Very Low | Medium | 8GB-16TB |\n| Shenandoah | Very Low | Medium | 8GB+ |\n| Parallel | High | Very High | Any |\n\n## Troubleshooting\n\n| Problem | Cause | Solution |\n|---------|-------|----------|\n| GC thrashing | Heap too small | Increase heap |\n| High latency | GC pauses | Switch to ZGC |\n| Memory leak | Object retention | Heap dump + MAT |\n| CPU spikes | Hot loops | Profile + optimize |\n\n## Usage\n\n```\nSkill(\"java-performance\")\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": true
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "java-spring-boot",
+      "parsed": {
+        "name": "java-spring-boot",
+        "description": "Build production Spring Boot applications - REST APIs, Security, Data, Actuator",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "sasmp_version": "1.3.0",
+          "version": "3.0.0",
+          "bonded_agent": "03-java-spring",
+          "bond_type": "PRIMARY_BOND",
+          "allowed-tools": "Read, Write, Bash, Glob, Grep"
+        },
+        "body": "# Java Spring Boot Skill\n\nBuild production-ready Spring Boot applications with modern best practices.\n\n## Overview\n\nThis skill covers Spring Boot development including REST APIs, security configuration, data access, actuator monitoring, and cloud integration. Follows Spring Boot 3.x patterns with emphasis on production readiness.\n\n## When to Use This Skill\n\nUse when you need to:\n- Create REST APIs with Spring MVC/WebFlux\n- Configure Spring Security (OAuth2, JWT)\n- Set up database access with Spring Data\n- Enable monitoring with Actuator\n- Integrate with Spring Cloud\n\n## Topics Covered\n\n### Spring Boot Core\n- Auto-configuration and starters\n- Application properties and profiles\n- Bean lifecycle and configuration\n- DevTools and hot reload\n\n### REST API Development\n- @RestController and @RequestMapping\n- Request/response handling\n- Validation with Bean Validation\n- Exception handling with @ControllerAdvice\n\n### Spring Security\n- SecurityFilterChain configuration\n- OAuth2 and JWT authentication\n- Method security (@PreAuthorize)\n- CORS and CSRF configuration\n\n### Spring Data JPA\n- Repository pattern\n- Query methods and @Query\n- Pagination and sorting\n- Auditing and transactions\n\n### Actuator & Monitoring\n- Health checks and probes\n- Metrics with Micrometer\n- Custom endpoints\n- Prometheus integration\n\n## Quick Reference\n\n```java\n// REST Controller\n@RestController\n@RequestMapping(\"/api/users\")\n@Validated\npublic class UserController {\n\n    @GetMapping(\"/{id}\")\n    public ResponseEntity<User> getUser(@PathVariable Long id) {\n        return userService.findById(id)\n            .map(ResponseEntity::ok)\n            .orElse(ResponseEntity.notFound().build());\n    }\n\n    @PostMapping\n    public ResponseEntity<User> createUser(@Valid @RequestBody UserRequest request) {\n        User user = userService.create(request);\n        URI location = URI.create(\"/api/users/\" + user.getId());\n        return ResponseEntity.created(location).body(user);\n    }\n}\n\n// Security Configuration\n@Configuration\n@EnableWebSecurity\npublic class SecurityConfig {\n\n    @Bean\n    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {\n        return http\n            .csrf(csrf -> csrf.disable())\n            .sessionManagement(s -> s.sessionCreationPolicy(STATELESS))\n            .authorizeHttpRequests(auth -> auth\n                .requestMatchers(\"/actuator/health/**\").permitAll()\n                .requestMatchers(\"/api/public/**\").permitAll()\n                .anyRequest().authenticated())\n            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))\n            .build();\n    }\n}\n\n// Exception Handler\n@RestControllerAdvice\npublic class GlobalExceptionHandler {\n\n    @ExceptionHandler(EntityNotFoundException.class)\n    public ProblemDetail handleNotFound(EntityNotFoundException ex) {\n        return ProblemDetail.forStatusAndDetail(NOT_FOUND, ex.getMessage());\n    }\n}\n```\n\n## Configuration Templates\n\n```yaml\n# application.yml\nspring:\n  application:\n    name: ${APP_NAME:my-service}\n  profiles:\n    active: ${SPRING_PROFILES_ACTIVE:local}\n  jpa:\n    open-in-view: false\n    properties:\n      hibernate:\n        jdbc.batch_size: 50\n\nmanagement:\n  endpoints:\n    web:\n      exposure:\n        include: health,info,metrics,prometheus\n  endpoint:\n    health:\n      probes:\n        enabled: true\n\nserver:\n  error:\n    include-stacktrace: never\n```\n\n## Common Patterns\n\n### Layer Architecture\n```\nController → Service → Repository → Database\n     ↓           ↓          ↓\n   DTOs      Entities    Entities\n```\n\n### Validation Patterns\n```java\npublic record CreateUserRequest(\n    @NotBlank @Size(max = 100) String name,\n    @Email @NotBlank String email,\n    @NotNull @Min(18) Integer age\n) {}\n```\n\n## Troubleshooting\n\n### Common Issues\n\n| Problem | Cause | Solution |\n|---------|-------|----------|\n| Bean not found | Missing @Component | Add annotation or @Bean |\n| Circular dependency | Constructor injection | Use @Lazy or refactor |\n| 401 Unauthorized | Security config | Check permitAll paths |\n| Slow startup | Heavy auto-config | Exclude unused starters |\n\n### Debug Properties\n```properties\ndebug=true\nlogging.level.org.springframework.security=DEBUG\nspring.jpa.show-sql=true\n```\n\n### Debug Checklist\n```\n□ Check /actuator/conditions\n□ Verify active profiles\n□ Review security filter chain\n□ Check bean definitions\n□ Test health endpoints\n```\n\n## Usage\n\n```\nSkill(\"java-spring-boot\")\n```\n\n## Related Skills\n- `java-testing` - Spring test patterns\n- `java-jpa-hibernate` - Data access"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": true
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "java-testing",
+      "parsed": {
+        "name": "java-testing",
+        "description": "Test Java applications - JUnit 5, Mockito, integration testing, TDD patterns",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "sasmp_version": "1.3.0",
+          "version": "3.0.0",
+          "bonded_agent": "04-java-testing",
+          "bond_type": "PRIMARY_BOND",
+          "allowed-tools": "Read, Write, Bash, Glob, Grep"
+        },
+        "body": "# Java Testing Skill\n\nWrite comprehensive tests for Java applications with modern testing practices.\n\n## Overview\n\nThis skill covers Java testing with JUnit 5, Mockito, AssertJ, and integration testing with Spring Boot Test and Testcontainers. Includes TDD patterns and test coverage strategies.\n\n## When to Use This Skill\n\nUse when you need to:\n- Write unit tests with JUnit 5\n- Create mocks with Mockito\n- Build integration tests with Testcontainers\n- Implement TDD/BDD practices\n- Improve test coverage\n\n## Topics Covered\n\n### JUnit 5\n- @Test, @Nested, @DisplayName\n- @ParameterizedTest with sources\n- Lifecycle annotations\n- Extensions and custom annotations\n\n### Mockito\n- @Mock, @InjectMocks, @Spy\n- Stubbing (when/thenReturn)\n- Verification (verify, times)\n- BDD style (given/willReturn)\n\n### AssertJ\n- Fluent assertions\n- Collection assertions\n- Exception assertions\n- Custom assertions\n\n### Integration Testing\n- @SpringBootTest slices\n- Testcontainers setup\n- MockMvc for APIs\n- Database testing\n\n## Quick Reference\n\n```java\n// Unit Test with Mockito\n@ExtendWith(MockitoExtension.class)\nclass UserServiceTest {\n\n    @Mock\n    private UserRepository userRepository;\n\n    @InjectMocks\n    private UserService userService;\n\n    @Test\n    @DisplayName(\"Should find user by ID\")\n    void shouldFindUserById() {\n        // Given\n        User user = new User(1L, \"John\");\n        given(userRepository.findById(1L)).willReturn(Optional.of(user));\n\n        // When\n        Optional<User> result = userService.findById(1L);\n\n        // Then\n        assertThat(result)\n            .isPresent()\n            .hasValueSatisfying(u ->\n                assertThat(u.getName()).isEqualTo(\"John\"));\n        then(userRepository).should().findById(1L);\n    }\n}\n\n// Parameterized Test\n@ParameterizedTest\n@CsvSource({\n    \"valid@email.com, true\",\n    \"invalid-email, false\",\n    \"'', false\"\n})\nvoid shouldValidateEmail(String email, boolean expected) {\n    assertThat(validator.isValid(email)).isEqualTo(expected);\n}\n\n// Integration Test with Testcontainers\n@Testcontainers\n@SpringBootTest\nclass OrderRepositoryIT {\n\n    @Container\n    static PostgreSQLContainer<?> postgres =\n        new PostgreSQLContainer<>(\"postgres:15\");\n\n    @DynamicPropertySource\n    static void configure(DynamicPropertyRegistry registry) {\n        registry.add(\"spring.datasource.url\", postgres::getJdbcUrl);\n        registry.add(\"spring.datasource.username\", postgres::getUsername);\n        registry.add(\"spring.datasource.password\", postgres::getPassword);\n    }\n\n    @Autowired\n    private OrderRepository repository;\n\n    @Test\n    void shouldPersistOrder() {\n        Order saved = repository.save(new Order(\"item\", 100.0));\n        assertThat(saved.getId()).isNotNull();\n    }\n}\n\n// API Test with MockMvc\n@WebMvcTest(UserController.class)\nclass UserControllerTest {\n\n    @Autowired\n    private MockMvc mockMvc;\n\n    @MockBean\n    private UserService userService;\n\n    @Test\n    void shouldReturnUser() throws Exception {\n        given(userService.findById(1L))\n            .willReturn(Optional.of(new User(1L, \"John\")));\n\n        mockMvc.perform(get(\"/api/users/1\"))\n            .andExpect(status().isOk())\n            .andExpect(jsonPath(\"$.name\").value(\"John\"));\n    }\n}\n```\n\n## Test Data Builders\n\n```java\npublic class UserTestBuilder {\n    private Long id = 1L;\n    private String name = \"John Doe\";\n    private String email = \"john@example.com\";\n    private boolean active = true;\n\n    public static UserTestBuilder aUser() {\n        return new UserTestBuilder();\n    }\n\n    public UserTestBuilder withName(String name) {\n        this.name = name;\n        return this;\n    }\n\n    public UserTestBuilder inactive() {\n        this.active = false;\n        return this;\n    }\n\n    public User build() {\n        return new User(id, name, email, active);\n    }\n}\n\n// Usage\nUser user = aUser().withName(\"Jane\").inactive().build();\n```\n\n## Coverage Goals\n\n```xml\n<!-- JaCoCo configuration -->\n<configuration>\n    <rules>\n        <rule>\n            <element>BUNDLE</element>\n            <limits>\n                <limit>\n                    <counter>LINE</counter>\n                    <value>COVEREDRATIO</value>\n                    <minimum>0.80</minimum>\n                </limit>\n            </limits>\n        </rule>\n    </rules>\n</configuration>\n```\n\n## Troubleshooting\n\n### Common Issues\n\n| Problem | Cause | Solution |\n|---------|-------|----------|\n| Mock not working | Missing @ExtendWith | Add MockitoExtension |\n| NPE in test | Mock not initialized | Check @InjectMocks |\n| Flaky test | Shared state | Isolate test data |\n| Context fails | Missing bean | Use @MockBean |\n\n### Debug Checklist\n```\n□ Run single test in isolation\n□ Check mock setup matches invocation\n□ Verify @BeforeEach setup\n□ Review @Transactional boundaries\n□ Check for shared mutable state\n```\n\n## Usage\n\n```\nSkill(\"java-testing\")\n```\n\n## Related Skills\n- `java-testing-advanced` - Advanced patterns\n- `java-spring-boot` - Spring test slices"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": true
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "java-testing-advanced",
+      "parsed": {
+        "name": "java-testing-advanced",
+        "description": "Advanced testing - Testcontainers, contract testing, mutation testing, property-based",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "sasmp_version": "1.3.0",
+          "version": "3.0.0",
+          "bonded_agent": "04-java-testing",
+          "bond_type": "SECONDARY_BOND",
+          "allowed-tools": "Read, Write, Bash, Glob, Grep"
+        },
+        "body": "# Java Testing Advanced Skill\n\nAdvanced testing techniques for comprehensive test coverage.\n\n## Overview\n\nThis skill covers advanced testing patterns including Testcontainers for integration testing, contract testing with Pact, mutation testing with PIT, and property-based testing.\n\n## When to Use This Skill\n\nUse when you need to:\n- Test with real databases (Testcontainers)\n- Verify API contracts\n- Find gaps with mutation testing\n- Generate test cases automatically\n\n## Quick Reference\n\n### Testcontainers\n\n```java\n@Testcontainers\n@SpringBootTest\nclass OrderRepositoryIT {\n\n    @Container\n    static PostgreSQLContainer<?> postgres =\n        new PostgreSQLContainer<>(\"postgres:15\")\n            .withDatabaseName(\"test\")\n            .withUsername(\"test\")\n            .withPassword(\"test\");\n\n    @Container\n    static KafkaContainer kafka =\n        new KafkaContainer(DockerImageName.parse(\"confluentinc/cp-kafka:7.4.0\"));\n\n    @DynamicPropertySource\n    static void configure(DynamicPropertyRegistry registry) {\n        registry.add(\"spring.datasource.url\", postgres::getJdbcUrl);\n        registry.add(\"spring.kafka.bootstrap-servers\", kafka::getBootstrapServers);\n    }\n\n    @Test\n    void shouldPersistOrder() {\n        Order saved = repository.save(new Order(\"item\", 100.0));\n        assertThat(saved.getId()).isNotNull();\n    }\n}\n```\n\n### Contract Testing (Pact)\n\n```java\n@ExtendWith(PactConsumerTestExt.class)\nclass UserServiceContractTest {\n\n    @Pact(consumer = \"order-service\", provider = \"user-service\")\n    public RequestResponsePact createPact(PactDslWithProvider builder) {\n        return builder\n            .given(\"user exists\")\n            .uponReceiving(\"get user request\")\n                .path(\"/users/1\")\n                .method(\"GET\")\n            .willRespondWith()\n                .status(200)\n                .body(new PactDslJsonBody()\n                    .integerType(\"id\", 1)\n                    .stringType(\"name\", \"John\"))\n            .toPact();\n    }\n\n    @Test\n    @PactTestFor(pactMethod = \"createPact\")\n    void testGetUser(MockServer mockServer) {\n        User user = client.getUser(mockServer.getUrl(), 1L);\n        assertThat(user.getName()).isEqualTo(\"John\");\n    }\n}\n```\n\n### Mutation Testing (PIT)\n\n```xml\n<plugin>\n    <groupId>org.pitest</groupId>\n    <artifactId>pitest-maven</artifactId>\n    <version>1.15.0</version>\n    <configuration>\n        <targetClasses>\n            <param>com.example.service.*</param>\n        </targetClasses>\n        <mutationThreshold>80</mutationThreshold>\n    </configuration>\n</plugin>\n```\n\n### Property-Based Testing\n\n```java\n@Property\nvoid shouldReverseListTwiceReturnsOriginal(@ForAll List<Integer> list) {\n    Collections.reverse(list);\n    Collections.reverse(list);\n    // Original order restored\n}\n```\n\n## Testing Pyramid\n\n```\n     /\\        E2E Tests (few)\n    /  \\       Contract Tests\n   /----\\      Integration Tests\n  /------\\     Unit Tests (many)\n```\n\n## Troubleshooting\n\n| Problem | Solution |\n|---------|----------|\n| Container slow | Reuse containers |\n| Port conflicts | Random ports |\n| Flaky tests | Wait strategies |\n\n## Usage\n\n```\nSkill(\"java-testing-advanced\")\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": true
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,256 @@
+{
+  "source": "firebase/agent-skills",
+  "repoUrl": "https://github.com/firebase/agent-skills",
+  "skills": [
+    {
+      "skillId": "firebase-ai-logic-basics",
+      "parsed": {
+        "name": "firebase-ai-logic",
+        "description": "Official skill for integrating Firebase AI Logic (Gemini API) into web applications. Covers setup, multimodal inference, structured output, and security.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "version": "1.0.0"
+        },
+        "body": "# Firebase AI Logic Basics\n\n## Overview\n\nFirebase AI Logic is a product of Firebase that allows developers to add gen AI to their mobile and web apps using client-side SDKs. You can call Gemini models directly from your app without managing a dedicated backend. Firebase AI Logic, which was previously known as \"Vertex AI for Firebase\", represents the evolution of Google's AI integration platform for mobile and web developers.\n\nIt supports the two Gemini API providers:\n- **Gemini Developer API**: It has a free tier ideal for prototyping, and pay-as-you-go for production \n- **Vertex AI Gemini API**: Ideal for scale with enterprise-grade production readiness, requires Blaze plan\n\nUse the Gemini Developer API as a default, and only Vertex AI Gemini API if the application requires it.\n\n## Setup & Initialization\n\n### Prerequisites\n\n- Before starting, ensure you have **Node.js 16+** and npm installed. Install them if they aren’t already available. \n- Identify the platform the user is interested in building on prior to starting: Android, iOS, Flutter or Web.\n- If their platform is unsupported, Direct the user to Firebase Docs to learn how to set up AI Logic for their application (share this link with the user https://firebase.google.com/docs/ai-logic/get-started)\n\n### Installation\n\nThe library is part of the standard Firebase Web SDK.\n\n`npm install -g firebase@latest`\n\nIf you're in a firebase directory (with a firebase.json) the currently selected project will be marked with \"current\" using this command:  \n\n`firebase projects:list`\n\nEnsure there's at least one app associated with the current project \n\n`firebase apps:list`\n\nInitialize AI logic SDK with the init command\n\n`firebase init # Choose AI logic`\n\nThis will automatically enable the Gemini Developer API in the Firebase console.\n\nMore info in [Firebase AI Logic Getting Started](https://firebase.google.com/docs/ai-logic/get-started.md.txt)\n\n## Core Capabilities\n\n### Text-Only Generation\n\n### Multimodal (Text + Images/Audio/Video/PDF input)\n\nFirebase AI Logic allows Gemini models to analyze image files directly from your app. This enables features like creating captions, answering questions about images, detecting objects, and categorizing images. Beyond images, Gemini can analyze other media types like audio, video, and PDFs by passing them as inline data with their MIME type. For files larger than 20 megabytes (which can cause HTTP 413 errors as inline data), store them in Cloud Storage for Firebase and pass their URLs to the Gemini Developer API.\n\n### Chat Session (Multi-turn)\n\nMaintain history automatically using `startChat`.\n\n### Streaming Responses\n\nTo improve the user experience by showing partial results as they arrive (like a typing effect), use `generateContentStream` instead of `generateContent` for faster display of results.\n\n### Generate Images with Nano Banana\n\n- Start with Gemini for most use cases, and choose Imagen for specialized tasks where image quality and specific styles are critical. (Example: gemini-2.5-flash-image)\n- Requires an upgraded Blaze pay-as-you-go billing plan.\n\n### Search Grounding with the built in googleSearch tool\n\n## Supported Platforms and Frameworks\n\nSupported Platforms and Frameworks include Kotlin and Java for Android, Swift for iOS, JavaScript for web apps, Dart for Flutter, and C Sharp for Unity.\n\n## Advanced Features\n\n### Structured Output (JSON)\n\nEnforce a specific JSON schema for the response.\n\n### On-Device AI (Hybrid)\n\nHybrid on-device inference for web apps, where the Firebase Javascript SDK automatically checks for Gemini Nano's availability (after installation) and switches between on-device or cloud-hosted prompt execution. This requires specific steps to enable model usage in the Chrome browser, more info in the [hybrid-on-device-inference documentation](https://firebase.google.com/docs/ai-logic/hybrid-on-device-inference.md.txt).\n\n## Security & Production\n\n### App Check\n\nRecommended: The developer must enable Firebase App Check to prevent unauthorized clients from using their API quota. see [App-check recaptcha enterprise](https://firebase.google.com/docs/app-check/web/recaptcha-enterprise-provider.md.txt).\n\n### Remote Config\n\nConsider that you do not need to hardcode model names (e.g., `gemini-flash-lite-latest`). Use Firebase Remote Config to update model versions dynamically without deploying new client code.  See [Changing model names remotely](https://firebase.google.com/docs/ai-logic/change-model-name-remotely.md.txt) \n\n## Initialization Code References\n\n| Language, Framework, Platform | Gemini API provider | Context URL |\n| :---- | :---- | :---- |\n| Web Modular API | Gemini Developer API (Developer API) | firebase://docs/ai-logic/get-started  |\n\n**Always use the most recent version of Gemini (gemini-flash-latest) unless another model is requested by the docs or the user. DO NOT USE gemini-1.5-flash**\n\n## References\n\n[Web SDK code examples and usage patterns](references/usage_patterns_web.md)"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "google",
+          "name": "firebase",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "firebase@latest",
+          "name": "firebase@latest",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "firebase-app-hosting-basics",
+      "parsed": {
+        "name": "firebase-app-hosting-basics",
+        "description": "Deploy and manage web apps with Firebase App Hosting. Use this skill when deploying Next.js/Angular apps with backends.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# App Hosting Basics\n\n## Description\nThis skill enables the agent to deploy and manage modern, full-stack web applications (Next.js, Angular, etc.) using Firebase App Hosting. \n\n**Important**: In order to use App Hosting, your Firebase project must be on the Blaze pricing plan. Direct the user to https://console.firebase.google.com/project/_/overview?purchaseBillingPlan=metered to upgrade their plan.\n\n## Hosting vs App Hosting\n\n**Choose Firebase Hosting if:**\n- You are deploying a static site (HTML/CSS/JS).\n- You are deploying a simple SPA (React, Vue, etc. without SSR).\n- You want full control over the build and deploy process via CLI.\n\n**Choose Firebase App Hosting if:**\n- You are using a supported full-stack framework like Next.js or Angular.\n- You need Server-Side Rendering (SSR) or ISR.\n- You want an automated \"git push to deploy\" workflow with zero configuration.\n\n## Deploying to App Hosting\n\n### Deploy from Source\n\nThis is the recommended flow for most users. \n1. Configure `firebase.json` with an `apphosting` block.\n    ```json\n    {\n      \"apphosting\": {\n        \"backendId\": \"my-app-id\",\n        \"rootDir\": \"/\",\n        \"ignore\": [\n          \"node_modules\",\n          \".git\",\n          \"firebase-debug.log\",\n          \"firebase-debug.*.log\",\n          \"functions\"\n        ]\n      }\n    }\n    ```\n2. Create or edit `apphosting.yaml`- see [Configuration](references/configuration.md) for more information on how to do so.\n3. If the app needs safe access to sensitive keys, use `firebase apphosting:secrets` commands to set and grant access to secrets.\n4. Run `firebase deploy` when you are ready to deploy.\n\n### Automated deployment via GitHub (CI/CD)\n\nAlternatively, set up a backend connected to a GitHub repository for automated deployments \"git push\" deployments.\nThis is only recommended for more advanced users, and is not required to use App Hosting.\nSee [CLI Commands](references/cli_commands.md) for more information on how to set this up using CLI commands.\n\n## Emulation\n\nSee [Emulation](references/emulation.md) for more information on how to test your app locally using the Firebase Local Emulator Suite."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "google",
+          "name": "firebase",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "git",
+          "name": "git",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "firebase-auth-basics",
+      "parsed": {
+        "name": "firebase-auth-basics",
+        "description": "Guide for setting up and using Firebase Authentication. Use this skill when the user's app requires user sign-in, user management, or secure data access using auth rules.",
+        "compatibility": "This skill is best used with the Firebase CLI, but does not require it. Install it by running `npm install -g firebase-tools`.",
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "## Prerequisites\n\n- **Firebase Project**: Created via `firebase projects:create` (see `firebase-basics`).\n- **Firebase CLI**: Installed and logged in (see `firebase-basics`).\n\n## Core Concepts\n\nFirebase Authentication provides backend services, easy-to-use SDKs, and ready-made UI libraries to authenticate users to your app.\n\n### Users\n\nA user is an entity that can sign in to your app. Each user is identified by a unique ID (`uid`) which is guaranteed to be unique across all providers.\nUser properties include:\n- `uid`: Unique identifier.\n- `email`: User's email address (if available).\n- `displayName`: User's display name (if available).\n- `photoURL`: URL to user's photo (if available).\n- `emailVerified`: Boolean indicating if the email is verified.\n\n### Identity Providers\n\nFirebase Auth supports multiple ways to sign in:\n- **Email/Password**: Basic email and password authentication.\n- **Federated Identity Providers**: Google, Facebook, Twitter, GitHub, Microsoft, Apple, etc.\n- **Phone Number**: SMS-based authentication.\n- **Anonymous**: Temporary guest accounts that can be linked to permanent accounts later.\n- **Custom Auth**: Integrate with your existing auth system.\n\nGoogle Sign In is recommended as a good and secure default provider.\n\n### Tokens\n\nWhen a user signs in, they receive an ID Token (JWT). This token is used to identify the user when making requests to Firebase services (Realtime Database, Cloud Storage, Firestore) or your own backend.\n- **ID Token**: Short-lived (1 hour), verifies identity.\n- **Refresh Token**: Long-lived, used to get new ID tokens.\n\n## Workflow\n\n### 1. Provisioning\n\n#### Option 1. Enabling Authentication via CLI\n\nOnly Google Sign In, anonymous auth, and email/password auth can be enabled via CLI. For other providers, use the Firebase Console.\n\nConfigure Firebase Authentication in `firebase.json` by adding an 'auth' block:\n\n```\n{\n  \"auth\": {\n    \"providers\": {\n      \"anonymous\": true,\n      \"emailPassword\": true,\n      \"googleSignIn\": {\n        \"oAuthBrandDisplayName\": \"Your Brand Name\",\n        \"supportEmail\": \"support@example.com\",\n        \"authorizedRedirectUris\": [\"https://example.com\"]\n      }\n    }\n  }\n}\n```\n\n#### Option 2. Enabling Authentication in Console\n\nEnable other providers in the Firebase Console.\n\n1.  Go to the https://console.firebase.google.com/project/_/authentication/providers\n2.  Select your project.\n3.  Enable the desired Sign-in providers (e.g., Email/Password, Google).\n\n### 2. Client Setup & Usage\n\n**Web**\nSee [references/client_sdk_web.md](references/client_sdk_web.md).\n\n### 3. Security Rules\n\nSecure your data using `request.auth` in Firestore/Storage rules.\n\nSee [references/security_rules.md](references/security_rules.md)."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "compatibility"
+        },
+        {
+          "type": "service",
+          "org": "google",
+          "name": "firebase",
+          "detectedFrom": "compatibility"
+        },
+        {
+          "type": "npm",
+          "org": "firebase-tools",
+          "name": "firebase-tools",
+          "detectedFrom": "compatibility"
+        }
+      ]
+    },
+    {
+      "skillId": "firebase-basics",
+      "parsed": {
+        "name": "firebase-basics",
+        "description": "Guide for setting up and using Firebase. Use this skill when the user is getting started with Firebase - setting up local environment, using Firebase for the first time, or adding Firebase to their app.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "## Prerequisites\n\n### Node.js and npm\nTo use the Firebase CLI, you need Node.js (version 20+ required) and npm (which comes with Node.js).\n\n**Recommended: Use a Node Version Manager**\nThis avoids permission issues when installing global packages.\n\n1.  **Install a Node Version Manager:**\n    - Mac/Linux: Follow the installation instructions on the [official nvm repository](https://github.com/nvm-sh/nvm#installing-and-updating).\n    - Windows: Download [nvm-windows](https://github.com/coreybutler/nvm-windows/releases)\n\n2.  **Install Node.js:**\n    ```bash\n    nvm install 24\n    nvm use 24\n    ```\n\n**Alternative: Official Installer**\nDownload and install the LTS version from [nodejs.org](https://nodejs.org/).\n\n**Verify Installation:**\n```bash\nnode --version\nnpm --version\n```\n\n## Core Workflow\n\n### 1. Installation\n\nInstall the Firebase CLI globally via npm:\n\n```bash\nnpm install -g firebase-tools\n```\n\nVerify installation:\n```bash\nfirebase --version\n```\n\n### 2. Authentication\n\nLog in to Firebase:\n\n```bash\nfirebase login\n```\n\n- This opens a browser for authentication.\n- For environments where localhost is not available (e.g., remote shell), use `firebase login --no-localhost`.\n\n### 3. Creating a Project\n\nTo create a new Firebase project from the CLI:\n\n```bash\nfirebase projects:create\n```\n\nYou will be prompted to:\n1. Enter a Project ID (must be unique globally).\n2. Enter a display name.\n\n### 4. Initialization\n\nInitialize Firebase services in your project directory:\n\n```bash\nmkdir my-project\ncd my-project\nfirebase init\n```\n\nThe CLI will guide you through:\n- Selecting features (Firestore, Functions, Hosting, etc.).\n- Associating with an existing project or creating a new one.\n- Configuring files (firebase.json, .firebaserc).\n\n## Exploring Commands\n\nThe Firebase CLI documents itself. Instruct the user to use help commands to discover functionality.\n\n- **Global Help**: List all available commands and categories.\n  ```bash\n  firebase --help\n  ```\n\n- **Command Help**: Get detailed usage for a specific command.\n  ```bash\n  firebase [command] --help\n  # Example:\n  firebase deploy --help\n  firebase firestore:indexes --help\n  ```\n\n## SDK Setup\n\nDetailed guides for adding Firebase to your app:\n\n- **Web**: See [references/web_setup.md](references/web_setup.md)\n\n## Common Issues\n\n- **Permission Denied (EACCES)**: If `npm install -g` fails, suggest using a node version manager (nvm) or `sudo` (caution advised).\n- **Login Issues**: If the browser doesn't open, try `firebase login --no-localhost`."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "google",
+          "name": "firebase",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "firebase-tools",
+          "name": "firebase-tools",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "firebase-data-connect-basics",
+      "parsed": {
+        "name": "firebase-data-connect",
+        "description": "Build and deploy Firebase Data Connect backends with PostgreSQL. Use for schema design, GraphQL queries/mutations, authorization, and SDK generation for web, Android, iOS, and Flutter apps.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Firebase Data Connect\n\nFirebase Data Connect is a relational database service using Cloud SQL for PostgreSQL with GraphQL schema, auto-generated queries/mutations, and type-safe SDKs.\n\n## Project Structure\n\n```\ndataconnect/\n├── dataconnect.yaml      # Service configuration\n├── schema/\n│   └── schema.gql        # Data model (types with @table)\n└── connector/\n    ├── connector.yaml    # Connector config + SDK generation\n    ├── queries.gql       # Queries\n    └── mutations.gql     # Mutations\n```\n\n## Development Workflow\n\nFollow this strict workflow to build your application. You **must** read the linked reference files for each step to understand the syntax and available features.\n\n### 1. Define Data Model (`schema/schema.gql`)\nDefine your GraphQL types, tables, and relationships.\n> **Read [reference/schema.md](reference/schema.md)** for:\n> *   `@table`, `@col`, `@default`\n> *   Relationships (`@ref`, one-to-many, many-to-many)\n> *   Data types (UUID, Vector, JSON, etc.)\n\n### 2. Define Operations (`connector/queries.gql`, `connector/mutations.gql`)\nWrite the queries and mutations your client will use. Data Connect generates the underlying SQL.\n> **Read [reference/operations.md](reference/operations.md)** for:\n> *   **Queries**: Filtering (`where`), Ordering (`orderBy`), Pagination (`limit`/`offset`).\n> *   **Mutations**: Create (`_insert`), Update (`_update`), Delete (`_delete`).\n> *   **Upserts**: Use `_upsert` to \"insert or update\" records (CRITICAL for user profiles).\n> *   **Transactions**: use `@transaction` for multi-step atomic operations.\n\n### 3. Secure Your App (`connector/` files)\nAdd authorization logic closely with your operations.\n> **Read [reference/security.md](reference/security.md)** for:\n> *   `@auth(level: ...)` for PUBLIC, USER, or NO_ACCESS.\n> *   `@check` and `@redact` for row-level security and validation.\n\n### 4. Generate & Use SDKs\nGenerate type-safe code for your client platform.\n> **Read [reference/sdks.md](reference/sdks.md)** for:\n> *   Android (Kotlin), iOS (Swift), Web (TypeScript), Flutter (Dart).\n> *   How to initialize and call your queries/mutations.\n> *   **Nested Data**: See how to access related fields (e.g., `movie.reviews`).\n\n---\n\n## Feature Capability Map\n\nIf you need to implement a specific feature, consult the mapped reference file:\n\n| Feature | Reference File | Key Concepts |\n| :--- | :--- | :--- |\n| **Data Modeling** | [reference/schema.md](reference/schema.md) | `@table`, `@unique`, `@index`, Relations |\n| **Vector Search** | [reference/advanced.md](reference/advanced.md) | `Vector`, `@col(dataType: \"vector\")` |\n| **Full-Text Search** | [reference/advanced.md](reference/advanced.md) | `@searchable` |\n| **Upserting Data** | [reference/operations.md](reference/operations.md) | `_upsert` mutations |\n| **Complex Filters** | [reference/operations.md](reference/operations.md) | `_or`, `_and`, `_not`, `eq`, `contains` |\n| **Transactions** | [reference/operations.md](reference/operations.md) | `@transaction`, `response` binding |\n| **Environment Config** | [reference/config.md](reference/config.md) | `dataconnect.yaml`, `connector.yaml` |\n\n---\n\n## Deployment & CLI\n\n> **Read [reference/config.md](reference/config.md)** for deep dive on configuration.\n\nCommon commands (run from project root):\n\n```bash\n# Initialize Data Connect\nfirebase init dataconnect\n\n# Start local emulator\nfirebase emulators:start --only dataconnect\n\n# Generate SDK code\nfirebase dataconnect:sdk:generate\n\n# Deploy to production\nfirebase deploy --only dataconnect\n```\n\n## Examples\n\nFor complete, working code examples of schemas and operations, see **[examples.md](examples.md)**."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "google",
+          "name": "firebase",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "firebase-firestore-basics",
+      "parsed": {
+        "name": "firebase-firestore-basics",
+        "description": "Comprehensive guide for Firestore basics including provisioning, security rules, and SDK usage. Use this skill when the user needs help setting up Firestore, writing security rules, or using the Firestore SDK in their application.",
+        "compatibility": "This skill is best used with the Firebase CLI, but does not require it. Install it by running `npm install -g firebase-tools`.",
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Firestore Basics\n\nThis skill provides a complete guide for getting started with Cloud Firestore, including provisioning, securing, and integrating it into your application.\n\n## Provisioning\n\nTo set up Cloud Firestore in your Firebase project and local environment, see [provisioning.md](references/provisioning.md).\n\n## Security Rules\n\nFor guidance on writing and deploying Firestore Security Rules to protect your data, see [security_rules.md](references/security_rules.md).\n\n## SDK Usage\n\nTo learn how to use Cloud Firestore in your application code, choose your platform:\n\n*   **Web (Modular SDK)**: [web_sdk_usage.md](references/web_sdk_usage.md)\n\n## Indexes\n\nFor checking index types, query support tables, and best practices, see [indexes.md](references/indexes.md)."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "compatibility"
+        },
+        {
+          "type": "service",
+          "org": "google",
+          "name": "firebase",
+          "detectedFrom": "compatibility"
+        },
+        {
+          "type": "npm",
+          "org": "firebase-tools",
+          "name": "firebase-tools",
+          "detectedFrom": "compatibility"
+        }
+      ]
+    },
+    {
+      "skillId": "firebase-hosting-basics",
+      "parsed": {
+        "name": "firebase-hosting-basics",
+        "description": "Skill for working with Firebase Hosting (Classic). Use this when you want to deploy static web apps, Single Page Apps (SPAs), or simple microservices. Do NOT use for Firebase App Hosting.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# hosting-basics\n\nThis skill provides instructions and references for working with Firebase Hosting, a fast and secure hosting service for your web app, static and dynamic content, and microservices.\n\n## Overview\n\nFirebase Hosting provides production-grade web content hosting for developers. With a single command, you can deploy web apps and serve both static and dynamic content to a global CDN (content delivery network).\n\n**Key Features:**\n- **Fast Content Delivery:** Files are cached on SSDs at CDN edges around the world.\n- **Secure by Default:** Zero-configuration SSL is built-in.\n- **Preview Channels:** View and test changes on temporary preview URLs before deploying live.\n- **GitHub Integration:** Automate previews and deploys with GitHub Actions.\n- **Dynamic Content:** Serve dynamic content and microservices using Cloud Functions or Cloud Run.\n\n## Hosting vs App Hosting\n\n**Choose Firebase Hosting if:**\n- You are deploying a static site (HTML/CSS/JS).\n- You are deploying a simple SPA (React, Vue, etc. without SSR).\n- You want full control over the build and deploy process via CLI.\n\n**Choose Firebase App Hosting if:**\n- You are using a supported full-stack framework like Next.js or Angular.\n- You need Server-Side Rendering (SSR) or ISR.\n- You want an automated \"git push to deploy\" workflow with zero configuration.\n\n## Instructions\n\n### 1. Configuration (`firebase.json`)\nFor details on configuring Hosting behavior, including public directories, redirects, rewrites, and headers, see [configuration.md](references/configuration.md).\n\n### 2. Deploying\nFor instructions on deploying your site, using preview channels, and managing releases, see [deploying.md](references/deploying.md).\n\n### 3. Emulation\nTo test your app locally:\n```bash\nfirebase emulators:start --only hosting\n```\nThis serves your app at `http://localhost:5000` by default."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "google",
+          "name": "firebase",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "git",
+          "name": "git",
+          "detectedFrom": "instructions"
+        }
+      ]
+    }
+  ]
+}

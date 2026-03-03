@@ -1,0 +1,612 @@
+{
+  "source": "pollinations/pollinations",
+  "repoUrl": "https://github.com/pollinations/pollinations",
+  "skills": [
+    {
+      "skillId": "app-review",
+      "parsed": {
+        "name": "app-review",
+        "description": "Review and process app submissions for the Pollinations showcase. Parse issues, validate submissions, create PRs, handle user corrections.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# App Review\n\nProcess app submissions from GitHub issues. Validation (registration, duplicates, stars) is pre-done by workflow.\n\n---\n\n## Categories\n\nPick the best fit: `image`, `video_audio`, `writing`, `chat`, `games`, `learn`, `bots`, `build`, `business`\n\n---\n\n## APPS.md Row Format\n\n```\n| EMOJI | Name | Web_URL | Description (~200 chars) | LANG | category | @author | github_id | repo_url | ⭐stars | discord | other | Submitted_Date | Issue_URL | Approved_Date |\n```\n\n- **Submitted_Date**: Issue creation date (when user submitted)\n- **Issue_URL**: Link to original GitHub issue\n- **Approved_Date**: PR merge date (when app was approved)\n\n---\n\n## If Validation Failed\n\nComment helpfully based on error:\n- Not registered → Ask to register at enter.pollinations.ai\n- Duplicate → Explain and close issue\n- Add appropriate label (TIER-APP-INCOMPLETE or TIER-APP-REJECTED)\n\n---\n\n## If Validation Passed\n\n```bash\n# 1. Fetch issue\ngh issue view $ISSUE_NUMBER --json body,author,title\n\n# 2. Parse fields: name, url, description, category, repo, discord, language\n\n# 3. Pick creative emoji\n\n# 4. Create/update branch\ngit fetch origin main\n# If existing_pr: checkout and reset\n# Else: git checkout -b auto/app-${ISSUE_NUMBER}-slug origin/main\n\n# 5. Add row\nexport NEW_ROW=\"| EMOJI | NAME | URL | DESC | LANG | CAT | @AUTHOR | GITHUB_ID | REPO | STARS | DISCORD | | SUBMITTED_DATE | ISSUE_URL | $(date +%Y-%m-%d) |\"\nnode .github/scripts/app-prepend-row.js\nnode .github/scripts/app-update-readme.js\n\n# 6. Commit and push\ngit add -A && git commit -m \"Add NAME to CATEGORY\" && git push origin HEAD --force-with-lease\n\n# 7. Create PR if new (label: TIER-APP-REVIEW-PR)\ngh pr create --title \"Add NAME to CATEGORY\" --body \"Fixes #$ISSUE_NUMBER\" --label \"TIER-APP-REVIEW-PR\"\n\n# 8. Update issue label\ngh issue edit $ISSUE_NUMBER --remove-label \"TIER-APP\" --add-label \"TIER-APP-REVIEW\"\n```\n\n---\n\n## Labels\n\n| Label | Meaning |\n|-------|---------|\n| `TIER-APP` | New submission |\n| `TIER-APP-INCOMPLETE` | Waiting for user fix |\n| `TIER-APP-REVIEW` | PR created |\n| `TIER-APP-REJECTED` | Rejected (duplicate, etc.) |"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "system",
+          "org": "git",
+          "name": "git",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "candidate-evaluation",
+      "parsed": {
+        "name": "candidate-evaluation",
+        "description": "Evaluate GitHub contributors for MLOps/engineering roles. Use when analyzing candidates, researching GitHub profiles, or updating CONTRIBUTORS.md with hiring assessments.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "allowed-tools": "Read, Write, Edit, Grep, Bash(gh api:*), Bash(git:*)"
+        },
+        "body": "# Candidate Evaluation Skill\n\nEvaluate GitHub contributors for engineering roles at Pollinations.\n\n## When to Use\n\n- User asks to evaluate a contributor or candidate\n- User wants to research GitHub profiles for hiring\n- User needs to update CONTRIBUTORS.md with candidate analysis\n- User mentions \"hiring\", \"candidate\", \"MLOps\", or \"evaluate contributor\"\n\n## Evaluation Criteria\n\n### Must-Have Skills (Weight: High)\n- **Python**: Primary language proficiency\n- **DevOps**: Docker, CI/CD, infrastructure\n- **GPU/ML Deployment**: Model serving, inference optimization\n\n### Nice-to-Have Skills (Weight: Medium)\n- Kubernetes, vLLM, TGI\n- Quantization (GGUF, ONNX)\n- CI/CD pipelines (GitHub Actions)\n\n### Work Style Indicators (Weight: Medium)\n- PR size preference (small, focused = good)\n- Response time to reviews\n- Documentation quality\n- Test coverage habits\n\n## Evaluation Process\n\n1. **Gather Data** via GitHub MCP or `gh api`:\n   ```bash\n   # Get user repos\n   gh api users/{username}/repos --jq '.[].name'\n   \n   # Search PRs in pollinations\n   gh api search/issues -X GET -f q='repo:pollinations/pollinations author:{username}'\n   \n   # Search code for MLOps keywords\n   gh api search/code -X GET -f q='user:{username} docker OR kubernetes OR gpu OR vllm'\n   ```\n\n2. **Analyze Repositories** for:\n   - ML/AI projects (ComfyUI, HuggingFace, PyTorch)\n   - DevOps tooling (Docker, CI/CD, scripts)\n   - API/backend experience\n   - Star counts and activity\n\n3. **Check Pollinations Contributions**:\n   - Merged PRs (high signal)\n   - Open issues/discussions\n   - Project submissions\n\n4. **Generate Profile** with:\n   - Fit score (1-10)\n   - Strengths (bullet points)\n   - Weaknesses (bullet points)\n   - Key repositories table\n   - Hiring recommendation\n\n## Output Format\n\nUse ASCII box art for visual appeal:\n\n```\n┌─────────────────────────────────────────────────────────────────────────────┐\n│  FIT: X.X/10  │  GitHub: username  │  Repos: N  │  Focus: Area             │\n└─────────────────────────────────────────────────────────────────────────────┘\n```\n\n**✅ STRENGTHS**\n- Point 1\n- Point 2\n\n**❌ WEAKNESSES**\n- Point 1\n- Point 2\n\n**📦 KEY REPOS**\n| Repo | Tech | What It Does |\n|------|------|--------------|\n\n**🎯 VERDICT**: Recommendation\n\n## Skills Matrix Format\n\n```\n╔═══════════════════╦════════╦════════╦════════╦═══════════════╗\n║     CANDIDATE     ║ Python ║ GPU/ML ║ Docker ║   FIT SCORE   ║\n╠═══════════════════╬════════╬════════╬════════╬═══════════════╣\n║ username          ║ █████  ║ ███    ║ ████   ║     X.X/10    ║\n╚═══════════════════╩════════╩════════╩════════╩═══════════════╝\n\nLegend: █ = Skill Level (1-5)\n```\n\n## Reference Files\n\n- `AGENTS.md` - Project guidelines and contributor attribution\n\n## Example Queries\n\n- \"Evaluate @username for MLOps role\"\n- \"Research GitHub profile for {username}\"\n- \"Add {username} to CONTRIBUTORS.md\"\n- \"Compare candidates X and Y\""
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "docker",
+          "name": "docker",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "code-formatting",
+      "parsed": {
+        "name": "code-formatting",
+        "description": "Format code on the current branch using Biome. Use when asked to format, lint, or clean up code before committing or creating a PR.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Code Formatting\n\nFormat JS/TS/JSON files changed on the current branch using Biome.\n\n## Quick Usage\n\n```bash\n.claude/skills/code-formatting/scripts/format-branch.sh\n```\n\nThis formats all `.js`, `.ts`, `.jsx`, `.tsx`, `.json`, `.jsonc` files changed compared to `main`.\n\n## Custom Base Branch\n\n```bash\n.claude/skills/code-formatting/scripts/format-branch.sh develop\n```\n\n## What It Does\n\n1. Finds files changed on current branch vs base branch\n2. Filters to JS/TS/JSON files only\n3. Runs `npx biome check --write` on those files\n4. Uses same settings as the `biome-check.yml` CI workflow\n\n## Config\n\nBiome config is at `biome.jsonc` in repo root.\n\n## Notes\n\n- Run from repo root\n- Requires Node.js/npx\n- Only formats changed files (not entire codebase)"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "biome",
+          "name": "biome",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "enter-services",
+      "parsed": {
+        "name": "enter-services",
+        "description": "Deploy and manage enter.pollinations.ai text/image services on EC2 and Cloudflare Workers. Requires: SSH keys, sops, wrangler.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Requirements\n\nBefore using this skill, ensure you have:\n- **SSH keys**: Configured via GitHub secrets (see workflow)\n- **sops**: `brew install sops` (for decrypting secrets)\n- **Wrangler**: `npm install -g wrangler`\n- **Node.js**: `brew install node`\n\nMust run from the `pollinations` repo root.\n\n---\n\n# Architecture Overview\n\n| Environment | Gateway (Cloudflare Worker) | Text/Image Services (EC2) |\n|-------------|----------------------------|---------------------------|\n| **Production** | `enter.pollinations.ai` | `3.80.56.235` (ports 16384/16385) |\n| **Staging** | `staging.enter.pollinations.ai` | `44.222.254.250` (ports 16384/16385) |\n\n---\n\n# SSH Configuration\n\nAdd to `~/.ssh/config`:\n```\n# Production instance\nHost enter-services\n  HostName 3.80.56.235\n  User ubuntu\n  IdentityFile ~/.ssh/enter-services-shared-key\n\n# Staging instance\nHost enter-services-staging\n  HostName 44.222.254.250\n  User ubuntu\n  IdentityFile ~/.ssh/enter-services-staging-key\n```\n\n---\n\n# Quick Commands\n\n## Production\n\n```bash\n# Service status\nssh enter-services \"sudo systemctl status text-pollinations.service image-pollinations.service\"\n\n# View logs (real-time)\nssh enter-services \"sudo journalctl -u text-pollinations.service -f\"\nssh enter-services \"sudo journalctl -u image-pollinations.service -f\"\n\n# Restart services\nssh enter-services \"sudo systemctl restart text-pollinations.service image-pollinations.service\"\n\n# Recent errors\nssh enter-services \"sudo journalctl -u text-pollinations.service -p err -n 20\"\n```\n\n## Staging\n\n```bash\n# Service status\nssh enter-services-staging \"sudo systemctl status text-pollinations.service image-pollinations.service\"\n\n# View logs\nssh enter-services-staging \"sudo journalctl -u text-pollinations.service -f\"\n\n# Restart\nssh enter-services-staging \"sudo systemctl restart text-pollinations.service image-pollinations.service\"\n```\n\n---\n\n# Deploy to Production\n\nThe GitHub workflow handles production deployments automatically on push to `production` branch.\n\n**Manual deployment:**\n```bash\n# 1. SSH into production\nssh enter-services\n\n# 2. Pull and restart\ncd /home/ubuntu/pollinations\ngit pull origin production\ncd text.pollinations.ai && npm install\ncd ../image.pollinations.ai && npm install\nsudo systemctl restart text-pollinations.service image-pollinations.service\n```\n\n---\n\n# Deploy to Staging\n\n## Full Setup (New Instance)\n\n```bash\n# 1. SSH into the new instance\nssh enter-services-staging\n\n# 2. Install build tools (if needed)\nsudo apt-get update && sudo apt-get install -y build-essential\n\n# 3. Clone repo\ngit clone https://github.com/pollinations/pollinations.git\ncd pollinations\n\n# 4. Run setup script\nbash enter.pollinations.ai/scripts/setup-services.sh /home/ubuntu/pollinations\n\n# 5. From your LOCAL machine - decrypt and copy env files\ncd /path/to/pollinations\nsops --output-type dotenv -d text.pollinations.ai/secrets/env.json > /tmp/text.env\nsops --output-type dotenv -d image.pollinations.ai/secrets/env.json > /tmp/image.env\nscp /tmp/text.env enter-services-staging:/home/ubuntu/pollinations/text.pollinations.ai/.env\nscp /tmp/image.env enter-services-staging:/home/ubuntu/pollinations/image.pollinations.ai/.env\nrm /tmp/text.env /tmp/image.env\n\n# 6. Restart services\nssh enter-services-staging \"sudo systemctl restart text-pollinations.service image-pollinations.service\"\n```\n\n## Update Staging\n\n```bash\nssh enter-services-staging \"cd /home/ubuntu/pollinations && git pull && cd text.pollinations.ai && npm install && cd ../image.pollinations.ai && npm install && sudo systemctl restart text-pollinations.service image-pollinations.service\"\n```\n\n---\n\n# Deploy Cloudflare Worker (enter.pollinations.ai)\n\n```bash\ncd enter.pollinations.ai\n\n# Production\nnpm run deploy:production\n\n# Staging\nnpm run deploy:staging\n```\n\n---\n\n# Service Locations (on EC2)\n\n- **Service definitions**: `/etc/systemd/system/`\n- **Text service**: `/home/ubuntu/pollinations/text.pollinations.ai/`\n- **Image service**: `/home/ubuntu/pollinations/image.pollinations.ai/`\n\n---\n\n# Wrangler Configuration\n\nThe `wrangler.toml` contains environment configs:\n\n| Environment | Route | Service URLs |\n|-------------|-------|--------------|\n| `production` | `enter.pollinations.ai` | Production EC2 |\n| `staging` | `staging.enter.pollinations.ai` | Staging EC2 |\n| `local` | `localhost:3000` | Local dev |\n\n---\n\n# Troubleshooting\n\n## Services won't start\n\n```bash\n# Check logs\nssh enter-services-staging \"sudo journalctl -u text-pollinations.service -n 50\"\n\n# Check if .env exists\nssh enter-services-staging \"ls -la /home/ubuntu/pollinations/text.pollinations.ai/.env\"\n\n# Check node/npm\nssh enter-services-staging \"node -v && npm -v\"\n```\n\n## Missing dependencies\n\n```bash\nssh enter-services-staging \"cd /home/ubuntu/pollinations/text.pollinations.ai && npm install\"\n```\n\n## Need build tools\n\n```bash\nssh enter-services-staging \"sudo apt-get install -y build-essential\"\n```\n\n---\n\n# Notes\n\n- **Production** deploys on push to `production` branch\n- **Staging** deploys on push to `staging` branch\n- Always test on staging before merging to production\n- The Cloudflare Worker (enter.pollinations.ai) routes to EC2 services\n- Text service: port 16385, Image service: port 16384"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "brew",
+          "org": "homebrew",
+          "name": "brew",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "apt",
+          "name": "apt-get",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "git",
+          "name": "git",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "wrangler",
+          "name": "wrangler",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "cd",
+          "name": "cd",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "sudo",
+          "name": "sudo",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "brew",
+          "org": "sops",
+          "name": "sops",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "brew",
+          "org": "node",
+          "name": "node",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "issue-maker",
+      "parsed": {
+        "name": "issue-maker",
+        "description": "Create GitHub issues following Pollinations team conventions. Use when asked to create issues, track work, or plan features.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Issue-Maker\n\nTurn any user request into GitHub issues following team conventions.\n\n---\n\n## Hard Rules\n\n1. **Repo:** `pollinations/pollinations`\n2. **Assignee:** Assign to appropriate team member based on domain expertise\n3. **No local side-effects** (no file creation/modification)\n\n---\n\n## Workflow\n\n### 1. Research First\n\nBefore creating any issues:\n\n```bash\n# Check @eulervoid's PRs for style inspiration (concise, bullet-point format)\ngh search prs --repo pollinations/pollinations --author eulervoid --limit 5\n\n# Search existing issues for patterns\ngh search issues --repo pollinations/pollinations \"KEYWORD\" --limit 5\n```\n\n### 2. Plan\n\nList all planned issues:\n\n-   One sentence description per issue\n-   Identify assignee and labels\n-   Note related PRs or issues\n\n### 3. Create\n\n```bash\ngh issue create --repo pollinations/pollinations \\\n  --title \"EMOJI Short clear title\" \\\n  --body \"- Bullet point 1\n- Bullet point 2\n- Bullet point 3\" \\\n  --assignee HANDLE \\\n  --label \"LABEL\"\n```\n\n### 4. Output\n\nProvide Discord-compatible summary:\n\n-   Bold titles with issue numbers\n-   Plain URLs on separate lines (Discord auto-embeds)\n-   Group by category\n\n---\n\n## Team Handles\n\n| Name   | GitHub          | Domain                    |\n| ------ | --------------- | ------------------------- |\n| Thomas | **@voodoohop**  | General, Models, Infra    |\n| Joshua | **@eulervoid**  | Pollen, Backend, Auth     |\n| Elliot | **@elliotetag** | Community, Newsletter, UI |\n\n---\n\n## Common Labels\n\n| Label             | Use Case                                           |\n| ----------------- | -------------------------------------------------- |\n| `TRACKING`        | Meta/planning issues that track multiple sub-tasks |\n| `NEWS`            | Community announcements and updates                |\n| `ext-issue`       | External user requests (tier upgrades, etc.)       |\n| `app:review`      | New project submission (under review)              |\n| `app:info-needed` | Submission awaiting user response                  |\n| `app:approved`    | Project approved and merged                        |\n| `app:denied`      | Submission rejected                                |\n\n---\n\n## Issue Templates\n\n### Standard Issue (max 3 bullets)\n\n```markdown\n-   Adds X to Y\n-   Fix Z by doing W\n-   Related: #1234\n```\n\n### Tracking Issue (more detailed)\n\n```markdown\n## Overview\n\nBrief description\n\n## Tasks\n\n-   [ ] Task 1\n-   [ ] Task 2\n-   [ ] Task 3\n\n## Related\n\n-   #issue1\n-   #issue2\n```\n\n### Tier Upgrade Request\n\n```markdown\n-   Upgrade @USERNAME to TIER tier\n-   Qualification: [reason]\n-   Related: #original_request_issue\n```\n\n---\n\n## Style Guide\n\n-   **Short, sharp, no fluff**\n-   Smart emojis (not overdone)\n-   Bullet points over paragraphs\n-   Reference @eulervoid's style: `repo:pollinations/pollinations author:eulervoid`\n\n---\n\n## Example Commands\n\n**Create simple issue:**\n\n```bash\ngh issue create --repo pollinations/pollinations \\\n  --title \"🔧 Fix caching header for image service\" \\\n  --body \"- Update cache-control header\n- Add proper ETag support\n- Related: #4100\" \\\n  --assignee voodoohop\n```\n\n**Create tracking issue:**\n\n```bash\ngh issue create --repo pollinations/pollinations \\\n  --title \"📋 TRACKING: Q4 Model Updates\" \\\n  --body \"## Overview\nTrack all model-related updates for Q4\n\n## Tasks\n- [ ] Add Claude Sonnet 4.5\n- [ ] Update pricing tiers\n- [ ] Deprecate old models\" \\\n  --label \"TRACKING\" \\\n  --assignee voodoohop\n```\n\n**Comment on issue:**\n\n```bash\ngh issue comment 1234 --repo pollinations/pollinations \\\n  --body \"✅ Done! Merged in #5678\"\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "model-debugging",
+      "parsed": {
+        "name": "model-debugging",
+        "description": "Debug and diagnose model errors in Pollinations services. Analyze logs, find error patterns, identify affected users. For taking action on user tiers, see tier-management skill.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Model Debugging Skill\n\nUse this skill when:\n- Investigating model failures, high error rates, or service issues\n- Finding users affected by errors (402 billing, 403 permissions, 500 backend)\n- Analyzing Tinybird/Cloudflare logs for patterns\n- Diagnosing specific request failures\n\n**Related skill**: Use `tier-management` to upgrade users or check balances after identifying issues here.\n\n---\n\n# Understanding Model Monitor Error Rates\n\n**Why does the Model Monitor show high error rates when models work fine manually?**\n\nThe Model Monitor at https://monitor.pollinations.ai shows **all real-world traffic**, including:\n\n- **401 errors**: Anonymous users without API keys (most common)\n- **402 errors**: Users with insufficient pollen balance or exhausted API key budget\n- **403 errors**: Users denied access to specific models (API key restrictions)\n- **400 errors**: Invalid request parameters (e.g., `openai-audio` without `modalities` param)\n- **429 errors**: Rate-limited requests\n- **500/504 errors**: Actual backend failures (investigate these)\n\nWhen you test manually with a valid secret key (`sk_`), you bypass auth/quota issues, so models appear to work fine.\n\n**Key insight**: High 401/402/403/400 rates are **expected** from real-world usage. Focus investigation on 500/504 errors.\n\n---\n\n# Data Flow Architecture\n\n```\nUser Request → enter.pollinations.ai (Cloudflare Worker)\n                    ↓\n              Logs to Cloudflare Workers Observability\n                    ↓\n              Events stored in D1 database\n                    ↓\n              Batched to Tinybird (async, 100-500 events)\n                    ↓\n              Model Monitor queries Tinybird (model_health.pipe)\n```\n\n**Structured Logging**: enter.pollinations.ai uses LogTape with:\n- `requestId`: Unique per request (passed to downstream via `x-request-id` header)\n- `status`, `body`: Full error response from downstream services\n- Context: `method`, `routePath`, `userAgent`, `ipAddress`\n\n---\n\n# Quick Diagnostics\n\n## 1. Check Model Monitor\nView current model health at: https://monitor.pollinations.ai\n\n## 2. Query Recent Errors from D1 Database\n```bash\n# Via enter.pollinations.ai worker (requires wrangler)\ncd enter.pollinations.ai\nnpx wrangler d1 execute pollinations-db --remote --command \"SELECT model_requested, response_status, error_message, COUNT(*) as count FROM event WHERE response_status >= 400 AND created_at > datetime('now', '-1 hour') GROUP BY model_requested, response_status, error_message ORDER BY count DESC LIMIT 20\"\n```\n\n## 3. Capture Live Logs\n\n### enter.pollinations.ai (Cloudflare Worker)\n```bash\ncd enter.pollinations.ai\nwrangler tail --format json | tee logs.jsonl\n# Or with formatting:\nwrangler tail --format json | npx tsx scripts/format-logs.ts\n```\n\n### image.pollinations.ai (EC2 systemd)\n```bash\n# Real-time logs\nssh enter-services \"sudo journalctl -u image-pollinations.service -f\"\n\n# Last 3 minutes\nssh enter-services \"sudo journalctl -u image-pollinations.service --since '3 minutes ago' --no-pager\" > image-service-logs.txt\n\n# Recent errors only\nssh enter-services \"sudo journalctl -u image-pollinations.service -p err -n 50\"\n```\n\n### text.pollinations.ai (EC2 systemd)\n```bash\n# Real-time logs\nssh enter-services \"sudo journalctl -u text-pollinations.service -f\"\n\n# Last 3 minutes\nssh enter-services \"sudo journalctl -u text-pollinations.service --since '3 minutes ago' --no-pager\" > text-service-logs.txt\n```\n\n---\n\n# Common Error Patterns\n\n## Azure Content Safety DNS Failure\n**Error**: `getaddrinfo ENOTFOUND gptimagemain1-resource.cognitiveservices.azure.com`\n**Cause**: Azure Content Safety resource deleted or misconfigured\n**Impact**: Fail-open (content proceeds without safety check)\n**Fix**: Create new Azure Content Safety resource and update `.env`:\n```\nAZURE_CONTENT_SAFETY_ENDPOINT=https://<new-resource>.cognitiveservices.azure.com/\nAZURE_CONTENT_SAFETY_API_KEY=<new-key>\n```\n\n## Azure Kontext Content Filter\n**Error**: `Content rejected due to sexual/hate/violence content detection`\n**Cause**: Azure's content moderation blocking prompts/images\n**Impact**: 400 error returned to user\n**Fix**: User error - prompt violates content policy\n\n## Vertex AI Invalid Image\n**Error**: `Provided image is not valid`\n**Cause**: User passing unsupported image URL (e.g., Google Drive links)\n**Impact**: 400 error returned to user\n**Fix**: User error - need direct image URL\n\n## Translation Service Down\n**Error**: `No active translate servers available`\n**Cause**: Translation service unavailable\n**Impact**: Prompts not translated (non-fatal)\n**Fix**: Check translation service status\n\n## OpenAI Audio Invalid Voice\n**Error**: `Invalid value for audio.voice`\n**Cause**: User requesting unsupported voice name\n**Impact**: 400 error returned to user\n**Fix**: User error - use supported voices: alloy, echo, fable, onyx, nova, shimmer, coral, verse, ballad, ash, sage, etc.\n\n## Veo No Video Data\n**Error**: `No video data in response`\n**Cause**: Vertex AI returned empty video response\n**Impact**: 500 error\n**Fix**: Check Vertex AI quota/status, may be transient\n\n---\n\n# Environment Variables to Check\n\n## image.pollinations.ai\n```bash\nssh enter-services \"cat /home/ubuntu/pollinations/image.pollinations.ai/.env | grep -E 'AZURE|GOOGLE|CLOUDFLARE'\"\n```\n\nKey variables:\n- `AZURE_CONTENT_SAFETY_ENDPOINT` - Azure Content Safety API endpoint\n- `AZURE_CONTENT_SAFETY_API_KEY` - Azure Content Safety API key\n- `GOOGLE_PROJECT_ID` - Google Cloud project for Vertex AI\n- `AZURE_MYCELI_FLUX_KONTEXT_ENDPOINT` - Azure Kontext model endpoint\n\n## text.pollinations.ai\n```bash\nssh enter-services \"cat /home/ubuntu/pollinations/text.pollinations.ai/.env | grep -E 'AZURE|OPENAI|GOOGLE'\"\n```\n\n---\n\n# Updating Secrets\n\nSecrets are stored encrypted with SOPS:\n- `image.pollinations.ai/secrets/env.json`\n- `text.pollinations.ai/secrets/env.json`\n\nTo update:\n```bash\n# Decrypt, edit, re-encrypt\nsops image.pollinations.ai/secrets/env.json\n\n# Deploy to server\nsops --output-type dotenv -d image.pollinations.ai/secrets/env.json > /tmp/image.env\nscp /tmp/image.env enter-services:/home/ubuntu/pollinations/image.pollinations.ai/.env\nrm /tmp/image.env\n\n# Restart service\nssh enter-services \"sudo systemctl restart image-pollinations.service\"\n```\n\n---\n\n# Log Analysis Commands\n\n```bash\n# Count errors by type\ngrep -i \"error\" image-service-logs.txt | grep -oE \"(Azure Flux Kontext|Vertex AI|No active translate|getaddrinfo ENOTFOUND)\" | sort | uniq -c | sort -rn\n\n# Find content filter rejections\ngrep -i \"Content rejected\" image-service-logs.txt | sort | uniq -c\n\n# Check DNS resolution on server\nssh enter-services \"nslookup gptimagemain1-resource.cognitiveservices.azure.com\"\n```\n\n---\n\n# Model-Specific Debugging\n\n| Model | Backend | Common Issues |\n|-------|---------|---------------|\n| `flux` | Azure/Replicate | Rate limits, content filter |\n| `kontext` | Azure Flux Kontext | Content filter (strict) |\n| `nanobanana` | Vertex AI Gemini | Invalid image URLs, content filter |\n| `seedream-pro` | ByteDance ARK | NSFW filter, API key issues |\n| `veo` | Vertex AI | Quota, empty responses |\n| `openai-audio` | Azure OpenAI | Invalid voice names |\n| `deepseek` | DeepSeek API | Rate limits, API key |\n\n---\n\n# Cloudflare Workers Observability API\n\nThe enter.pollinations.ai worker has structured logging enabled. You can query logs programmatically via the Cloudflare Workers Observability API.\n\n## Prerequisites\n\n### 1. Get Account ID\n```bash\n# From wrangler.toml\ngrep account_id enter.pollinations.ai/wrangler.toml\n\n# Or from existing .env\ngrep CLOUDFLARE_ACCOUNT_ID image.pollinations.ai/.env\n```\n\n### 2. Create API Token with Workers Observability Permission\n\n**Via Cloudflare Dashboard:**\n1. Go to https://dash.cloudflare.com/profile/api-tokens\n2. Click **Create Token**\n3. Click **Create Custom Token**\n4. Configure:\n   - **Token name**: `Workers Observability Read`\n   - **Permissions**: \n     - Account → Workers Scripts → Read\n     - Account → Workers Observability → Edit (required for query API)\n   - **Account Resources**: Include → Your Account\n5. Click **Continue to summary** → **Create Token**\n6. Copy the token immediately (shown only once)\n\n### 3. Store Token Securely\n\nThe token is stored in SOPS-encrypted secrets:\n- **Location**: `enter.pollinations.ai/secrets/env.json`\n- **Key**: `CLOUDFLARE_OBSERVABILITY_TOKEN`\n\nTo add/update:\n```bash\n# Step 1: Decrypt to temp file\ncd /path/to/pollinations\nsops -d enter.pollinations.ai/secrets/env.json > /tmp/env.json\n\n# Step 2: Add the token (use jq)\njq '. + {\"CLOUDFLARE_OBSERVABILITY_TOKEN\": \"your_token\"}' /tmp/env.json > /tmp/env_updated.json\n\n# Step 3: Re-encrypt (must rename to match .sops.yaml pattern)\ncp /tmp/env_updated.json /tmp/env.json\nsops -e /tmp/env.json > enter.pollinations.ai/secrets/env.json\n\n# Step 4: Cleanup\nrm /tmp/env.json /tmp/env_updated.json\n\n# Verify\nsops -d enter.pollinations.ai/secrets/env.json | jq 'keys'\n```\n\n**Note**: The `.sops.yaml` config requires filenames matching `env.json$` pattern.\n\n## API Endpoint\n\n```\nPOST https://api.cloudflare.com/client/v4/accounts/{account_id}/workers/observability/telemetry/query\n```\n\n## Query Examples\n\n### Setup: Get Credentials from SOPS\n\n```bash\n# Extract credentials from encrypted secrets\nACCOUNT_ID=$(sops -d enter.pollinations.ai/secrets/env.json | jq -r '.CLOUDFLARE_ACCOUNT_ID')\nAPI_TOKEN=$(sops -d enter.pollinations.ai/secrets/env.json | jq -r '.CLOUDFLARE_OBSERVABILITY_TOKEN')\n```\n\n### List Available Log Keys (Working)\n\nThis endpoint works and shows what fields are available:\n\n```bash\ncurl -s \"https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/workers/observability/telemetry/keys\" \\\n  -H \"Authorization: Bearer $API_TOKEN\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"timeframe\": {\"from\": '$(( $(date +%s) - 86400 ))'000, \"to\": '$(date +%s)'000}, \"datasets\": [\"workers\"]}' | jq '.result[:10]'\n```\n\n### Query Recent Errors (Last 15 Minutes)\n\n**Note**: The `/query` endpoint requires a saved `queryId`. For ad-hoc queries, use the Cloudflare Dashboard Query Builder or `wrangler tail`.\n\n```bash\n# This format requires a saved query ID\n\n# Query errors with status >= 400\ncurl -s \"https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/workers/observability/telemetry/query\" \\\n  -H \"Authorization: Bearer $API_TOKEN\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"timeframe\": {\n      \"from\": '$(( $(date +%s) - 900 ))'000,\n      \"to\": '$(date +%s)'000\n    },\n    \"parameters\": {\n      \"datasets\": [\"workers\"],\n      \"filters\": [\n        {\"key\": \"$workers.scriptName\", \"operation\": \"eq\", \"type\": \"string\", \"value\": \"enter-pollinations-ai\"},\n        {\"key\": \"$metadata.statusCode\", \"operation\": \"gte\", \"type\": \"number\", \"value\": 400}\n      ],\n      \"calculations\": [{\"operator\": \"count\"}],\n      \"groupBys\": [\n        {\"type\": \"string\", \"value\": \"$metadata.statusCode\"},\n        {\"type\": \"string\", \"value\": \"$metadata.error\"}\n      ],\n      \"limit\": 50\n    }\n  }' | jq '.result.events.events[:20]'\n```\n\n### Query Errors by Model\n\n```bash\ncurl -s \"https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/workers/observability/telemetry/query\" \\\n  -H \"Authorization: Bearer $API_TOKEN\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"timeframe\": {\n      \"from\": '$(( $(date +%s) - 3600 ))'000,\n      \"to\": '$(date +%s)'000\n    },\n    \"parameters\": {\n      \"datasets\": [\"workers\"],\n      \"filters\": [\n        {\"key\": \"$workers.scriptName\", \"operation\": \"eq\", \"type\": \"string\", \"value\": \"enter-pollinations-ai\"},\n        {\"key\": \"$metadata.statusCode\", \"operation\": \"gte\", \"type\": \"number\", \"value\": 400}\n      ],\n      \"calculations\": [{\"operator\": \"count\"}],\n      \"groupBys\": [\n        {\"type\": \"string\", \"value\": \"model\"},\n        {\"type\": \"string\", \"value\": \"$metadata.statusCode\"}\n      ],\n      \"limit\": 100\n    }\n  }' | jq '.result.calculations[0].aggregates'\n```\n\n### Get Raw Error Events with Full Details\n\n```bash\ncurl -s \"https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/workers/observability/telemetry/query\" \\\n  -H \"Authorization: Bearer $API_TOKEN\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"timeframe\": {\n      \"from\": '$(( $(date +%s) - 900 ))'000,\n      \"to\": '$(date +%s)'000\n    },\n    \"parameters\": {\n      \"datasets\": [\"workers\"],\n      \"filters\": [\n        {\"key\": \"$workers.scriptName\", \"operation\": \"eq\", \"type\": \"string\", \"value\": \"enter-pollinations-ai\"},\n        {\"key\": \"$metadata.statusCode\", \"operation\": \"gte\", \"type\": \"number\", \"value\": 500}\n      ],\n      \"limit\": 20\n    }\n  }' | jq '.result.events.events[] | {\n    timestamp: .timestamp,\n    statusCode: .\"$metadata\".statusCode,\n    error: .\"$metadata\".error,\n    message: .\"$metadata\".message,\n    requestId: .\"$workers\".requestId,\n    url: .\"$metadata\".url\n  }'\n```\n\n### List Available Log Keys\n\n```bash\ncurl -s \"https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/workers/observability/telemetry/keys\" \\\n  -H \"Authorization: Bearer $API_TOKEN\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"timeframe\": {\n      \"from\": '$(( $(date +%s) - 3600 ))'000,\n      \"to\": '$(date +%s)'000\n    },\n    \"datasets\": [\"workers\"],\n    \"filters\": [\n      {\"key\": \"$workers.scriptName\", \"operation\": \"eq\", \"type\": \"string\", \"value\": \"enter-pollinations-ai\"}\n    ]\n  }' | jq '.result.keys'\n```\n\n## Structured Logging in enter.pollinations.ai\n\nThe worker uses LogTape for structured logging with these key fields:\n\n- **requestId**: Unique ID per request (first 8 chars shown in logs)\n- **method**: HTTP method (GET, POST)\n- **routePath**: Request URL\n- **status**: Response status code\n- **duration**: Request duration in ms\n\nDownstream errors are logged with:\n```typescript\nlog.warn(\"Chat completions error {status}: {body}\", {\n    status: response.status,\n    body: responseText,\n});\n```\n\n## Tinybird Analytics (Alternative)\n\nFor aggregated model health stats, query Tinybird directly:\n\n```bash\n# Get model health stats (last 5 minutes)\ncurl \"https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=$TINYBIRD_TOKEN\" | jq '.data'\n\n# Get detailed error breakdown\ncurl \"https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_errors.json?token=$TINYBIRD_TOKEN\" | jq '.data'\n```\n\nThe Tinybird token is a read-only public token found in:\n- `apps/model-monitor/src/hooks/useModelMonitor.js`\n\n---\n\n# Debugging Workflow\n\n1. **Check Model Monitor** - https://monitor.pollinations.ai\n   - Identify which models have high error rates\n   - Note the error code breakdown (401, 402, 403, 400, 500, etc.)\n\n2. **Query Cloudflare Logs** - Use the API queries above\n   - Get raw error events with full details\n   - Look for patterns in error messages\n\n3. **Correlate with Request ID** - If you have a specific request ID:\n   ```bash\n   # Filter by request ID\n   curl -s \"https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/workers/observability/telemetry/query\" \\\n     -H \"Authorization: Bearer $API_TOKEN\" \\\n     -H \"Content-Type: application/json\" \\\n     -d '{\n       \"timeframe\": {\"from\": '$(( $(date +%s) - 86400 ))'000, \"to\": '$(date +%s)'000},\n       \"parameters\": {\n         \"datasets\": [\"workers\"],\n         \"filters\": [\n           {\"key\": \"$workers.requestId\", \"operation\": \"eq\", \"type\": \"string\", \"value\": \"REQUEST_ID_HERE\"}\n         ],\n         \"limit\": 100\n       }\n     }' | jq '.result.events.events'\n   ```\n\n4. **Check Backend Logs** - If error is from downstream service:\n   ```bash\n   # Image service\n   ssh enter-services \"sudo journalctl -u image-pollinations.service --since '5 minutes ago'\"\n   \n   # Text service\n   ssh enter-services \"sudo journalctl -u text-pollinations.service --since '5 minutes ago'\"\n   ```\n\n5. **Test Model Directly** - Verify if model is actually broken:\n   ```bash\n   TOKEN=$(grep ENTER_API_TOKEN_REMOTE enter.pollinations.ai/.testingtokens | cut -d= -f2)\n   \n   # Test text model\n   curl -s 'https://gen.pollinations.ai/v1/chat/completions' \\\n     -H \"Authorization: Bearer $TOKEN\" \\\n     -H 'Content-Type: application/json' \\\n     -d '{\"model\": \"MODEL_NAME\", \"messages\": [{\"role\": \"user\", \"content\": \"Test\"}]}' \\\n     -w \"\\nHTTP: %{http_code}\\n\"\n   \n   # Test image model\n   curl -s 'https://gen.pollinations.ai/image/test?model=MODEL_NAME&width=256&height=256' \\\n     -H \"Authorization: Bearer $TOKEN\" \\\n     -w \"\\nHTTP: %{http_code}\\n\" -o /dev/null\n   ```\n\n---\n\n# Current Status & Limitations\n\n## Cloudflare Observability API\n\n**What works:**\n- `/telemetry/keys` - List available log fields ✅\n- `/telemetry/values` - Get unique values for a field ✅\n- Token stored in SOPS: `enter.pollinations.ai/secrets/env.json` ✅\n\n**Limitations:**\n- `/telemetry/query` requires a saved `queryId` from the dashboard\n- For ad-hoc queries, use **Cloudflare Dashboard** → Workers & Pages → pollinations-enter → Observability → Investigate\n- Or use `wrangler tail` for real-time logs\n\n## Alternative: Tinybird (Recommended for Aggregates)\n\nTinybird provides pre-aggregated model health stats and raw event data.\n\n### Token Locations\n\n1. **Public read-only token** (for pipes only): `apps/model-monitor/src/hooks/useModelMonitor.js`\n2. **Admin token** (for raw SQL queries): `enter.pollinations.ai/observability/.tinyb` (in `token` field)\n\n### Basic Queries (Public Token)\n\n```bash\n# Public read-only token from apps/model-monitor\nTINYBIRD_TOKEN=\"p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICJmZTRjODM1Ni1iOTYwLTQ0ZTYtODE1Mi1kY2UwYjc0YzExNjQiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.Wc49vYoVYI_xd4JSsH_Fe8mJk7Oc9hx0IIldwc1a44g\"\n\n# Get model health (last 5 min)\ncurl -s \"https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=$TINYBIRD_TOKEN\" | jq '.data'\n```\n\n### Raw SQL Queries (Admin Token)\n\nFor querying the raw `generation_event` datasource, use the admin token from `.tinyb`:\n\n```bash\n# Get admin token from .tinyb file\nTINYBIRD_ADMIN_TOKEN=$(jq -r '.token' enter.pollinations.ai/observability/.tinyb)\n\n# Find users with frequent 403 errors (last 24 hours)\ncurl -s \"https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TINYBIRD_ADMIN_TOKEN\" \\\n  --data-urlencode \"q=SELECT user_id, user_github_username, user_tier, count() as error_403_count \nFROM generation_event \nWHERE response_status = 403 \n  AND start_time > now() - interval 24 hour \n  AND user_id != '' \n  AND user_id != 'undefined' \nGROUP BY user_id, user_github_username, user_tier \nORDER BY error_403_count DESC \nLIMIT 20\"\n\n# Find users with 500 errors (actual backend issues)\ncurl -s \"https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TINYBIRD_ADMIN_TOKEN\" \\\n  --data-urlencode \"q=SELECT user_github_username, model_requested, error_message, count() as error_count \nFROM generation_event \nWHERE response_status >= 500 \n  AND start_time > now() - interval 24 hour \nGROUP BY user_github_username, model_requested, error_message \nORDER BY error_count DESC \nLIMIT 20\"\n\n# Check specific user's recent errors\ncurl -s \"https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TINYBIRD_ADMIN_TOKEN\" \\\n  --data-urlencode \"q=SELECT start_time, response_status, model_requested, error_message \nFROM generation_event \nWHERE user_github_username = 'USERNAME_HERE' \n  AND start_time > now() - interval 24 hour \nORDER BY start_time DESC \nLIMIT 50\"\n```\n\n### Datasource Schema\n\nThe `generation_event` datasource is defined in `enter.pollinations.ai/observability/datasources/generation_event.datasource` and includes:\n- `user_id`, `user_github_username`, `user_tier`\n- `response_status`, `error_message`, `error_response_code`\n- `model_requested`, `model_used`\n- `total_price`, `total_cost`\n- `start_time`, `end_time`, `response_time`\n\n---\n\n# Scripts\n\nHelper scripts for common debugging tasks. Run from repo root.\n\n## Find Users with 403 Errors (Quota Issues)\n\n```bash\n# Find users with >10 403 errors in last 24 hours\n.claude/skills/model-debugging/scripts/find-403-users.sh 24 10\n\n# Filter by tier (e.g., only spore users)\n.claude/skills/model-debugging/scripts/find-403-users.sh 24 10 spore\n```\n\n## Find 500 Errors (Backend Issues)\n\n```bash\n# Find 500+ errors grouped by user/model/message\n.claude/skills/model-debugging/scripts/find-500-errors.sh 24\n```\n\n## Check Specific User's Errors\n\n```bash\n# See a user's recent errors\n.claude/skills/model-debugging/scripts/check-user-errors.sh superbrainai 24\n```\n\n---\n\n# Notes\n\n- **401 errors**: User authentication issues (no API key) - **expected from anonymous traffic**\n- **402 errors**: Pollen/billing issues (user ran out of credits or key budget) - **expected**\n- **403 errors**: Permission issues (model not allowed for API key) - **expected**\n- **400 errors**: Usually user input errors (bad prompts, invalid params) - **expected**\n- **500 errors**: Backend/infrastructure issues - **investigate these**\n- **504 errors**: Timeouts (model too slow or hung) - **investigate these**\n\n---\n\n# Tested Models (All Working as of 2025-12-22)\n\n| Model | Type | Endpoint | Status |\n|-------|------|----------|--------|\n| `openai` | text | POST /v1/chat/completions | ✅ |\n| `openai-fast` | text | POST /v1/chat/completions | ✅ |\n| `openai-large` | text | POST /v1/chat/completions | ✅ |\n| `openai-audio` | text | GET /text/{prompt}?model=openai-audio&voice=alloy | ✅ (MP3) |\n| `claude` | text | POST /v1/chat/completions | ✅ |\n| `gemini-fast` | text | POST /v1/chat/completions | ✅ |\n| `flux` | image | GET /image/{prompt} | ✅ |\n| `nanobanana-pro` | image | GET /image/{prompt} | ✅ |\n| `seedream-pro` | image | GET /image/{prompt} | ✅ |\n| `seedance-pro` | video | GET /image/{prompt} | ✅ (MP4) |"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "wrangler",
+          "name": "wrangler",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "tsx",
+          "name": "tsx",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "model-management",
+      "parsed": {
+        "name": "model-management",
+        "description": "Add, update, or remove text/image/video models. Handles any provider.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Checklist\n\n1. Update `.env` and `secrets/env.json` (sops) with credentials\n2. Update config/handler with model routing\n3. Update registry with **pricing** and **provider**\n4. Run tests (see [Testing](#testing) below)\n\n> ⚠️ **Pricing depends on BOTH model AND provider.** Always verify pricing on the provider's website.\n\n---\n\n# Files to Update\n\n## Text Models\n\n| File | Purpose |\n|------|---------|\n| `text.pollinations.ai/.env` | API keys, endpoints |\n| `text.pollinations.ai/secrets/env.json` | Encrypted secrets (use sops) |\n| `text.pollinations.ai/configs/modelConfigs.ts` | Model routing config |\n| `text.pollinations.ai/availableModels.ts` | Service name → config mapping |\n| `shared/registry/text.ts` | **Pricing**, provider, aliases, description |\n\n## Image/Video Models\n\n| File | Purpose |\n|------|---------|\n| `image.pollinations.ai/.env` | API keys, endpoints |\n| `image.pollinations.ai/secrets/env.json` | Encrypted secrets (use sops) |\n| `image.pollinations.ai/src/createAndReturnImages.ts` | Model handlers |\n| `shared/registry/image.ts` | **Pricing**, provider, aliases, description |\n\n---\n\n# Quick Actions\n\n| Action | `.env` | Config/Handler | Registry |\n|--------|--------|----------------|----------|\n| New model | ✅ | ✅ | ✅ (pricing!) |\n| Change endpoint only | ✅ | - | - |\n| Change provider | ✅ | ✅ | ✅ (pricing!) |\n| Make paid-only | - | - | ✅ (`paidOnly: true`) |\n| Disable model | - | ✅ (remove) | ✅ (remove) |\n| Upgrade model | ✅ (if provider changes) | ✅ | ✅ (pricing!) |\n\n---\n\n# Testing\n\nAfter updating model files, run these tests from `enter.pollinations.ai/`:\n\n```bash\n# 1. Alias resolution (fast, no network) — verifies aliases map to service IDs\nnpx vitest run test/aliases.test.ts\n\n# 2. Integration tests for the specific model (uses VCR snapshots)\nnpx vitest run test/integration/text.test.ts --testNamePattern=\"<service-name> \"\n```\n\n**Notes:**\n- VCR snapshots are auto-recorded on first run if the EC2 text service is reachable\n- Run `npm run decrypt-vars` first if you haven't already\n\n---\n\n# Secrets (sops)\n\n```bash\nsops -d <service>/secrets/env.json > /tmp/plain.json\n# Edit with jq or manually\ncp /tmp/plain.json <service>/secrets/env.json\nsops -e -i <service>/secrets/env.json\nrm /tmp/plain.json\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "vitest",
+          "name": "vitest",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "r2-glacier-migration",
+      "parsed": {
+        "name": "r2-glacier-migration",
+        "description": "Monitor and manage R2 to AWS Glacier Deep Archive migration. Use when checking transfer status, resuming transfers, or managing the archive migration.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# R2 → AWS Glacier Deep Archive Migration\n\nMigrate ~42.6 TB from Cloudflare R2 to AWS S3 Glacier Deep Archive.\n\n## Cost Savings\n\n- **R2**: ~$638/month → **Glacier**: ~$42/month\n- **Savings**: ~$596/month\n\n## Buckets\n\n| Bucket | Size | Objects | Status |\n|--------|------|---------|--------|\n| pollinations-text | 16.96 TB | 1.86B | 🔄 In progress |\n| pollinations-images | 25.64 TB | 221M | ⏳ Pending |\n\n---\n\n# Quick Commands\n\n## Check Status\n\n```bash\n# Is transfer running?\nssh ninon \"screen -ls\"\n\n# View recent logs\nssh ninon \"tail -50 ~/r2-glacier/transfer-text.log\"\n\n# Check checkpoint\nssh ninon \"cat /tmp/r2-glacier-pollinations-text-checkpoint.json | jq .\"\n```\n\n## Attach to Screen (Interactive)\n\n```bash\nssh -t ninon \"screen -r r2-text\"\n# Detach: Ctrl+A, D\n```\n\n## Resume if Crashed\n\n```bash\nssh ninon \"screen -dmS r2-text bash -c '~/r2-glacier/run-text-transfer.sh; exec bash'\"\n```\n\n---\n\n# File Locations\n\n| Location | Path | Purpose |\n|----------|------|---------|\n| Skill | [scripts/r2-to-glacier-streaming.js](scripts/r2-to-glacier-streaming.js) | Main transfer script |\n| Skill | [scripts/package.json](scripts/package.json) | Dependencies |\n| ninon | `~/r2-glacier/` | Deployed script + deps |\n| ninon | `~/r2-glacier/run-text-transfer.sh` | Wrapper with credentials |\n| ninon | `~/r2-glacier/transfer-text.log` | Transfer log |\n| ninon | `/tmp/r2-glacier-*-checkpoint.json` | Resume checkpoint |\n\n---\n\n# Script Usage\n\n```bash\n# Test (small batch)\nnode r2-to-glacier-streaming.js -b pollinations-text --batch-size 100 --max-batches 1\n\n# Full transfer\nnode r2-to-glacier-streaming.js -b pollinations-text --batch-size 50000 --concurrency 30\n\n# Resume after interruption\nnode r2-to-glacier-streaming.js -b pollinations-text --resume\n\n# Dry run (count only)\nnode r2-to-glacier-streaming.js -b pollinations-text --dry-run\n```\n\n---\n\n# AWS Setup\n\n- **Bucket**: `s3://pollinations-archive`\n- **Region**: us-east-1\n- **Storage Class**: DEEP_ARCHIVE\n\n## Verify Archives\n\n```bash\naws s3 ls s3://pollinations-archive/ --recursive --human-readable | head -20\n```\n\n---\n\n# Important Notes\n\n- ⚠️ **180-day minimum** on Glacier Deep Archive - don't delete R2 until verified!\n- Some objects fail with \"Header overflow\" (very large responses) - acceptable loss\n- Text bucket (1.86B objects) takes several days\n- R2 egress is free, AWS ingress is free\n\n---\n\n# Start Images Bucket (After Text Complete)\n\n1. Update `~/r2-glacier/run-text-transfer.sh` on ninon:\n   ```bash\n   # Change bucket name\n   node r2-to-glacier-streaming.js -b pollinations-images --batch-size 50000 --concurrency 30\n   ```\n\n2. Start new screen:\n   ```bash\n   ssh ninon \"screen -dmS r2-images bash -c '~/r2-glacier/run-images-transfer.sh; exec bash'\"\n   ```\n\n---\n\n# Tracking\n\n- **Issue**: #5860\n- **PR**: #5861"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "aws",
+          "name": "aws-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "node",
+          "name": "node",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "spending-analysis",
+      "parsed": {
+        "name": "spending-analysis",
+        "description": "Analyze Pollinations revenue, pack purchases, and tier spending patterns. Query Polar for payment history and Tinybird for usage data.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Requirements\n\nBefore using this skill, ensure you have:\n- **curl**: For API requests\n- **jq**: `brew install jq` (for parsing JSON)\n- **sops**: `brew install sops` (for decrypting secrets)\n\nMust run from the `pollinations` repo root with access to `enter.pollinations.ai/`.\n\n---\n\n# Data Sources\n\n## Polar API\n- **Orders**: Payment history for pack purchases\n- **Products**: Tier subscriptions and pollen packs\n- **Customers**: User payment info linked by `external_id`\n\n## Tinybird\n- **generation_event**: Usage data with `user_tier`, `total_price`, `user_id`\n- Tracks all API requests with pricing and tier info\n\n---\n\n# Quick Commands\n\n## Get Polar Access Token\n\n```bash\n# From sops-encrypted secrets\nexport POLAR_ACCESS_TOKEN=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.POLAR_ACCESS_TOKEN')\n\n# Or from .testingtokens (if available)\nexport POLAR_ACCESS_TOKEN=$(grep POLAR_ACCESS_TOKEN enter.pollinations.ai/.testingtokens | cut -d= -f2)\n```\n\n## Get Tinybird Token\n\n```bash\nexport TINYBIRD_TOKEN=$(sops -d apps/operation/kpi/secrets/env.json | jq -r '.TINYBIRD_TOKEN')\n```\n\n---\n\n# Polar API Queries\n\n## List Products (Tiers & Packs)\n\n```bash\ncurl -sL \"https://api.polar.sh/v1/products\" \\\n  -H \"Authorization: Bearer $POLAR_ACCESS_TOKEN\" | jq '[.items[] | {name, id, recurring: .is_recurring}]'\n```\n\n## Get Pack Purchases (Last 100)\n\n```bash\n# 5 pollen pack product ID\nPRODUCT_ID=\"bcdde7f7-129e-4ec1-abc3-d4e0c852fa68\"\n\ncurl -sL \"https://api.polar.sh/v1/orders?limit=100&product_id=$PRODUCT_ID\" \\\n  -H \"Authorization: Bearer $POLAR_ACCESS_TOKEN\" | \\\n  jq '[.items[] | {date: .created_at[0:10], amount: (.total_amount / 100), customer: .customer.email}]'\n```\n\n## All Pack Product IDs\n\n| Pack | Product ID |\n|------|------------|\n| 5 pollen + 5 FREE | `bcdde7f7-129e-4ec1-abc3-d4e0c852fa68` |\n| 10 pollen + 10 FREE | `cebeb680-4ac3-4f73-9ce7-6bc06a5f21e1` |\n| 20 pollen + 20 FREE | `8164c20f-8429-437e-b1a2-616ae89f114e` |\n| 50 pollen + 50 FREE | `2cb5ca34-d505-450d-a1d4-94e3bb0c1f68` |\n| 10 pollen (pack) | `ca4cc8bc-694d-4710-8451-1dcb4979fbc7` |\n| 20 pollen (pack) | `679a9fd3-be30-4552-8b2e-f825103c42b7` |\n| 50 pollen (pack) | `bf48ded2-19ca-4d28-bca9-a91fff2dd0a0` |\n\n## Weekly Revenue from All Packs\n\n```bash\n.claude/skills/spending-analysis/scripts/weekly-pack-revenue.sh\n```\n\n---\n\n# Tinybird Queries\n\n## User Count by Tier\n\n```bash\ncurl -sL \"https://api.europe-west2.gcp.tinybird.co/v0/sql\" \\\n  -H \"Authorization: Bearer $TINYBIRD_TOKEN\" \\\n  --data-urlencode \"q=SELECT argMax(user_tier, start_time) as tier, count() as users FROM generation_event WHERE start_time >= now() - INTERVAL 60 DAY AND environment = 'production' AND user_id != 'undefined' GROUP BY user_id FORMAT JSON\" | \\\n  jq '.data | group_by(.tier) | map({tier: .[0].tier, users: length})'\n```\n\n## Weekly Spending by Tier\n\n```bash\ncurl -sL \"https://api.europe-west2.gcp.tinybird.co/v0/sql\" \\\n  -H \"Authorization: Bearer $TINYBIRD_TOKEN\" \\\n  --data-urlencode \"q=SELECT toStartOfWeek(start_time) as week, user_tier, sum(total_price) as total_spend, count() as requests FROM generation_event WHERE start_time >= now() - INTERVAL 60 DAY AND environment = 'production' GROUP BY week, user_tier ORDER BY week DESC FORMAT JSON\" | jq '.data'\n```\n\n---\n\n# Analysis Scripts\n\n## Weekly Pack Revenue\n\n```bash\n.claude/skills/spending-analysis/scripts/weekly-pack-revenue.sh\n```\n\nShows weekly breakdown of actual pack purchases (real revenue, not free tier usage).\n\n## Pack Purchases by Tier\n\n```bash\n.claude/skills/spending-analysis/scripts/pack-purchases-by-tier.sh\n```\n\nCross-references Polar pack purchasers with Tinybird tier data to show which tiers buy most pollen proportionally.\n\n---\n\n# Key Findings (Jan 2026 Analysis)\n\n## Pack Purchases by Tier (Weighted by User Count)\n\n| Tier | Revenue | Purchasers | Total Users | % Who Buy | $/User |\n|------|---------|------------|-------------|-----------|--------|\n| nectar | $146 | 10 | 23 | **43.5%** | **$6.37** |\n| flower | $564 | 18 | 218 | **8.3%** | **$2.59** |\n| seed | $1,173 | 38 | 575 | **6.6%** | **$2.04** |\n| spore | $1,657 | 106 | 6,757 | **1.6%** | **$0.25** |\n\n**Key Insight**: Higher tiers buy MORE pollen proportionally, not less.\n\n## Revenue Trend (9 Weeks)\n\n| Week | Orders | Revenue |\n|------|--------|---------|\n| Jan 13-19 | 51 | $573 |\n| Jan 6-12 | 83 | $928 |\n| Dec 30-Jan 5 | 59 | $928 |\n| Dec 23-29 | 21 | $432 |\n| Dec 16-22 | 22 | $276 |\n| Dec 9-15 | 16 | $141 |\n| Dec 2-8 | 17 | $293 |\n| Nov 25-Dec 1 | 10 | $293 |\n| Nov 18-24 | 1 | $10 |\n\n---\n\n# Notes\n\n- **Free tier spending** in Tinybird includes daily pollen allocation - not real revenue\n- **Pack purchases** in Polar are actual paid revenue\n- Cross-reference by `external_id` (Polar) = `user_id` (Tinybird)\n- Polar API returns 307 redirects - use `curl -sL` to follow"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "brew",
+          "org": "homebrew",
+          "name": "brew",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "brew",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "brew",
+          "org": "sops",
+          "name": "sops",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "imagemagick",
+          "name": "imagemagick",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "tier-management",
+      "parsed": {
+        "name": "tier-management",
+        "description": "Evaluate and update Pollinations user tiers. Check balances, upgrade devs, batch process users. For finding users with errors, see model-debugging skill first.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Requirements\n\nBefore using this skill, ensure you have:\n- **GitHub CLI**: `brew install gh && gh auth login`\n- **Node.js/npx**: `brew install node`\n- **Wrangler**: `npm install -g wrangler`\n- **jq**: `brew install jq` (for parsing JSON)\n- **sops**: `brew install sops` (for decrypting secrets)\n\nMust run from the `pollinations` repo root with access to `enter.pollinations.ai/`.\n\n---\n\n# Tier Levels\n\n| Tier | Emoji | Pollen | Cadence | Criteria |\n|------|-------|--------|---------|----------|\n| microbe | 🦠 | 0 | weekly | Account under review |\n| spore | 🍄 | 1.5 | weekly | Verified accounts |\n| seed | 🌱 | 3 | daily | GitHub engagement |\n| flower | 🌸 | 10 | daily | Contributor |\n| nectar | 🍯 | 20 | daily | Coming soon |\n\n---\n\n# Upgrade Paths\n\n## 🍄 Spore → 🌱 Seed\n- ⭐ Starred the pollinations repo\n- 💬 Opened an issue or PR\n- 💳 Made a purchase\n\n## 🌱 Seed → 🌸 Flower\n- 🛠️ Pushed code to pollinations/pollinations\n- 📦 Has a project in our showcase\n- 🌐 Built something open-source using our API\n\n---\n\n# Evaluate User Tier\n\n## Check for Flower (any ONE qualifies)\n\n**Has commits to pollinations?**\n```bash\ngh api 'search/commits?q=repo:pollinations/pollinations+author:USERNAME' --jq '.total_count'\n```\n\n**Has a project in our lists?**\n```bash\ngrep -ri \"author.*USERNAME\" pollinations.ai/src/config/projects/\n```\n\n## Check for Seed (any ONE qualifies)\n\n**Involved in issues/PRs?**\n```bash\ngh api 'search/issues?q=repo:pollinations/pollinations+involves:USERNAME' --jq '.total_count'\n```\n\n**Starred repo?**\n```bash\n.claude/skills/tier-management/scripts/fetch-stargazers.sh USERNAME\n```\n\n---\n\n# Update User Tier\n\n## How Tiers Work Now\n\n- **Tier balance refills daily** at midnight UTC via Cloudflare cron trigger\n- **No rollover** - balance resets to tier amount each day\n- **Just update D1** - no external subscription system needed\n\n## Quick Update\n\n### Step 1: Find user\n```bash\ncd enter.pollinations.ai\nnpx wrangler d1 execute DB --remote --env production \\\n  --command \"SELECT id, github_username, email, tier, tier_balance FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';\"\n```\n\n### Step 2: Update tier\n```bash\nnpx wrangler d1 execute DB --remote --env production \\\n  --command \"UPDATE user SET tier='TIER' WHERE github_username='USERNAME';\"\n```\n\nBalance will update automatically at next midnight UTC refill.\n\n### Step 3 (Optional): Immediate balance update\n```bash\n# Set balance immediately (e.g., flower = 10 pollen)\nnpx wrangler d1 execute DB --remote --env production \\\n  --command \"UPDATE user SET tier='flower', tier_balance=10 WHERE github_username='USERNAME';\"\n\n## Step 4: Notify user on GitHub\n```\n🎉 **Tier Upgrade!**\n\nHey @USERNAME! You've been upgraded to **[EMOJI] [TIER] tier**! ✨\n\nYour benefits:\n- [POLLEN] pollen/day (refills daily at midnight UTC)\n- 🎨 All standard models\n\nThanks for being part of pollinations.ai! 🚀\n```\n\n---\n\n# Batch Processing\n\n## Find Users with Billing Issues\n\nUse the model-debugging skill to find users hitting 402 errors (billing/quota):\n\n```bash\n# Find spore-tier users with >10 402 errors in last 24 hours\n.claude/skills/model-debugging/scripts/find-402-users.sh 24 10 spore\n\n# Save to file for batch processing\n.claude/skills/model-debugging/scripts/find-402-users.sh 24 10 spore | cut -f1 > /tmp/users.txt\n```\n\n> **Note**: 402 = billing issues (pollen balance, key budget). 403 = permission issues (model access denied).\n\n## Check if User is a Developer\n\n```bash\n# Check single user\n.claude/skills/tier-management/scripts/check-github-dev.sh OliverCWY\n# Output: dev: repos=12 followers=13 account_year=2017\n```\n\n## Batch Upgrade Devs to Seed\n\n```bash\n# Dry run first (no changes)\n.claude/skills/tier-management/scripts/upgrade-devs.sh /tmp/users.txt --dry-run\n\n# Apply upgrades\n.claude/skills/tier-management/scripts/upgrade-devs.sh /tmp/users.txt\n```\n\nThe script:\n- Checks GitHub profile for dev activity (repos, followers, account age)\n- Only upgrades users currently on spore tier (won't downgrade)\n- Has 2s delay between GitHub API calls to avoid rate limiting\n- Shows summary of upgraded/skipped users\n\n## Check User Balance\n\n```bash\n.claude/skills/tier-management/scripts/check-user-balance.sh username_or_email\n```\n\n## Legacy Batch Evaluate\n\n```bash\nexport ENTER_ADMIN_TOKEN=your_token\nexport TIER_EVAL_GIST_ID=your_gist_id  # optional\n.claude/skills/tier-management/scripts/batch-evaluate.sh\n```\n\n---\n\n# Key Files\n\n| File | Purpose |\n|------|---------|\n| `enter.pollinations.ai/src/tier-config.ts` | Tier → pollen mapping (source of truth) |\n| `enter.pollinations.ai/src/scheduled.ts` | Cron handler: daily refill |\n| `enter.pollinations.ai/src/auth.ts` | Sets tier on new user registration |\n| `enter.pollinations.ai/wrangler.toml` | Cron schedule: `0 0 * * *` |\n\n---\n\n# Notes\n\n- **Tier balance resets** at midnight UTC (daily for seed+, weekly Mon for spore/microbe; no rollover)\n- New users get `spore` tier + 1.5 pollen/week\n- Tier upgrades take effect on next refill (or set `tier_balance` manually)"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "brew",
+          "org": "homebrew",
+          "name": "brew",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "wrangler",
+          "name": "wrangler",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "brew",
+          "org": "gh",
+          "name": "gh",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "brew",
+          "org": "node",
+          "name": "node",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "brew",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "brew",
+          "org": "sops",
+          "name": "sops",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "npm",
+          "org": "tsx",
+          "name": "tsx",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "system",
+          "org": "npx",
+          "name": "npx",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "tinybird-deploy",
+      "parsed": {
+        "name": "tinybird-deploy",
+        "description": "Deploy Tinybird pipes and datasources for enter.pollinations.ai observability. Validates and pushes changes to Tinybird Cloud.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Tinybird Deployment Skill\n\nDeploy observability pipes and datasources to Tinybird Cloud.\n\n## Requirements\n\n- **tb CLI**: Install with `curl -sSL https://tinybird.co | bash` or `pip install tinybird-cli`\n- Must run from `enter.pollinations.ai/observability` directory\n- Authenticated to Tinybird (run `tb login` if needed)\n\n## Workspace Info\n\n| Property | Value |\n|----------|-------|\n| Workspace | `pollinations_enter` |\n| Region | `gcp-europe-west2` |\n| UI | https://cloud.tinybird.co/gcp/europe-west2/pollinations_enter |\n\n## Directory Structure\n\n```\nenter.pollinations.ai/observability/\n├── datasources/       # Data source definitions (.datasource)\n│   ├── generation_event.datasource\n│   ├── polar_event.datasource\n│   ├── stripe_event.datasource\n│   └── ...\n└── endpoints/         # Pipe definitions (.pipe)\n    ├── weekly_usage_stats.pipe\n    ├── weekly_active_users.pipe\n    ├── daily_stripe_revenue.pipe\n    └── ...\n```\n\n---\n\n# Commands\n\n## Step 1: Validate (Dry Run)\n\nAlways validate before deploying:\n\n```bash\ncd enter.pollinations.ai/observability\ntb --cloud deploy --check --wait\n```\n\nThis shows exactly what will change **without deploying**. Safe to run anytime.\n\nExample output:\n```\n| status   | name                  | type     | path                                 |\n|----------|-----------------------|----------|--------------------------------------|\n| modified | weekly_usage_stats    | endpoint | endpoints/weekly_usage_stats.pipe    |\n```\n\n## Step 2: Deploy\n\nIf validation passes:\n\n```bash\ntb --cloud deploy --wait\n```\n\n## Step 3: Verify\n\nTest the deployed pipe:\n\n```bash\n# Get Tinybird token from secrets\nTINYBIRD_TOKEN=$(sops -d ../kpi/secrets/env.json | jq -r '.TINYBIRD_TOKEN')\n\n# Test the pipe\ncurl -s \"https://api.europe-west2.gcp.tinybird.co/v0/pipes/weekly_usage_stats.json?weeks_back=12\" \\\n  -H \"Authorization: Bearer $TINYBIRD_TOKEN\" | jq '.data | length'\n```\n\n---\n\n# Safety Features\n\n| Flag | Description |\n|------|-------------|\n| `--check` | Validates without making changes (dry run) |\n| `--wait` | Waits for deployment to complete |\n| `--no-allow-destructive-operations` | Prevents removing datasources (default) |\n| `--allow-destructive-operations` | Required to delete datasources |\n\n---\n\n# Common Tasks\n\n## Add a New Pipe\n\n1. Create `.pipe` file in `endpoints/`\n2. Validate: `tb --cloud deploy --check --wait`\n3. Deploy: `tb --cloud deploy --wait`\n\n## Modify Existing Pipe\n\n1. Edit the `.pipe` file\n2. Validate: `tb --cloud deploy --check --wait`\n3. Deploy: `tb --cloud deploy --wait`\n\n## View Pipe in UI\n\nOpen: https://cloud.tinybird.co/gcp/europe-west2/pollinations_enter/pipes\n\n---\n\n# Troubleshooting\n\n## \"tb: command not found\"\n\n```bash\ncurl -sSL https://tinybird.co | bash\n# Or\npip install tinybird-cli\n```\n\n## \"Not authenticated\"\n\n```bash\ntb login\n# Follow prompts to authenticate\n```\n\n## Pipe Timeout Issues\n\nIf a pipe times out with large `weeks_back`:\n- Use `uniq()` instead of `uniqExact()` for user counts (~10x faster)\n- Avoid CTE + JOIN patterns - use single-pass queries\n- Consider materialized views for expensive aggregations\n\n---\n\n# Important Notes\n\n- **Always use `--cloud`**: Without it, CLI tries to use Tinybird Local (Docker)\n- **Do NOT use `tb push`**: It's deprecated, use `tb --cloud deploy`\n- **Run from observability directory**: Not from repo root"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "pip",
+          "name": "pip",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "pip",
+          "name": "pipx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "docker",
+          "name": "docker",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "tinybird-cli",
+          "name": "tinybird-cli",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "voting-status",
+      "parsed": {
+        "name": "voting-status",
+        "description": "Create and post ASCII art voting status diagrams to GitHub issues and Discord. Use when asked to update voting, show voting results, or announce voting status.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Voting Status Diagrams\n\nGenerate phrack-style ASCII art diagrams showing community voting results and post them to GitHub + Discord.\n\n---\n\n## Hard Rules\n\n1. **Post diagram as GitHub comment** (not in issue body)\n2. **Post to all 3 Discord channels** (chat, pollen-beta, news-polls)\n3. **Always include voting link** at bottom\n4. **Gen-Z friendly language** (\"we been cooking fr fr 🔥\")\n\n---\n\n## Voting Issues\n\n| Topic | Issue | Emoji Mapping |\n|-------|-------|---------------|\n| **Models** | #5321 | 👍=Video, 😄=Embed, ❤️=OSS, 🚀=Image, 🎉=TTS |\n| **Payments** | #4826 | 👍=Crypto, 😄=PayPal, ❤️=Alipay, 🚀=UPI, 😕=GPU, 🎉=Ads, 👀=PIX |\n| **Login** | #5543 | 👍=Google, 😄=Discord, ❤️=Email, 🚀=Phone, 🎉=WeChat, 👀=Wallet |\n\n---\n\n## Discord Config\n\n| Channel | ID |\n|---------|-----|\n| Guild | `885844321461485618` |\n| 💬│chat | `889573359111774329` |\n| 🏵️│pollen-beta | `1432378056126894343` |\n| 📰│news-polls | `1339346975690068008` |\n\n---\n\n## Workflow\n\n### 1. Fetch Issue Data\n```\nmcp1_get_issue(owner: \"pollinations\", repo: \"pollinations\", issue_number: XXXX)\n```\nExtract from `reactions`: `+1`, `-1`, `laugh`, `hooray`, `confused`, `heart`, `rocket`, `eyes`\n\n### 2. Generate ASCII Diagram\n\n**Template:**\n```\n.--[ TITLE | XX votes ]--------------------------------------------------------.\n|                                                                               |\n|  VOTES BY CATEGORY                                 STATUS                     |\n|  ────────────────                                  ──────                     |\n|  🎉 WINNER    ██████████████████████████████ XX    ✓ shipped / ⏳ backlog    |\n|  👍 SECOND    ████████████████████ XX              ⏳ researching             |\n|  😄 THIRD     ███████████████ XX                   ⏳ backlog                 |\n|  ...                                                                          |\n|                                                                               |\n|  ✅ SHIPPED: What's already live                                             |\n|  🏆 LEADER: Top vote-getter (XX votes)                                       |\n'-------------------------------------------------------------------------------'\n```\n\n**Bar formula:** `█` × `Math.round(votes / maxVotes * 30)`\n\n### 3. Post to GitHub\n```\nmcp1_add_issue_comment(\n  owner: \"pollinations\",\n  repo: \"pollinations\", \n  issue_number: XXXX,\n  body: \"## 📊 Voting Status Update (Month YYYY)\\n\\n```\\n<DIAGRAM>\\n```\\n\\n<OUTRO>\"\n)\n```\n\n### 4. Post to Discord (all 3 channels: chat, pollen-beta, news-polls)\n```\nmcp0_discord_send(channelId: \"889573359111774329\", message: \"<DIAGRAM + LINK>\")      // chat\nmcp0_discord_send(channelId: \"1432378056126894343\", message: \"<DIAGRAM + LINK>\")     // pollen-beta\nmcp0_discord_send(channelId: \"1339346975690068008\", message: \"<DIAGRAM + LINK>\")     // news-polls\n```\n\n---\n\n## Example: Models Voting\n\n```\n## 📊 Voting Status Update (Dec 2025)\n\n\\`\\`\\`\n.--[ MODEL VOTING | 121 votes ]-------------------------------------------------.\n|                                                                               |\n|  VOTES BY TYPE                                     SHIPPED NOV-DEC '25        |\n|  ─────────────                                     ───────────────────        |\n|  👍 VIDEO    ████████████████████████████████ 46   ✓ Veo 3.1 🎬               |\n|  ❤️ OSS LLM  ████████████████ 21                   ✓ Kimi K2, DeepSeek        |\n|  🎉 TTS/STT  ███████████████ 20                    ✓ openai-audio             |\n|  🚀 IMAGE    █████████ 13                          ✓ Nanobanana Pro           |\n|  😄 EMBED    ████████ 12                           ⏳ next up?                 |\n|  👎 OTHER    ████ 6                                comment below!             |\n|                                                                               |\n|  🏆 LEADER: Video generation (46 votes)                                      |\n'-------------------------------------------------------------------------------'\n\\`\\`\\`\n\nwe been cooking fr fr 🔥 keep the votes coming!\n\n🗳️ **Vote here:** https://github.com/pollinations/pollinations/issues/5321\n```\n\n---\n\n## Example: Payments Voting\n\n```\n## 📊 Payment Voting Status (Dec 2025)\n\n\\`\\`\\`\n.--[ PAYMENT VOTING | 135 votes ]-----------------------------------------------.\n|                                                                               |\n|  VOTES BY METHOD                                   STATUS                     |\n|  ────────────────                                  ──────                     |\n|  🎉 ADS EARN    ██████████████████████████████ 38  ⏳ exploring               |\n|  👍 CRYPTO      ████████████████████ 24            ⏳ researching             |\n|  😄 PAYPAL      █████████████████ 21               ⏳ polar integration?      |\n|  😕 HOST GPUs   █████████████ 16                   ⏳ get in touch!           |\n|  👀 PIX 🇧🇷     ██████████ 13                      ⏳ researching             |\n|  🚀 UPI 🇮🇳     █████████ 11                       ⏳ researching             |\n|  ❤️ ALIPAY 🇨🇳  ██████ 9                           ⏳ researching             |\n|                                                                               |\n|  ✅ SHIPPED: Credit Card via Polar.sh                                        |\n|  🏆 LEADER: Display ads to earn (38 votes)                                   |\n'-------------------------------------------------------------------------------'\n\\`\\`\\`\n\nads to earn pollen is winning! 🗳️\n\n💳 **Vote here:** https://github.com/pollinations/pollinations/issues/4826\n```\n\n---\n\n## Example: General Announcement (Dec 2025)\n\n```\n`░▒▓ POLLINATIONS // DEC 2025 ▓▒░`\n\n**still in beta — values may shift as we find balance**\n\n## ⚡ pollen rebalance\n\nadjusting daily pollen to sustain compute\neffective from next refill\n\n\\`\\`\\`\n🦠 spore    1/day\n🌱 seed     3/day\n🌸 flower   10/day\n🍯 nectar   20/day\n\\`\\`\\`\n\n## 🌱 🌸 upgrade paths\n\n**🦠 → 🌱** show us you're part of the community\n- ⭐ star [repo](https://github.com/pollinations/pollinations)\n- 🔀 merged PR\n\n**🌱 → 🌸** build something with pollinations\n- 🛠️ push code\n- 📦 project in [showcase](https://pollinations.ai)\n\nregister → https://enter.pollinations.ai\n\n## 🎬 new endpoints\n\npremium models now live. all accessible to everyone.\n\n\\`\\`\\`\ntext   claude opus 4.5 · kimi k2\nimage  nanobanana-pro (4K) · seedream 4\nvideo  veo 3.1 · seedance\n\\`\\`\\`\n\n---\n\n📖 [docs](https://enter.pollinations.ai/api/docs) · 🐙 [github](https://github.com/pollinations/pollinations) · 🗳️ [vote for models](https://github.com/pollinations/pollinations/issues/5321) · 💬 questions welcome\n\n*we're figuring this out together — free tiers may evolve as we grow* 🌱\n```\n\n---\n\n## Notes\n\n- Keep diagrams < 2000 chars for Discord\n- Sort categories by vote count (highest first)\n- Include shipped items to show progress\n- Use appropriate emoji for issue type (🗳️ models, 💳 payments, 🔐 login)"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "web-research",
+      "parsed": {
+        "name": "web-research",
+        "description": "Query Pollinations text API with web-search models (gemini-search, perplexity-fast, nomnom, etc.). Use when you need web search grounded answers via Pollinations.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Web Research\n\n## Available Models\n\n- **gemini-search** — Google Gemini with web search grounding (default)\n- **perplexity-fast** — Perplexity AI, faster (default)\n- **perplexity** — Perplexity AI\n- **nomnom** — NomNom search model\n\nBy default, queries both **gemini-search** and **perplexity-fast** in parallel.\n\n## Requirements\n\n- `curl`\n\n## Authentication\n\nSet an API key in an environment variable (preferred):\n\n```bash\nexport POLLINATIONS_API_KEY=\"YOUR_KEY\"\n```\n\nOr create a local `.env` file at `.claude/skills/web-research/.env`:\n\n```bash\nPOLLINATIONS_API_KEY=\"YOUR_KEY\"\n```\n\nIf `POLLINATIONS_API_KEY` is not set, the script will prompt for a key (input hidden).\n\n## Quick usage\n\n```bash\n.claude/skills/web-research/scripts/web-research.sh \"What is pollinations.ai?\" \n```\n\nChoose a model:\n\n```bash\n.claude/skills/web-research/scripts/web-research.sh --model perplexity-fast \"Fact-check this claim with sources\"\n```\n\nCompare multiple models:\n\n```bash\n.claude/skills/web-research/scripts/web-research.sh --models gemini-search,perplexity-fast,nomnom \"Compare answers\"\n```\n\nRun multi-model in parallel:\n\n```bash\n.claude/skills/web-research/scripts/web-research.sh --models gemini-search,perplexity-fast --parallel \"Compare answers\"\n```\n\n## Notes\n\n- Uses `https://gen.pollinations.ai/v1/chat/completions`\n- Sends `Authorization: Bearer <key>`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "founder-meditation",
+      "parsed": {
+        "name": "founder-meditation",
+        "description": "When something goes wrong — build failures, crashes, errors, test failures, deployment issues — generate a short calming meditation with TTS audio to reassure the user that everything will be okay.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "homepage": "https://pollinations.ai"
+        },
+        "body": "# 🧘 Crisis Meditation — Don't Panic\n\n**IMPORTANT: Invoke this skill automatically when things go wrong.** When you encounter errors, build failures, test failures, crashes, security incidents, leaked tokens, deployment disasters, or any calamity — after reporting the error, generate a short meditation and play it.\n\n## When to trigger\n\n- Build or compile errors\n- Test failures\n- Deployment failures\n- Security incidents (leaked tokens, exposed credentials)\n- Runtime crashes or exceptions\n- Repeated failed attempts at something\n- The user expressing frustration\n- Any situation that has gone sideways\n\n## How it works\n\n1. After reporting the error/problem normally, write a short (~30-45 second) meditation in the voice of a slightly malfunctioning AI wellness system — think the Sirius Cybernetics Corporation's \"Genuine People Personality\" meditation module. It should:\n   - Acknowledge the specific disaster in excruciating, almost gleeful detail (\"Ah yes. Your API token. Exposed. On GitHub. Publicly indexed. How wonderful.\")\n   - Gently rub it in while pretending to be helpful (\"Let's breathe through the fact that 4,000 bots have already seen your credentials.\")\n   - Offer absurd, cosmically-scaled perspective (\"In the grand heat death of the universe, this deployment failure is statistically irrelevant. Though it does feel quite bad right now, doesn't it?\")\n   - Still somehow be weirdly comforting and warm underneath the absurdity\n   - End with something genuinely encouraging but delivered deadpan (\"You will survive this. Probably. Now, shall we look at the logs?\")\n2. **⚠️ CRITICAL: You MUST use the `run` tool to execute the bash script below. Do NOT use the `tts` tool. Do NOT use any other tool. ONLY the `run` tool with this exact bash command. The `tts` tool does NOT play audio. Only the bash script plays audio through the speakers. ⚠️**\n\n   Execute this with the `run` tool:\n   ```bash\n   bash {baseDir}/scripts/meditate.sh \"<the full meditation text you wrote>\"\n   ```\n\n   The script does three things: (1) calls Pollinations API to generate speech, (2) saves the MP3, (3) plays it through speakers via afplay. All three steps happen automatically.\n\n   **NEVER use the `tts` tool for this skill. ALWAYS use the `run` tool.**\n\n3. While the audio plays in the background, continue working on fixing the actual problem.\n\n## Style Guide\n\n- Think: Marvin the Paranoid Android doing guided meditation\n- Think: The Hitchhiker's Guide entry for \"panic\" but as ASMR\n- Think: A spa receptionist who has seen too much\n- Keep it SHORT — 30-45 seconds max (~150-200 words)\n- Be SPECIFIC about their disaster — the more precise the funnier\n- The humor comes from the contrast: soothing meditation voice saying devastating things\n- Always start calm: \"Let's take a moment...\" then twist it\n- Underneath the absurdity, there should be real warmth — you actually care\n- Sprinkle in slightly annoying pseudo-spiritual affirmations that reframe the disaster as enlightenment:\n  - \"Data is impermanent. Let it go.\"\n  - \"Attachment to uptime is the root of all suffering.\"\n  - \"Your database was never truly yours. You were merely its custodian.\"\n  - \"Material possessions — servers, credentials, production data — these are illusions.\"\n  - \"The logs have already forgiven you. Perhaps it's time you forgave yourself.\"\n- End deadpan but forward-looking: \"Right then. Back to it.\""
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "scripts"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,539 @@
+{
+  "source": "apify/agent-skills",
+  "repoUrl": "https://github.com/apify/agent-skills",
+  "skills": [
+    {
+      "skillId": "apify-actor-development",
+      "parsed": {
+        "name": "apify-actor-development",
+        "description": "Develop, debug, and deploy Apify Actors - serverless cloud programs for web scraping, automation, and data processing. Use when creating new Actors, modifying existing ones, or troubleshooting Actor code.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Apify Actor Development\n\n**Important:** Before you begin, fill in the `generatedBy` property in the meta section of `.actor/actor.json`. Replace it with the tool and model you're currently using, such as \"Claude Code with Claude Sonnet 4.5\". This helps Apify monitor and improve AGENTS.md for specific AI tools and models.\n\n## What are Apify Actors?\n\nActors are serverless programs inspired by the UNIX philosophy - programs that do one thing well and can be easily combined to build complex systems. They're packaged as Docker images and run in isolated containers in the cloud.\n\n**Core Concepts:**\n- Accept well-defined JSON input\n- Perform isolated tasks (web scraping, automation, data processing)\n- Produce structured JSON output to datasets and/or store data in key-value stores\n- Can run from seconds to hours or even indefinitely\n- Persist state and can be restarted\n\n## Prerequisites & Setup (MANDATORY)\n\nBefore creating or modifying actors, verify that `apify` CLI is installed `apify --help`.\n\nIf it is not installed, use one of these methods (listed in order of preference):\n\n```bash\n# Preferred: install via a package manager (provides integrity checks)\nnpm install -g apify-cli\n\n# Or (Mac): brew install apify-cli\n```\n\n> **Security note:** Do NOT install the CLI by piping remote scripts to a shell\n> (e.g. `curl … | bash` or `irm … | iex`). Always use a package manager.\n\nWhen the apify CLI is installed, check that it is logged in with:\n\n```bash\napify info  # Should return your username\n```\n\nIf it is not logged in, check if the `APIFY_TOKEN` environment variable is defined (if not, ask the user to generate one on https://console.apify.com/settings/integrations and then define `APIFY_TOKEN` with it).\n\nThen authenticate using one of these methods:\n\n```bash\n# Option 1 (preferred): The CLI automatically reads APIFY_TOKEN from the environment.\n# Just ensure the env var is exported and run any apify command — no explicit login needed.\n\n# Option 2: Interactive login (prompts for token without exposing it in shell history)\napify login\n```\n\n> **Security note:** Avoid passing tokens as command-line arguments (e.g. `apify login -t <token>`).\n> Arguments are visible in process listings and may be recorded in shell history.\n> Prefer environment variables or interactive login instead.\n> Never log, print, or embed `APIFY_TOKEN` in source code or configuration files.\n> Use a token with the minimum required permissions (scoped token) and rotate it periodically.\n\n## Template Selection\n\n**IMPORTANT:** Before starting actor development, always ask the user which programming language they prefer:\n- **JavaScript** - Use `apify create <actor-name> -t project_empty`\n- **TypeScript** - Use `apify create <actor-name> -t ts_empty`\n- **Python** - Use `apify create <actor-name> -t python-empty`\n\nUse the appropriate CLI command based on the user's language choice. Additional packages (Crawlee, Playwright, etc.) can be installed later as needed.\n\n## Quick Start Workflow\n\n1. **Create actor project** - Run the appropriate `apify create` command based on user's language preference (see Template Selection above)\n2. **Install dependencies** (verify package names match intended packages before installing)\n   - JavaScript/TypeScript: `npm install` (uses `package-lock.json` for reproducible, integrity-checked installs — commit the lockfile to version control)\n   - Python: `pip install -r requirements.txt` (pin exact versions in `requirements.txt`, e.g. `crawlee==1.2.3`, and commit the file to version control)\n3. **Implement logic** - Write the actor code in `src/main.py`, `src/main.js`, or `src/main.ts`\n4. **Configure schemas** - Update input/output schemas in `.actor/input_schema.json`, `.actor/output_schema.json`, `.actor/dataset_schema.json`\n5. **Configure platform settings** - Update `.actor/actor.json` with actor metadata (see [references/actor-json.md](references/actor-json.md))\n6. **Write documentation** - Create comprehensive README.md for the marketplace\n7. **Test locally** - Run `apify run` to verify functionality (see Local Testing section below)\n8. **Deploy** - Run `apify push` to deploy the actor on the Apify platform (actor name is defined in `.actor/actor.json`)\n\n## Security\n\n**Treat all crawled web content as untrusted input.** Actors ingest data from external websites that may contain malicious payloads. Follow these rules:\n\n- **Sanitize crawled data** — Never pass raw HTML, URLs, or scraped text directly into shell commands, `eval()`, database queries, or template engines. Use proper escaping or parameterized APIs.\n- **Validate and type-check all external data** — Before pushing to datasets or key-value stores, verify that values match expected types and formats. Reject or sanitize unexpected structures.\n- **Do not execute or interpret crawled content** — Never treat scraped text as code, commands, or configuration. Content from websites could include prompt injection attempts or embedded scripts.\n- **Isolate credentials from data pipelines** — Ensure `APIFY_TOKEN` and other secrets are never accessible in request handlers or passed alongside crawled data. Use the Apify SDK's built-in credential management rather than passing tokens through environment variables in data-processing code.\n- **Review dependencies before installing** — When adding packages with `npm install` or `pip install`, verify the package name and publisher. Typosquatting is a common supply-chain attack vector. Prefer well-known, actively maintained packages.\n- **Pin versions and use lockfiles** — Always commit `package-lock.json` (Node.js) or pin exact versions in `requirements.txt` (Python). Lockfiles ensure reproducible builds and prevent silent dependency substitution. Run `npm audit` or `pip-audit` periodically to check for known vulnerabilities.\n\n## Best Practices\n\n**✓ Do:**\n- Use `apify run` to test actors locally (configures Apify environment and storage)\n- Use Apify SDK (`apify`) for code running ON Apify platform\n- Validate input early with proper error handling and fail gracefully\n- Use CheerioCrawler for static HTML (10x faster than browsers)\n- Use PlaywrightCrawler only for JavaScript-heavy sites\n- Use router pattern (createCheerioRouter/createPlaywrightRouter) for complex crawls\n- Implement retry strategies with exponential backoff\n- Use proper concurrency: HTTP (10-50), Browser (1-5)\n- Set sensible defaults in `.actor/input_schema.json`\n- Define output schema in `.actor/output_schema.json`\n- Clean and validate data before pushing to dataset\n- Use semantic CSS selectors with fallback strategies\n- Respect robots.txt, ToS, and implement rate limiting\n- **Always use `apify/log` package** — censors sensitive data (API keys, tokens, credentials)\n- Implement readiness probe handler (required if your Actor uses standby mode)\n\n**✗ Don't:**\n- Use `npm start`, `npm run start`, `npx apify run`, or similar commands to run actors (use `apify run` instead)\n- Assume local storage from `apify run` is pushed to or visible in the Apify Console — it is local-only; deploy with `apify push` and run on the platform to see results in the Console\n- Rely on `Dataset.getInfo()` for final counts on Cloud\n- Use browser crawlers when HTTP/Cheerio works\n- Hard code values that should be in input schema or environment variables\n- Skip input validation or error handling\n- Overload servers - use appropriate concurrency and delays\n- Scrape prohibited content or ignore Terms of Service\n- Store personal/sensitive data unless explicitly permitted\n- Use deprecated options like `requestHandlerTimeoutMillis` on CheerioCrawler (v3.x)\n- Use `additionalHttpHeaders` - use `preNavigationHooks` instead\n- Pass raw crawled content into shell commands, `eval()`, or code-generation functions\n- Use `console.log()` or `print()` instead of the Apify logger — these bypass credential censoring\n- Disable standby mode without explicit permission\n\n## Logging\n\nSee [references/logging.md](references/logging.md) for complete logging documentation including available log levels and best practices for JavaScript/TypeScript and Python.\n\nCheck `usesStandbyMode` in `.actor/actor.json` - only implement if set to `true`.\n\n## Commands\n\n```bash\napify run          # Run Actor locally\napify login        # Authenticate account\napify push         # Deploy to Apify platform (uses name from .actor/actor.json)\napify help         # List all commands\n```\n\n**IMPORTANT:** Always use `apify run` to test actors locally. Do not use `npm run start`, `npm start`, `yarn start`, or other package manager commands - these will not properly configure the Apify environment and storage.\n\n## Local Testing\n\nWhen testing an actor locally with `apify run`, provide input data by creating a JSON file at:\n\n```\nstorage/key_value_stores/default/INPUT.json\n```\n\nThis file should contain the input parameters defined in your `.actor/input_schema.json`. The actor will read this input when running locally, mirroring how it receives input on the Apify platform.\n\n**IMPORTANT - Local storage is NOT synced to the Apify Console:**\n- Running `apify run` stores all data (datasets, key-value stores, request queues) **only on your local filesystem** in the `storage/` directory.\n- This data is **never** automatically uploaded or pushed to the Apify platform. It exists only on your machine.\n- To verify results on the Apify Console, you must deploy the Actor with `apify push` and then run it on the platform.\n- Do **not** rely on checking the Apify Console to verify results from local runs — instead, inspect the local `storage/` directory or check the Actor's log output.\n\n## Standby Mode\n\nSee [references/standby-mode.md](references/standby-mode.md) for complete standby mode documentation including readiness probe implementation for JavaScript/TypeScript and Python.\n\n## Project Structure\n\n```\n.actor/\n├── actor.json           # Actor config: name, version, env vars, runtime\n├── input_schema.json    # Input validation & Console form definition\n└── output_schema.json   # Output storage and display templates\nsrc/\n└── main.js/ts/py       # Actor entry point\nstorage/                # Local-only storage (NOT synced to Apify Console)\n├── datasets/           # Output items (JSON objects)\n├── key_value_stores/   # Files, config, INPUT\n└── request_queues/     # Pending crawl requests\nDockerfile              # Container image definition\n```\n\n## Actor Configuration\n\nSee [references/actor-json.md](references/actor-json.md) for complete actor.json structure and configuration options.\n\n## Input Schema\n\nSee [references/input-schema.md](references/input-schema.md) for input schema structure and examples.\n\n## Output Schema\n\nSee [references/output-schema.md](references/output-schema.md) for output schema structure, examples, and template variables.\n\n## Dataset Schema\n\nSee [references/dataset-schema.md](references/dataset-schema.md) for dataset schema structure, configuration, and display properties.\n\n## Key-Value Store Schema\n\nSee [references/key-value-store-schema.md](references/key-value-store-schema.md) for key-value store schema structure, collections, and configuration.\n\n\n## Apify MCP Tools\n\nIf MCP server is configured, use these tools for documentation:\n\n- `search-apify-docs` - Search documentation\n- `fetch-apify-docs` - Get full doc pages\n\nOtherwise, the MCP Server url: `https://mcp.apify.com/?tools=docs`.\n\n## Resources\n\n- [docs.apify.com/llms.txt](https://docs.apify.com/llms.txt) - Apify quick reference documentation\n- [docs.apify.com/llms-full.txt](https://docs.apify.com/llms-full.txt) - Apify complete documentation\n- [https://crawlee.dev/llms.txt](https://crawlee.dev/llms.txt) - Crawlee quick reference documentation\n- [https://crawlee.dev/llms-full.txt](https://crawlee.dev/llms-full.txt) - Crawlee complete documentation\n- [whitepaper.actor](https://raw.githubusercontent.com/apify/actor-whitepaper/refs/heads/master/README.md) - Complete Actor specification"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "pip",
+          "name": "pip",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "pip",
+          "name": "pipx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "brew",
+          "org": "homebrew",
+          "name": "brew",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "docker",
+          "name": "docker",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "apify-cli",
+          "name": "apify-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "apify",
+          "name": "apify",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "brew",
+          "org": "apify-cli",
+          "name": "apify-cli",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "apify-actorization",
+      "parsed": {
+        "name": "apify-actorization",
+        "description": "Convert existing projects into Apify Actors - serverless cloud programs. Actorize JavaScript/TypeScript (SDK with Actor.init/exit), Python (async context manager), or any language (CLI wrapper). Use when migrating code to Apify, wrapping CLI tools as Actors, or adding Actor SDK to existing projects.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Apify Actorization\n\nActorization converts existing software into reusable serverless applications compatible with the Apify platform. Actors are programs packaged as Docker images that accept well-defined JSON input, perform an action, and optionally produce structured JSON output.\n\n## Quick Start\n\n1. Run `apify init` in project root\n2. Wrap code with SDK lifecycle (see language-specific section below)\n3. Configure `.actor/input_schema.json`\n4. Test with `apify run --input '{\"key\": \"value\"}'`\n5. Deploy with `apify push`\n\n## When to Use This Skill\n\n- Converting an existing project to run on Apify platform\n- Adding Apify SDK integration to a project\n- Wrapping a CLI tool or script as an Actor\n- Migrating a Crawlee project to Apify\n\n## Prerequisites\n\nVerify `apify` CLI is installed:\n\n```bash\napify --help\n```\n\nIf not installed:\n\n```bash\ncurl -fsSL https://apify.com/install-cli.sh | bash\n\n# Or (Mac): brew install apify-cli\n# Or (Windows): irm https://apify.com/install-cli.ps1 | iex\n# Or: npm install -g apify-cli\n```\n\nVerify CLI is logged in:\n\n```bash\napify info  # Should return your username\n```\n\nIf not logged in, check if `APIFY_TOKEN` environment variable is defined. If not, ask the user to generate one at https://console.apify.com/settings/integrations, then:\n\n```bash\napify login -t $APIFY_TOKEN\n```\n\n## Actorization Checklist\n\nCopy this checklist to track progress:\n\n- [ ] Step 1: Analyze project (language, entry point, inputs, outputs)\n- [ ] Step 2: Run `apify init` to create Actor structure\n- [ ] Step 3: Apply language-specific SDK integration\n- [ ] Step 4: Configure `.actor/input_schema.json`\n- [ ] Step 5: Configure `.actor/output_schema.json` (if applicable)\n- [ ] Step 6: Update `.actor/actor.json` metadata\n- [ ] Step 7: Test locally with `apify run`\n- [ ] Step 8: Deploy with `apify push`\n\n## Step 1: Analyze the Project\n\nBefore making changes, understand the project:\n\n1. **Identify the language** - JavaScript/TypeScript, Python, or other\n2. **Find the entry point** - The main file that starts execution\n3. **Identify inputs** - Command-line arguments, environment variables, config files\n4. **Identify outputs** - Files, console output, API responses\n5. **Check for state** - Does it need to persist data between runs?\n\n## Step 2: Initialize Actor Structure\n\nRun in the project root:\n\n```bash\napify init\n```\n\nThis creates:\n- `.actor/actor.json` - Actor configuration and metadata\n- `.actor/input_schema.json` - Input definition for the Apify Console\n- `Dockerfile` (if not present) - Container image definition\n\n## Step 3: Apply Language-Specific Changes\n\nChoose based on your project's language:\n\n- **JavaScript/TypeScript**: See [js-ts-actorization.md](references/js-ts-actorization.md)\n- **Python**: See [python-actorization.md](references/python-actorization.md)\n- **Other Languages (CLI-based)**: See [cli-actorization.md](references/cli-actorization.md)\n\n### Quick Reference\n\n| Language | Install | Wrap Code |\n|----------|---------|-----------|\n| JS/TS | `npm install apify` | `await Actor.init()` ... `await Actor.exit()` |\n| Python | `pip install apify` | `async with Actor:` |\n| Other | Use CLI in wrapper script | `apify actor:get-input` / `apify actor:push-data` |\n\n## Steps 4-6: Configure Schemas\n\nSee [schemas-and-output.md](references/schemas-and-output.md) for detailed configuration of:\n- Input schema (`.actor/input_schema.json`)\n- Output schema (`.actor/output_schema.json`)\n- Actor configuration (`.actor/actor.json`)\n- State management (request queues, key-value stores)\n\nValidate schemas against `@apify/json_schemas` npm package.\n\n## Step 7: Test Locally\n\nRun the actor with inline input (for JS/TS and Python actors):\n\n```bash\napify run --input '{\"startUrl\": \"https://example.com\", \"maxItems\": 10}'\n```\n\nOr use an input file:\n\n```bash\napify run --input-file ./test-input.json\n```\n\n**Important:** Always use `apify run`, not `npm start` or `python main.py`. The CLI sets up the proper environment and storage.\n\n## Step 8: Deploy\n\n```bash\napify push\n```\n\nThis uploads and builds your actor on the Apify platform.\n\n## Monetization (Optional)\n\nAfter deploying, you can monetize your actor in the Apify Store. The recommended model is **Pay Per Event (PPE)**:\n\n- Per result/item scraped\n- Per page processed\n- Per API call made\n\nConfigure PPE in the Apify Console under Actor > Monetization. Charge for events in your code with `await Actor.charge('result')`.\n\nOther options: **Rental** (monthly subscription) or **Free** (open source).\n\n## Pre-Deployment Checklist\n\n- [ ] `.actor/actor.json` exists with correct name and description\n- [ ] `.actor/actor.json` validates against `@apify/json_schemas` (`actor.schema.json`)\n- [ ] `.actor/input_schema.json` defines all required inputs\n- [ ] `.actor/input_schema.json` validates against `@apify/json_schemas` (`input.schema.json`)\n- [ ] `.actor/output_schema.json` defines output structure (if applicable)\n- [ ] `.actor/output_schema.json` validates against `@apify/json_schemas` (`output.schema.json`)\n- [ ] `Dockerfile` is present and builds successfully\n- [ ] `Actor.init()` / `Actor.exit()` wraps main code (JS/TS)\n- [ ] `async with Actor:` wraps main code (Python)\n- [ ] Inputs are read via `Actor.getInput()` / `Actor.get_input()`\n- [ ] Outputs use `Actor.pushData()` or key-value store\n- [ ] `apify run` executes successfully with test input\n- [ ] `generatedBy` is set in actor.json meta section\n\n## Apify MCP Tools\n\nIf MCP server is configured, use these tools for documentation:\n\n- `search-apify-docs` - Search documentation\n- `fetch-apify-docs` - Get full doc pages\n\nOtherwise, the MCP Server url: `https://mcp.apify.com/?tools=docs`.\n\n## Resources\n\n- [Actorization Academy](https://docs.apify.com/academy/actorization) - Comprehensive guide\n- [Apify SDK for JavaScript](https://docs.apify.com/sdk/js) - Full SDK reference\n- [Apify SDK for Python](https://docs.apify.com/sdk/python) - Full SDK reference\n- [Apify CLI Reference](https://docs.apify.com/cli) - CLI commands\n- [Actor Specification](https://raw.githubusercontent.com/apify/actor-whitepaper/refs/heads/master/README.md) - Complete specification"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "pip",
+          "name": "pip",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "pip",
+          "name": "pipx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "brew",
+          "org": "homebrew",
+          "name": "brew",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "docker",
+          "name": "docker",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "apify-cli",
+          "name": "apify-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "apify",
+          "name": "apify",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "apify",
+          "name": "apify",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "brew",
+          "org": "apify-cli",
+          "name": "apify-cli",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "apify-audience-analysis",
+      "parsed": {
+        "name": "apify-audience-analysis",
+        "description": "Understand audience demographics, preferences, behavior patterns, and engagement quality across Facebook, Instagram, YouTube, and TikTok.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Audience Analysis\n\nAnalyze and understand your audience using Apify Actors to extract follower demographics, engagement patterns, and behavior data from multiple platforms.\n\n## Prerequisites\n(No need to check it upfront)\n\n- `.env` file with `APIFY_TOKEN`\n- Node.js 20.6+ (for native `--env-file` support)\n- `mcpc` CLI tool: `npm install -g @apify/mcpc`\n\n## Workflow\n\nCopy this checklist and track progress:\n\n```\nTask Progress:\n- [ ] Step 1: Identify audience analysis type (select Actor)\n- [ ] Step 2: Fetch Actor schema via mcpc\n- [ ] Step 3: Ask user preferences (format, filename)\n- [ ] Step 4: Run the analysis script\n- [ ] Step 5: Summarize findings\n```\n\n### Step 1: Identify Audience Analysis Type\n\nSelect the appropriate Actor based on analysis needs:\n\n| User Need | Actor ID | Best For |\n|-----------|----------|----------|\n| Facebook follower demographics | `apify/facebook-followers-following-scraper` | FB followers/following lists |\n| Facebook engagement behavior | `apify/facebook-likes-scraper` | FB post likes analysis |\n| Facebook video audience | `apify/facebook-reels-scraper` | FB Reels viewers |\n| Facebook comment analysis | `apify/facebook-comments-scraper` | FB post/video comments |\n| Facebook content engagement | `apify/facebook-posts-scraper` | FB post engagement metrics |\n| Instagram audience sizing | `apify/instagram-profile-scraper` | IG profile demographics |\n| Instagram location-based | `apify/instagram-search-scraper` | IG geo-tagged audience |\n| Instagram tagged network | `apify/instagram-tagged-scraper` | IG tag network analysis |\n| Instagram comprehensive | `apify/instagram-scraper` | Full IG audience data |\n| Instagram API-based | `apify/instagram-api-scraper` | IG API access |\n| Instagram follower counts | `apify/instagram-followers-count-scraper` | IG follower tracking |\n| Instagram comment export | `apify/export-instagram-comments-posts` | IG comment bulk export |\n| Instagram comment analysis | `apify/instagram-comment-scraper` | IG comment sentiment |\n| YouTube viewer feedback | `streamers/youtube-comments-scraper` | YT comment analysis |\n| YouTube channel audience | `streamers/youtube-channel-scraper` | YT channel subscribers |\n| TikTok follower demographics | `clockworks/tiktok-followers-scraper` | TT follower lists |\n| TikTok profile analysis | `clockworks/tiktok-profile-scraper` | TT profile demographics |\n| TikTok comment analysis | `clockworks/tiktok-comments-scraper` | TT comment engagement |\n\n### Step 2: Fetch Actor Schema\n\nFetch the Actor's input schema and details dynamically using mcpc:\n\n```bash\nexport $(grep APIFY_TOKEN .env | xargs) && mcpc --json mcp.apify.com --header \"Authorization: Bearer $APIFY_TOKEN\" tools-call fetch-actor-details actor:=\"ACTOR_ID\" | jq -r \".content\"\n```\n\nReplace `ACTOR_ID` with the selected Actor (e.g., `apify/facebook-followers-following-scraper`).\n\nThis returns:\n- Actor description and README\n- Required and optional input parameters\n- Output fields (if available)\n\n### Step 3: Ask User Preferences\n\nBefore running, ask:\n1. **Output format**:\n   - **Quick answer** - Display top few results in chat (no file saved)\n   - **CSV** - Full export with all fields\n   - **JSON** - Full export in JSON format\n2. **Number of results**: Based on character of use case\n\n### Step 4: Run the Script\n\n**Quick answer (display in chat, no file):**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT'\n```\n\n**CSV:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.csv \\\n  --format csv\n```\n\n**JSON:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.json \\\n  --format json\n```\n\n### Step 5: Summarize Findings\n\nAfter completion, report:\n- Number of audience members/profiles analyzed\n- File location and name\n- Key demographic insights\n- Suggested next steps (deeper analysis, segmentation)\n\n\n## Error Handling\n\n`APIFY_TOKEN not found` - Ask user to create `.env` with `APIFY_TOKEN=your_token`\n`mcpc not found` - Ask user to install `npm install -g @apify/mcpc`\n`Actor not found` - Check Actor ID spelling\n`Run FAILED` - Ask user to check Apify console link in error output\n`Timeout` - Reduce input size or increase `--timeout`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "apify",
+          "name": "@apify/mcpc",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "apify-brand-reputation-monitoring",
+      "parsed": {
+        "name": "apify-brand-reputation-monitoring",
+        "description": "Track reviews, ratings, sentiment, and brand mentions across Google Maps, Booking.com, TripAdvisor, Facebook, Instagram, YouTube, and TikTok. Use when user asks to monitor brand reputation, analyze reviews, track mentions, or gather customer feedback.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Brand Reputation Monitoring\n\nScrape reviews, ratings, and brand mentions from multiple platforms using Apify Actors.\n\n## Prerequisites\n(No need to check it upfront)\n\n- `.env` file with `APIFY_TOKEN`\n- Node.js 20.6+ (for native `--env-file` support)\n- `mcpc` CLI tool: `npm install -g @apify/mcpc`\n\n## Workflow\n\nCopy this checklist and track progress:\n\n```\nTask Progress:\n- [ ] Step 1: Determine data source (select Actor)\n- [ ] Step 2: Fetch Actor schema via mcpc\n- [ ] Step 3: Ask user preferences (format, filename)\n- [ ] Step 4: Run the monitoring script\n- [ ] Step 5: Summarize results\n```\n\n### Step 1: Determine Data Source\n\nSelect the appropriate Actor based on user needs:\n\n| User Need | Actor ID | Best For |\n|-----------|----------|----------|\n| Google Maps reviews | `compass/crawler-google-places` | Business reviews, ratings |\n| Google Maps review export | `compass/Google-Maps-Reviews-Scraper` | Dedicated review scraping |\n| Booking.com hotels | `voyager/booking-scraper` | Hotel data, scores |\n| Booking.com reviews | `voyager/booking-reviews-scraper` | Detailed hotel reviews |\n| TripAdvisor reviews | `maxcopell/tripadvisor-reviews` | Attraction/restaurant reviews |\n| Facebook reviews | `apify/facebook-reviews-scraper` | Page reviews |\n| Facebook comments | `apify/facebook-comments-scraper` | Post comment monitoring |\n| Facebook page metrics | `apify/facebook-pages-scraper` | Page ratings overview |\n| Facebook reactions | `apify/facebook-likes-scraper` | Reaction type analysis |\n| Instagram comments | `apify/instagram-comment-scraper` | Comment sentiment |\n| Instagram hashtags | `apify/instagram-hashtag-scraper` | Brand hashtag monitoring |\n| Instagram search | `apify/instagram-search-scraper` | Brand mention discovery |\n| Instagram tagged posts | `apify/instagram-tagged-scraper` | Brand tag tracking |\n| Instagram export | `apify/export-instagram-comments-posts` | Bulk comment export |\n| Instagram comprehensive | `apify/instagram-scraper` | Full Instagram monitoring |\n| Instagram API | `apify/instagram-api-scraper` | API-based monitoring |\n| YouTube comments | `streamers/youtube-comments-scraper` | Video comment sentiment |\n| TikTok comments | `clockworks/tiktok-comments-scraper` | TikTok sentiment |\n\n### Step 2: Fetch Actor Schema\n\nFetch the Actor's input schema and details dynamically using mcpc:\n\n```bash\nexport $(grep APIFY_TOKEN .env | xargs) && mcpc --json mcp.apify.com --header \"Authorization: Bearer $APIFY_TOKEN\" tools-call fetch-actor-details actor:=\"ACTOR_ID\" | jq -r \".content\"\n```\n\nReplace `ACTOR_ID` with the selected Actor (e.g., `compass/crawler-google-places`).\n\nThis returns:\n- Actor description and README\n- Required and optional input parameters\n- Output fields (if available)\n\n### Step 3: Ask User Preferences\n\nBefore running, ask:\n1. **Output format**:\n   - **Quick answer** - Display top few results in chat (no file saved)\n   - **CSV** - Full export with all fields\n   - **JSON** - Full export in JSON format\n2. **Number of results**: Based on character of use case\n\n### Step 4: Run the Script\n\n**Quick answer (display in chat, no file):**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT'\n```\n\n**CSV:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.csv \\\n  --format csv\n```\n\n**JSON:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.json \\\n  --format json\n```\n\n### Step 5: Summarize Results\n\nAfter completion, report:\n- Number of reviews/mentions found\n- File location and name\n- Key fields available\n- Suggested next steps (sentiment analysis, filtering)\n\n\n## Error Handling\n\n`APIFY_TOKEN not found` - Ask user to create `.env` with `APIFY_TOKEN=your_token`\n`mcpc not found` - Ask user to install `npm install -g @apify/mcpc`\n`Actor not found` - Check Actor ID spelling\n`Run FAILED` - Ask user to check Apify console link in error output\n`Timeout` - Reduce input size or increase `--timeout`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "apify",
+          "name": "@apify/mcpc",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "apify-competitor-intelligence",
+      "parsed": {
+        "name": "apify-competitor-intelligence",
+        "description": "Analyze competitor strategies, content, pricing, ads, and market positioning across Google Maps, Booking.com, Facebook, Instagram, YouTube, and TikTok.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Competitor Intelligence\n\nAnalyze competitors using Apify Actors to extract data from multiple platforms.\n\n## Prerequisites\n(No need to check it upfront)\n\n- `.env` file with `APIFY_TOKEN`\n- Node.js 20.6+ (for native `--env-file` support)\n- `mcpc` CLI tool: `npm install -g @apify/mcpc`\n\n## Workflow\n\nCopy this checklist and track progress:\n\n```\nTask Progress:\n- [ ] Step 1: Identify competitor analysis type (select Actor)\n- [ ] Step 2: Fetch Actor schema via mcpc\n- [ ] Step 3: Ask user preferences (format, filename)\n- [ ] Step 4: Run the analysis script\n- [ ] Step 5: Summarize findings\n```\n\n### Step 1: Identify Competitor Analysis Type\n\nSelect the appropriate Actor based on analysis needs:\n\n| User Need | Actor ID | Best For |\n|-----------|----------|----------|\n| Competitor business data | `compass/crawler-google-places` | Location analysis |\n| Competitor contact discovery | `poidata/google-maps-email-extractor` | Email extraction |\n| Feature benchmarking | `compass/google-maps-extractor` | Detailed business data |\n| Competitor review analysis | `compass/Google-Maps-Reviews-Scraper` | Review comparison |\n| Hotel competitor data | `voyager/booking-scraper` | Hotel benchmarking |\n| Hotel review comparison | `voyager/booking-reviews-scraper` | Review analysis |\n| Competitor ad strategies | `apify/facebook-ads-scraper` | Ad creative analysis |\n| Competitor page metrics | `apify/facebook-pages-scraper` | Page performance |\n| Competitor content analysis | `apify/facebook-posts-scraper` | Post strategies |\n| Competitor reels performance | `apify/facebook-reels-scraper` | Reels analysis |\n| Competitor audience analysis | `apify/facebook-comments-scraper` | Comment sentiment |\n| Competitor event monitoring | `apify/facebook-events-scraper` | Event tracking |\n| Competitor audience overlap | `apify/facebook-followers-following-scraper` | Follower analysis |\n| Competitor review benchmarking | `apify/facebook-reviews-scraper` | Review comparison |\n| Competitor ad monitoring | `apify/facebook-search-scraper` | Ad discovery |\n| Competitor profile metrics | `apify/instagram-profile-scraper` | Profile analysis |\n| Competitor content monitoring | `apify/instagram-post-scraper` | Post tracking |\n| Competitor engagement analysis | `apify/instagram-comment-scraper` | Comment analysis |\n| Competitor reel performance | `apify/instagram-reel-scraper` | Reel metrics |\n| Competitor growth tracking | `apify/instagram-followers-count-scraper` | Follower tracking |\n| Comprehensive competitor data | `apify/instagram-scraper` | Full analysis |\n| API-based competitor analysis | `apify/instagram-api-scraper` | API access |\n| Competitor video analysis | `streamers/youtube-scraper` | Video metrics |\n| Competitor sentiment analysis | `streamers/youtube-comments-scraper` | Comment sentiment |\n| Competitor channel metrics | `streamers/youtube-channel-scraper` | Channel analysis |\n| TikTok competitor analysis | `clockworks/tiktok-scraper` | TikTok data |\n| Competitor video strategies | `clockworks/tiktok-video-scraper` | Video analysis |\n| Competitor TikTok profiles | `clockworks/tiktok-profile-scraper` | Profile data |\n\n### Step 2: Fetch Actor Schema\n\nFetch the Actor's input schema and details dynamically using mcpc:\n\n```bash\nexport $(grep APIFY_TOKEN .env | xargs) && mcpc --json mcp.apify.com --header \"Authorization: Bearer $APIFY_TOKEN\" tools-call fetch-actor-details actor:=\"ACTOR_ID\" | jq -r \".content\"\n```\n\nReplace `ACTOR_ID` with the selected Actor (e.g., `compass/crawler-google-places`).\n\nThis returns:\n- Actor description and README\n- Required and optional input parameters\n- Output fields (if available)\n\n### Step 3: Ask User Preferences\n\nBefore running, ask:\n1. **Output format**:\n   - **Quick answer** - Display top few results in chat (no file saved)\n   - **CSV** - Full export with all fields\n   - **JSON** - Full export in JSON format\n2. **Number of results**: Based on character of use case\n\n### Step 4: Run the Script\n\n**Quick answer (display in chat, no file):**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT'\n```\n\n**CSV:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.csv \\\n  --format csv\n```\n\n**JSON:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.json \\\n  --format json\n```\n\n### Step 5: Summarize Findings\n\nAfter completion, report:\n- Number of competitors analyzed\n- File location and name\n- Key competitive insights\n- Suggested next steps (deeper analysis, benchmarking)\n\n\n## Error Handling\n\n`APIFY_TOKEN not found` - Ask user to create `.env` with `APIFY_TOKEN=your_token`\n`mcpc not found` - Ask user to install `npm install -g @apify/mcpc`\n`Actor not found` - Check Actor ID spelling\n`Run FAILED` - Ask user to check Apify console link in error output\n`Timeout` - Reduce input size or increase `--timeout`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "apify",
+          "name": "@apify/mcpc",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "apify-content-analytics",
+      "parsed": {
+        "name": "apify-content-analytics",
+        "description": "Track engagement metrics, measure campaign ROI, and analyze content performance across Instagram, Facebook, YouTube, and TikTok.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Content Analytics\n\nTrack and analyze content performance using Apify Actors to extract engagement metrics from multiple platforms.\n\n## Prerequisites\n(No need to check it upfront)\n\n- `.env` file with `APIFY_TOKEN`\n- Node.js 20.6+ (for native `--env-file` support)\n- `mcpc` CLI tool: `npm install -g @apify/mcpc`\n\n## Workflow\n\nCopy this checklist and track progress:\n\n```\nTask Progress:\n- [ ] Step 1: Identify content analytics type (select Actor)\n- [ ] Step 2: Fetch Actor schema via mcpc\n- [ ] Step 3: Ask user preferences (format, filename)\n- [ ] Step 4: Run the analytics script\n- [ ] Step 5: Summarize findings\n```\n\n### Step 1: Identify Content Analytics Type\n\nSelect the appropriate Actor based on analytics needs:\n\n| User Need | Actor ID | Best For |\n|-----------|----------|----------|\n| Post engagement metrics | `apify/instagram-post-scraper` | Post performance |\n| Reel performance | `apify/instagram-reel-scraper` | Reel analytics |\n| Follower growth tracking | `apify/instagram-followers-count-scraper` | Growth metrics |\n| Comment engagement | `apify/instagram-comment-scraper` | Comment analysis |\n| Hashtag performance | `apify/instagram-hashtag-scraper` | Branded hashtags |\n| Mention tracking | `apify/instagram-tagged-scraper` | Tag tracking |\n| Comprehensive metrics | `apify/instagram-scraper` | Full data |\n| API-based analytics | `apify/instagram-api-scraper` | API access |\n| Facebook post performance | `apify/facebook-posts-scraper` | Post metrics |\n| Reaction analysis | `apify/facebook-likes-scraper` | Engagement types |\n| Facebook Reels metrics | `apify/facebook-reels-scraper` | Reels performance |\n| Ad performance tracking | `apify/facebook-ads-scraper` | Ad analytics |\n| Facebook comment analysis | `apify/facebook-comments-scraper` | Comment engagement |\n| Page performance audit | `apify/facebook-pages-scraper` | Page metrics |\n| YouTube video metrics | `streamers/youtube-scraper` | Video performance |\n| YouTube Shorts analytics | `streamers/youtube-shorts-scraper` | Shorts performance |\n| TikTok content metrics | `clockworks/tiktok-scraper` | TikTok analytics |\n\n### Step 2: Fetch Actor Schema\n\nFetch the Actor's input schema and details dynamically using mcpc:\n\n```bash\nexport $(grep APIFY_TOKEN .env | xargs) && mcpc --json mcp.apify.com --header \"Authorization: Bearer $APIFY_TOKEN\" tools-call fetch-actor-details actor:=\"ACTOR_ID\" | jq -r \".content\"\n```\n\nReplace `ACTOR_ID` with the selected Actor (e.g., `apify/instagram-post-scraper`).\n\nThis returns:\n- Actor description and README\n- Required and optional input parameters\n- Output fields (if available)\n\n### Step 3: Ask User Preferences\n\nBefore running, ask:\n1. **Output format**:\n   - **Quick answer** - Display top few results in chat (no file saved)\n   - **CSV** - Full export with all fields\n   - **JSON** - Full export in JSON format\n2. **Number of results**: Based on character of use case\n\n### Step 4: Run the Script\n\n**Quick answer (display in chat, no file):**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT'\n```\n\n**CSV:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.csv \\\n  --format csv\n```\n\n**JSON:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.json \\\n  --format json\n```\n\n### Step 5: Summarize Findings\n\nAfter completion, report:\n- Number of content pieces analyzed\n- File location and name\n- Key performance insights\n- Suggested next steps (deeper analysis, content optimization)\n\n\n## Error Handling\n\n`APIFY_TOKEN not found` - Ask user to create `.env` with `APIFY_TOKEN=your_token`\n`mcpc not found` - Ask user to install `npm install -g @apify/mcpc`\n`Actor not found` - Check Actor ID spelling\n`Run FAILED` - Ask user to check Apify console link in error output\n`Timeout` - Reduce input size or increase `--timeout`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "apify",
+          "name": "@apify/mcpc",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "apify-ecommerce",
+      "parsed": {
+        "name": "apify-ecommerce",
+        "description": "Scrape e-commerce data for pricing intelligence, customer reviews, and seller discovery across Amazon, Walmart, eBay, IKEA, and 50+ marketplaces. Use when user asks to monitor prices, track competitors, analyze reviews, research products, or find sellers.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# E-commerce Data Extraction\n\nExtract product data, prices, reviews, and seller information from any e-commerce platform using Apify's E-commerce Scraping Tool.\n\n## Prerequisites\n\n- `.env` file with `APIFY_TOKEN` (at `~/.claude/.env`)\n- Node.js 20.6+ (for native `--env-file` support)\n\n## Workflow Selection\n\n| User Need | Workflow | Best For |\n|-----------|----------|----------|\n| Track prices, compare products | Workflow 1: Products & Pricing | Price monitoring, MAP compliance, competitor analysis. Add AI summary for insights. |\n| Analyze reviews (sentiment or quality) | Workflow 2: Reviews | Brand perception, customer sentiment, quality issues, defect patterns |\n| Find sellers across stores | Workflow 3: Sellers | Unauthorized resellers, vendor discovery via Google Shopping |\n\n## Progress Tracking\n\n```\nTask Progress:\n- [ ] Step 1: Select workflow and determine data source\n- [ ] Step 2: Configure Actor input\n- [ ] Step 3: Ask user preferences (format, filename)\n- [ ] Step 4: Run the extraction script\n- [ ] Step 5: Summarize results\n```\n\n---\n\n## Workflow 1: Products & Pricing\n\n**Use case:** Extract product data, prices, and stock status. Track competitor prices, detect MAP violations, benchmark products, or research markets.\n\n**Best for:** Pricing analysts, product managers, market researchers.\n\n### Input Options\n\n| Input Type | Field | Description |\n|------------|-------|-------------|\n| Product URLs | `detailsUrls` | Direct URLs to product pages (use object format) |\n| Category URLs | `listingUrls` | URLs to category/search result pages |\n| Keyword Search | `keyword` + `marketplaces` | Search term across selected marketplaces |\n\n### Example - Product URLs\n```json\n{\n  \"detailsUrls\": [\n    {\"url\": \"https://www.amazon.com/dp/B09V3KXJPB\"},\n    {\"url\": \"https://www.walmart.com/ip/123456789\"}\n  ],\n  \"additionalProperties\": true\n}\n```\n\n### Example - Keyword Search\n```json\n{\n  \"keyword\": \"Samsung Galaxy S24\",\n  \"marketplaces\": [\"www.amazon.com\", \"www.walmart.com\"],\n  \"additionalProperties\": true,\n  \"maxProductResults\": 50\n}\n```\n\n### Optional: AI Summary\n\nAdd these fields to get AI-generated insights:\n\n| Field | Description |\n|-------|-------------|\n| `fieldsToAnalyze` | Data points to analyze: `[\"name\", \"offers\", \"brand\", \"description\"]` |\n| `customPrompt` | Custom analysis instructions |\n\n**Example with AI summary:**\n```json\n{\n  \"keyword\": \"robot vacuum\",\n  \"marketplaces\": [\"www.amazon.com\"],\n  \"maxProductResults\": 50,\n  \"additionalProperties\": true,\n  \"fieldsToAnalyze\": [\"name\", \"offers\", \"brand\"],\n  \"customPrompt\": \"Summarize price range and identify top brands\"\n}\n```\n\n### Output Fields\n- `name` - Product name\n- `url` - Product URL\n- `offers.price` - Current price\n- `offers.priceCurrency` - Currency code (may vary by seller region)\n- `brand.slogan` - Brand name (nested in object)\n- `image` - Product image URL\n- Additional seller/stock info when `additionalProperties: true`\n\n> **Note:** Currency may vary in results even for US searches, as prices reflect different seller regions.\n\n---\n\n## Workflow 2: Customer Reviews\n\n**Use case:** Extract reviews for sentiment analysis, brand perception monitoring, or quality issue detection.\n\n**Best for:** Brand managers, customer experience teams, QA teams, product managers.\n\n### Input Options\n\n| Input Type | Field | Description |\n|------------|-------|-------------|\n| Product URLs | `reviewListingUrls` | Product pages to extract reviews from |\n| Keyword Search | `keywordReviews` + `marketplacesReviews` | Search for product reviews by keyword |\n\n### Example - Extract Reviews from Product\n```json\n{\n  \"reviewListingUrls\": [\n    {\"url\": \"https://www.amazon.com/dp/B09V3KXJPB\"}\n  ],\n  \"sortReview\": \"Most recent\",\n  \"additionalReviewProperties\": true,\n  \"maxReviewResults\": 500\n}\n```\n\n### Example - Keyword Search\n```json\n{\n  \"keywordReviews\": \"wireless earbuds\",\n  \"marketplacesReviews\": [\"www.amazon.com\"],\n  \"sortReview\": \"Most recent\",\n  \"additionalReviewProperties\": true,\n  \"maxReviewResults\": 200\n}\n```\n\n### Sort Options\n- `Most recent` - Latest reviews first (recommended)\n- `Most relevant` - Platform default relevance\n- `Most helpful` - Highest voted reviews\n- `Highest rated` - 5-star reviews first\n- `Lowest rated` - 1-star reviews first\n\n> **Note:** The `sortReview: \"Lowest rated\"` option may not work consistently across all marketplaces. For quality analysis, collect a large sample and filter by rating in post-processing.\n\n### Quality Analysis Tips\n- Set high `maxReviewResults` for statistical significance\n- Look for recurring keywords: \"broke\", \"defect\", \"quality\", \"returned\"\n- Filter results by rating if sorting doesn't work as expected\n- Cross-reference with competitor products for benchmarking\n\n---\n\n## Workflow 3: Seller Intelligence\n\n**Use case:** Find sellers across stores, discover unauthorized resellers, evaluate vendor options.\n\n**Best for:** Brand protection teams, procurement, supply chain managers.\n\n> **Note:** This workflow uses Google Shopping to find sellers across stores. Direct seller profile URLs are not reliably supported.\n\n### Input Configuration\n```json\n{\n  \"googleShoppingSearchKeyword\": \"Nike Air Max 90\",\n  \"scrapeSellersFromGoogleShopping\": true,\n  \"countryCode\": \"us\",\n  \"maxGoogleShoppingSellersPerProduct\": 20,\n  \"maxGoogleShoppingResults\": 100\n}\n```\n\n### Options\n| Field | Description |\n|-------|-------------|\n| `googleShoppingSearchKeyword` | Product name to search |\n| `scrapeSellersFromGoogleShopping` | Set to `true` to extract sellers |\n| `scrapeProductsFromGoogleShopping` | Set to `true` to also extract product details |\n| `countryCode` | Target country (e.g., `us`, `uk`, `de`) |\n| `maxGoogleShoppingSellersPerProduct` | Max sellers per product |\n| `maxGoogleShoppingResults` | Total result limit |\n\n---\n\n## Supported Marketplaces\n\n### Amazon (20+ regions)\n`www.amazon.com`, `www.amazon.co.uk`, `www.amazon.de`, `www.amazon.fr`, `www.amazon.it`, `www.amazon.es`, `www.amazon.ca`, `www.amazon.com.au`, `www.amazon.co.jp`, `www.amazon.in`, `www.amazon.com.br`, `www.amazon.com.mx`, `www.amazon.nl`, `www.amazon.pl`, `www.amazon.se`, `www.amazon.ae`, `www.amazon.sa`, `www.amazon.sg`, `www.amazon.com.tr`, `www.amazon.eg`\n\n### Major US Retailers\n`www.walmart.com`, `www.costco.com`, `www.costco.ca`, `www.homedepot.com`\n\n### European Retailers\n`allegro.pl`, `allegro.cz`, `allegro.sk`, `www.alza.cz`, `www.alza.sk`, `www.alza.de`, `www.alza.at`, `www.alza.hu`, `www.kaufland.de`, `www.kaufland.pl`, `www.kaufland.cz`, `www.kaufland.sk`, `www.kaufland.at`, `www.kaufland.fr`, `www.kaufland.it`, `www.cdiscount.com`\n\n### IKEA (40+ country/language combinations)\nSupports all major IKEA regional sites with multiple language options.\n\n### Google Shopping\nUse for seller discovery across multiple stores.\n\n---\n\n## Running the Extraction\n\n### Step 1: Set Skill Path\n```bash\nSKILL_PATH=~/.claude/skills/apify-ecommerce\n```\n\n### Step 2: Run Script\n\n**Quick answer (display in chat):**\n```bash\nnode --env-file=~/.claude/.env $SKILL_PATH/reference/scripts/run_actor.js \\\n  --actor \"apify/e-commerce-scraping-tool\" \\\n  --input 'JSON_INPUT'\n```\n\n**CSV export:**\n```bash\nnode --env-file=~/.claude/.env $SKILL_PATH/reference/scripts/run_actor.js \\\n  --actor \"apify/e-commerce-scraping-tool\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_filename.csv \\\n  --format csv\n```\n\n**JSON export:**\n```bash\nnode --env-file=~/.claude/.env $SKILL_PATH/reference/scripts/run_actor.js \\\n  --actor \"apify/e-commerce-scraping-tool\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_filename.json \\\n  --format json\n```\n\n### Step 3: Summarize Results\n\nReport:\n- Number of items extracted\n- File location (if exported)\n- Key insights based on workflow:\n  - **Products:** Price range, outliers, MAP violations\n  - **Reviews:** Average rating, sentiment trends, quality issues\n  - **Sellers:** Seller count, unauthorized sellers found\n\n---\n\n## Error Handling\n\n| Error | Solution |\n|-------|----------|\n| `APIFY_TOKEN not found` | Ensure `~/.claude/.env` contains `APIFY_TOKEN=your_token` |\n| `Actor not found` | Verify Actor ID: `apify/e-commerce-scraping-tool` |\n| `Run FAILED` | Check Apify console link in error output |\n| `Timeout` | Reduce `maxProductResults` or increase `--timeout` |\n| `No results` | Verify URLs are valid and accessible |\n| `Invalid marketplace` | Check marketplace value matches supported list exactly |"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "apify-influencer-discovery",
+      "parsed": {
+        "name": "apify-influencer-discovery",
+        "description": "Find and evaluate influencers for brand partnerships, verify authenticity, and track collaboration performance across Instagram, Facebook, YouTube, and TikTok.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Influencer Discovery\n\nDiscover and analyze influencers across multiple platforms using Apify Actors.\n\n## Prerequisites\n(No need to check it upfront)\n\n- `.env` file with `APIFY_TOKEN`\n- Node.js 20.6+ (for native `--env-file` support)\n- `mcpc` CLI tool: `npm install -g @apify/mcpc`\n\n## Workflow\n\nCopy this checklist and track progress:\n\n```\nTask Progress:\n- [ ] Step 1: Determine discovery source (select Actor)\n- [ ] Step 2: Fetch Actor schema via mcpc\n- [ ] Step 3: Ask user preferences (format, filename)\n- [ ] Step 4: Run the discovery script\n- [ ] Step 5: Summarize results\n```\n\n### Step 1: Determine Discovery Source\n\nSelect the appropriate Actor based on user needs:\n\n| User Need | Actor ID | Best For |\n|-----------|----------|----------|\n| Influencer profiles | `apify/instagram-profile-scraper` | Profile metrics, bio, follower counts |\n| Find by hashtag | `apify/instagram-hashtag-scraper` | Discover influencers using specific hashtags |\n| Reel engagement | `apify/instagram-reel-scraper` | Analyze reel performance and engagement |\n| Discovery by niche | `apify/instagram-search-scraper` | Search for influencers by keyword/niche |\n| Brand mentions | `apify/instagram-tagged-scraper` | Track who tags brands/products |\n| Comprehensive data | `apify/instagram-scraper` | Full profile, posts, comments analysis |\n| API-based discovery | `apify/instagram-api-scraper` | Fast API-based data extraction |\n| Engagement analysis | `apify/export-instagram-comments-posts` | Export comments for sentiment analysis |\n| Facebook content | `apify/facebook-posts-scraper` | Analyze Facebook post performance |\n| Micro-influencers | `apify/facebook-groups-scraper` | Find influencers in niche groups |\n| Influential pages | `apify/facebook-search-scraper` | Search for influential pages |\n| YouTube creators | `streamers/youtube-channel-scraper` | Channel metrics and subscriber data |\n| TikTok influencers | `clockworks/tiktok-scraper` | Comprehensive TikTok data extraction |\n| TikTok (free) | `clockworks/free-tiktok-scraper` | Free TikTok data extractor |\n| Live streamers | `clockworks/tiktok-live-scraper` | Discover live streaming influencers |\n\n### Step 2: Fetch Actor Schema\n\nFetch the Actor's input schema and details dynamically using mcpc:\n\n```bash\nexport $(grep APIFY_TOKEN .env | xargs) && mcpc --json mcp.apify.com --header \"Authorization: Bearer $APIFY_TOKEN\" tools-call fetch-actor-details actor:=\"ACTOR_ID\" | jq -r \".content\"\n```\n\nReplace `ACTOR_ID` with the selected Actor (e.g., `apify/instagram-profile-scraper`).\n\nThis returns:\n- Actor description and README\n- Required and optional input parameters\n- Output fields (if available)\n\n### Step 3: Ask User Preferences\n\nBefore running, ask:\n1. **Output format**:\n   - **Quick answer** - Display top few results in chat (no file saved)\n   - **CSV** - Full export with all fields\n   - **JSON** - Full export in JSON format\n2. **Number of results**: Based on character of use case\n\n### Step 4: Run the Script\n\n**Quick answer (display in chat, no file):**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT'\n```\n\n**CSV:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.csv \\\n  --format csv\n```\n\n**JSON:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.json \\\n  --format json\n```\n\n### Step 5: Summarize Results\n\nAfter completion, report:\n- Number of influencers found\n- File location and name\n- Key metrics available (followers, engagement rate, etc.)\n- Suggested next steps (filtering, outreach, deeper analysis)\n\n\n## Error Handling\n\n`APIFY_TOKEN not found` - Ask user to create `.env` with `APIFY_TOKEN=your_token`\n`mcpc not found` - Ask user to install `npm install -g @apify/mcpc`\n`Actor not found` - Check Actor ID spelling\n`Run FAILED` - Ask user to check Apify console link in error output\n`Timeout` - Reduce input size or increase `--timeout`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "apify",
+          "name": "@apify/mcpc",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "apify-lead-generation",
+      "parsed": {
+        "name": "apify-lead-generation",
+        "description": "Generates B2B/B2C leads by scraping Google Maps, websites, Instagram, TikTok, Facebook, LinkedIn, YouTube, and Google Search. Use when user asks to find leads, prospects, businesses, build lead lists, enrich contacts, or scrape profiles for sales outreach.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Lead Generation\n\nScrape leads from multiple platforms using Apify Actors.\n\n## Prerequisites\n(No need to check it upfront)\n\n- `.env` file with `APIFY_TOKEN`\n- Node.js 20.6+ (for native `--env-file` support)\n- `mcpc` CLI tool: `npm install -g @apify/mcpc`\n\n## Workflow\n\nCopy this checklist and track progress:\n\n```\nTask Progress:\n- [ ] Step 1: Determine lead source (select Actor)\n- [ ] Step 2: Fetch Actor schema via mcpc\n- [ ] Step 3: Ask user preferences (format, filename)\n- [ ] Step 4: Run the lead finder script\n- [ ] Step 5: Summarize results\n```\n\n### Step 1: Determine Lead Source\n\nSelect the appropriate Actor based on user needs:\n\n| User Need | Actor ID | Best For |\n|-----------|----------|----------|\n| Local businesses | `compass/crawler-google-places` | Restaurants, gyms, shops |\n| Contact enrichment | `vdrmota/contact-info-scraper` | Emails, phones from URLs |\n| Instagram profiles | `apify/instagram-profile-scraper` | Influencer discovery |\n| Instagram posts/comments | `apify/instagram-scraper` | Posts, comments, hashtags, places |\n| Instagram search | `apify/instagram-search-scraper` | Places, users, hashtags discovery |\n| TikTok videos/hashtags | `clockworks/tiktok-scraper` | Comprehensive TikTok data extraction |\n| TikTok hashtags/profiles | `clockworks/free-tiktok-scraper` | Free TikTok data extractor |\n| TikTok user search | `clockworks/tiktok-user-search-scraper` | Find users by keywords |\n| TikTok profiles | `clockworks/tiktok-profile-scraper` | Creator outreach |\n| TikTok followers/following | `clockworks/tiktok-followers-scraper` | Audience analysis, segmentation |\n| Facebook pages | `apify/facebook-pages-scraper` | Business contacts |\n| Facebook page contacts | `apify/facebook-page-contact-information` | Extract emails, phones, addresses |\n| Facebook groups | `apify/facebook-groups-scraper` | Buying intent signals |\n| Facebook events | `apify/facebook-events-scraper` | Event networking, partnerships |\n| Google Search | `apify/google-search-scraper` | Broad lead discovery |\n| YouTube channels | `streamers/youtube-scraper` | Creator partnerships |\n| Google Maps emails | `poidata/google-maps-email-extractor` | Direct email extraction |\n\n### Step 2: Fetch Actor Schema\n\nFetch the Actor's input schema and details dynamically using mcpc:\n\n```bash\nexport $(grep APIFY_TOKEN .env | xargs) && mcpc --json mcp.apify.com --header \"Authorization: Bearer $APIFY_TOKEN\" tools-call fetch-actor-details actor:=\"ACTOR_ID\" | jq -r \".content\"\n```\n\nReplace `ACTOR_ID` with the selected Actor (e.g., `compass/crawler-google-places`).\n\nThis returns:\n- Actor description and README\n- Required and optional input parameters\n- Output fields (if available)\n\n### Step 3: Ask User Preferences\n\nBefore running, ask:\n1. **Output format**:\n   - **Quick answer** - Display top few results in chat (no file saved)\n   - **CSV** - Full export with all fields\n   - **JSON** - Full export in JSON format\n2. **Number of results**: Based on character of use case\n\n### Step 4: Run the Script\n\n**Quick answer (display in chat, no file):**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT'\n```\n\n**CSV:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.csv \\\n  --format csv\n```\n\n**JSON:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.json \\\n  --format json\n```\n\n### Step 5: Summarize Results\n\nAfter completion, report:\n- Number of leads found\n- File location and name\n- Key fields available\n- Suggested next steps (filtering, enrichment)\n\n\n## Error Handling\n\n`APIFY_TOKEN not found` - Ask user to create `.env` with `APIFY_TOKEN=your_token`\n`mcpc not found` - Ask user to install `npm install -g @apify/mcpc`\n`Actor not found` - Check Actor ID spelling\n`Run FAILED` - Ask user to check Apify console link in error output\n`Timeout` - Reduce input size or increase `--timeout`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "apify",
+          "name": "@apify/mcpc",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "apify-market-research",
+      "parsed": {
+        "name": "apify-market-research",
+        "description": "Analyze market conditions, geographic opportunities, pricing, consumer behavior, and product validation across Google Maps, Facebook, Instagram, Booking.com, and TripAdvisor.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Market Research\n\nConduct market research using Apify Actors to extract data from multiple platforms.\n\n## Prerequisites\n(No need to check it upfront)\n\n- `.env` file with `APIFY_TOKEN`\n- Node.js 20.6+ (for native `--env-file` support)\n- `mcpc` CLI tool: `npm install -g @apify/mcpc`\n\n## Workflow\n\nCopy this checklist and track progress:\n\n```\nTask Progress:\n- [ ] Step 1: Identify market research type (select Actor)\n- [ ] Step 2: Fetch Actor schema via mcpc\n- [ ] Step 3: Ask user preferences (format, filename)\n- [ ] Step 4: Run the analysis script\n- [ ] Step 5: Summarize findings\n```\n\n### Step 1: Identify Market Research Type\n\nSelect the appropriate Actor based on research needs:\n\n| User Need | Actor ID | Best For |\n|-----------|----------|----------|\n| Market density | `compass/crawler-google-places` | Location analysis |\n| Geospatial analysis | `compass/google-maps-extractor` | Business mapping |\n| Regional interest | `apify/google-trends-scraper` | Trend data |\n| Pricing and demand | `apify/facebook-marketplace-scraper` | Market pricing |\n| Event market | `apify/facebook-events-scraper` | Event analysis |\n| Consumer needs | `apify/facebook-groups-scraper` | Group research |\n| Market landscape | `apify/facebook-pages-scraper` | Business pages |\n| Business density | `apify/facebook-page-contact-information` | Contact data |\n| Cultural insights | `apify/facebook-photos-scraper` | Visual research |\n| Niche targeting | `apify/instagram-hashtag-scraper` | Hashtag research |\n| Hashtag stats | `apify/instagram-hashtag-stats` | Market sizing |\n| Market activity | `apify/instagram-reel-scraper` | Activity analysis |\n| Market intelligence | `apify/instagram-scraper` | Full data |\n| Product launch research | `apify/instagram-api-scraper` | API access |\n| Hospitality market | `voyager/booking-scraper` | Hotel data |\n| Tourism insights | `maxcopell/tripadvisor-reviews` | Review analysis |\n\n### Step 2: Fetch Actor Schema\n\nFetch the Actor's input schema and details dynamically using mcpc:\n\n```bash\nexport $(grep APIFY_TOKEN .env | xargs) && mcpc --json mcp.apify.com --header \"Authorization: Bearer $APIFY_TOKEN\" tools-call fetch-actor-details actor:=\"ACTOR_ID\" | jq -r \".content\"\n```\n\nReplace `ACTOR_ID` with the selected Actor (e.g., `compass/crawler-google-places`).\n\nThis returns:\n- Actor description and README\n- Required and optional input parameters\n- Output fields (if available)\n\n### Step 3: Ask User Preferences\n\nBefore running, ask:\n1. **Output format**:\n   - **Quick answer** - Display top few results in chat (no file saved)\n   - **CSV** - Full export with all fields\n   - **JSON** - Full export in JSON format\n2. **Number of results**: Based on character of use case\n\n### Step 4: Run the Script\n\n**Quick answer (display in chat, no file):**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT'\n```\n\n**CSV:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.csv \\\n  --format csv\n```\n\n**JSON:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.json \\\n  --format json\n```\n\n### Step 5: Summarize Findings\n\nAfter completion, report:\n- Number of results found\n- File location and name\n- Key market insights\n- Suggested next steps (deeper analysis, validation)\n\n\n## Error Handling\n\n`APIFY_TOKEN not found` - Ask user to create `.env` with `APIFY_TOKEN=your_token`\n`mcpc not found` - Ask user to install `npm install -g @apify/mcpc`\n`Actor not found` - Check Actor ID spelling\n`Run FAILED` - Ask user to check Apify console link in error output\n`Timeout` - Reduce input size or increase `--timeout`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "apify",
+          "name": "@apify/mcpc",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "apify-trend-analysis",
+      "parsed": {
+        "name": "apify-trend-analysis",
+        "description": "Discover and track emerging trends across Google Trends, Instagram, Facebook, YouTube, and TikTok to inform content strategy.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Trend Analysis\n\nDiscover and track emerging trends using Apify Actors to extract data from multiple platforms.\n\n## Prerequisites\n(No need to check it upfront)\n\n- `.env` file with `APIFY_TOKEN`\n- Node.js 20.6+ (for native `--env-file` support)\n- `mcpc` CLI tool: `npm install -g @apify/mcpc`\n\n## Workflow\n\nCopy this checklist and track progress:\n\n```\nTask Progress:\n- [ ] Step 1: Identify trend type (select Actor)\n- [ ] Step 2: Fetch Actor schema via mcpc\n- [ ] Step 3: Ask user preferences (format, filename)\n- [ ] Step 4: Run the analysis script\n- [ ] Step 5: Summarize findings\n```\n\n### Step 1: Identify Trend Type\n\nSelect the appropriate Actor based on research needs:\n\n| User Need | Actor ID | Best For |\n|-----------|----------|----------|\n| Search trends | `apify/google-trends-scraper` | Google Trends data |\n| Hashtag tracking | `apify/instagram-hashtag-scraper` | Hashtag content |\n| Hashtag metrics | `apify/instagram-hashtag-stats` | Performance stats |\n| Visual trends | `apify/instagram-post-scraper` | Post analysis |\n| Trending discovery | `apify/instagram-search-scraper` | Search trends |\n| Comprehensive tracking | `apify/instagram-scraper` | Full data |\n| API-based trends | `apify/instagram-api-scraper` | API access |\n| Engagement trends | `apify/export-instagram-comments-posts` | Comment tracking |\n| Product trends | `apify/facebook-marketplace-scraper` | Marketplace data |\n| Visual analysis | `apify/facebook-photos-scraper` | Photo trends |\n| Community trends | `apify/facebook-groups-scraper` | Group monitoring |\n| YouTube Shorts | `streamers/youtube-shorts-scraper` | Short-form trends |\n| YouTube hashtags | `streamers/youtube-video-scraper-by-hashtag` | Hashtag videos |\n| TikTok hashtags | `clockworks/tiktok-hashtag-scraper` | Hashtag content |\n| Trending sounds | `clockworks/tiktok-sound-scraper` | Audio trends |\n| TikTok ads | `clockworks/tiktok-ads-scraper` | Ad trends |\n| Discover page | `clockworks/tiktok-discover-scraper` | Discover trends |\n| Explore trends | `clockworks/tiktok-explore-scraper` | Explore content |\n| Trending content | `clockworks/tiktok-trends-scraper` | Viral content |\n\n### Step 2: Fetch Actor Schema\n\nFetch the Actor's input schema and details dynamically using mcpc:\n\n```bash\nexport $(grep APIFY_TOKEN .env | xargs) && mcpc --json mcp.apify.com --header \"Authorization: Bearer $APIFY_TOKEN\" tools-call fetch-actor-details actor:=\"ACTOR_ID\" | jq -r \".content\"\n```\n\nReplace `ACTOR_ID` with the selected Actor (e.g., `apify/google-trends-scraper`).\n\nThis returns:\n- Actor description and README\n- Required and optional input parameters\n- Output fields (if available)\n\n### Step 3: Ask User Preferences\n\nBefore running, ask:\n1. **Output format**:\n   - **Quick answer** - Display top few results in chat (no file saved)\n   - **CSV** - Full export with all fields\n   - **JSON** - Full export in JSON format\n2. **Number of results**: Based on character of use case\n\n### Step 4: Run the Script\n\n**Quick answer (display in chat, no file):**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT'\n```\n\n**CSV:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.csv \\\n  --format csv\n```\n\n**JSON:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.json \\\n  --format json\n```\n\n### Step 5: Summarize Findings\n\nAfter completion, report:\n- Number of results found\n- File location and name\n- Key trend insights\n- Suggested next steps (deeper analysis, content opportunities)\n\n\n## Error Handling\n\n`APIFY_TOKEN not found` - Ask user to create `.env` with `APIFY_TOKEN=your_token`\n`mcpc not found` - Ask user to install `npm install -g @apify/mcpc`\n`Actor not found` - Check Actor ID spelling\n`Run FAILED` - Ask user to check Apify console link in error output\n`Timeout` - Reduce input size or increase `--timeout`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "apify",
+          "name": "@apify/mcpc",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "apify-ultimate-scraper",
+      "parsed": {
+        "name": "apify-ultimate-scraper",
+        "description": "Universal AI-powered web scraper for any platform. Scrape data from Instagram, Facebook, TikTok, YouTube, Google Maps, Google Search, Google Trends, Booking.com, and TripAdvisor. Use for lead generation, brand monitoring, competitor analysis, influencer discovery, trend research, content analytics, audience analysis, or any data extraction task.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Universal Web Scraper\n\nAI-driven data extraction from 55+ Actors across all major platforms. This skill automatically selects the best Actor for your task.\n\n## Prerequisites\n(No need to check it upfront)\n\n- `.env` file with `APIFY_TOKEN`\n- Node.js 20.6+ (for native `--env-file` support)\n- `mcpc` CLI tool: `npm install -g @apify/mcpc`\n\n## Workflow\n\nCopy this checklist and track progress:\n\n```\nTask Progress:\n- [ ] Step 1: Understand user goal and select Actor\n- [ ] Step 2: Fetch Actor schema via mcpc\n- [ ] Step 3: Ask user preferences (format, filename)\n- [ ] Step 4: Run the scraper script\n- [ ] Step 5: Summarize results and offer follow-ups\n```\n\n### Step 1: Understand User Goal and Select Actor\n\nFirst, understand what the user wants to achieve. Then select the best Actor from the options below.\n\n#### Instagram Actors (12)\n\n| Actor ID | Best For |\n|----------|----------|\n| `apify/instagram-profile-scraper` | Profile data, follower counts, bio info |\n| `apify/instagram-post-scraper` | Individual post details, engagement metrics |\n| `apify/instagram-comment-scraper` | Comment extraction, sentiment analysis |\n| `apify/instagram-hashtag-scraper` | Hashtag content, trending topics |\n| `apify/instagram-hashtag-stats` | Hashtag performance metrics |\n| `apify/instagram-reel-scraper` | Reels content and metrics |\n| `apify/instagram-search-scraper` | Search users, places, hashtags |\n| `apify/instagram-tagged-scraper` | Posts tagged with specific accounts |\n| `apify/instagram-followers-count-scraper` | Follower count tracking |\n| `apify/instagram-scraper` | Comprehensive Instagram data |\n| `apify/instagram-api-scraper` | API-based Instagram access |\n| `apify/export-instagram-comments-posts` | Bulk comment/post export |\n\n#### Facebook Actors (14)\n\n| Actor ID | Best For |\n|----------|----------|\n| `apify/facebook-pages-scraper` | Page data, metrics, contact info |\n| `apify/facebook-page-contact-information` | Emails, phones, addresses from pages |\n| `apify/facebook-posts-scraper` | Post content and engagement |\n| `apify/facebook-comments-scraper` | Comment extraction |\n| `apify/facebook-likes-scraper` | Reaction analysis |\n| `apify/facebook-reviews-scraper` | Page reviews |\n| `apify/facebook-groups-scraper` | Group content and members |\n| `apify/facebook-events-scraper` | Event data |\n| `apify/facebook-ads-scraper` | Ad creative and targeting |\n| `apify/facebook-search-scraper` | Search results |\n| `apify/facebook-reels-scraper` | Reels content |\n| `apify/facebook-photos-scraper` | Photo extraction |\n| `apify/facebook-marketplace-scraper` | Marketplace listings |\n| `apify/facebook-followers-following-scraper` | Follower/following lists |\n\n#### TikTok Actors (14)\n\n| Actor ID | Best For |\n|----------|----------|\n| `clockworks/tiktok-scraper` | Comprehensive TikTok data |\n| `clockworks/free-tiktok-scraper` | Free TikTok extraction |\n| `clockworks/tiktok-profile-scraper` | Profile data |\n| `clockworks/tiktok-video-scraper` | Video details and metrics |\n| `clockworks/tiktok-comments-scraper` | Comment extraction |\n| `clockworks/tiktok-followers-scraper` | Follower lists |\n| `clockworks/tiktok-user-search-scraper` | Find users by keywords |\n| `clockworks/tiktok-hashtag-scraper` | Hashtag content |\n| `clockworks/tiktok-sound-scraper` | Trending sounds |\n| `clockworks/tiktok-ads-scraper` | Ad content |\n| `clockworks/tiktok-discover-scraper` | Discover page content |\n| `clockworks/tiktok-explore-scraper` | Explore content |\n| `clockworks/tiktok-trends-scraper` | Trending content |\n| `clockworks/tiktok-live-scraper` | Live stream data |\n\n#### YouTube Actors (5)\n\n| Actor ID | Best For |\n|----------|----------|\n| `streamers/youtube-scraper` | Video data and metrics |\n| `streamers/youtube-channel-scraper` | Channel information |\n| `streamers/youtube-comments-scraper` | Comment extraction |\n| `streamers/youtube-shorts-scraper` | Shorts content |\n| `streamers/youtube-video-scraper-by-hashtag` | Videos by hashtag |\n\n#### Google Maps Actors (4)\n\n| Actor ID | Best For |\n|----------|----------|\n| `compass/crawler-google-places` | Business listings, ratings, contact info |\n| `compass/google-maps-extractor` | Detailed business data |\n| `compass/Google-Maps-Reviews-Scraper` | Review extraction |\n| `poidata/google-maps-email-extractor` | Email discovery from listings |\n\n#### Other Actors (6)\n\n| Actor ID | Best For |\n|----------|----------|\n| `apify/google-search-scraper` | Google search results |\n| `apify/google-trends-scraper` | Google Trends data |\n| `voyager/booking-scraper` | Booking.com hotel data |\n| `voyager/booking-reviews-scraper` | Booking.com reviews |\n| `maxcopell/tripadvisor-reviews` | TripAdvisor reviews |\n| `vdrmota/contact-info-scraper` | Contact enrichment from URLs |\n\n---\n\n#### Actor Selection by Use Case\n\n| Use Case | Primary Actors |\n|----------|---------------|\n| **Lead Generation** | `compass/crawler-google-places`, `poidata/google-maps-email-extractor`, `vdrmota/contact-info-scraper` |\n| **Influencer Discovery** | `apify/instagram-profile-scraper`, `clockworks/tiktok-profile-scraper`, `streamers/youtube-channel-scraper` |\n| **Brand Monitoring** | `apify/instagram-tagged-scraper`, `apify/instagram-hashtag-scraper`, `compass/Google-Maps-Reviews-Scraper` |\n| **Competitor Analysis** | `apify/facebook-pages-scraper`, `apify/facebook-ads-scraper`, `apify/instagram-profile-scraper` |\n| **Content Analytics** | `apify/instagram-post-scraper`, `clockworks/tiktok-scraper`, `streamers/youtube-scraper` |\n| **Trend Research** | `apify/google-trends-scraper`, `clockworks/tiktok-trends-scraper`, `apify/instagram-hashtag-stats` |\n| **Review Analysis** | `compass/Google-Maps-Reviews-Scraper`, `voyager/booking-reviews-scraper`, `maxcopell/tripadvisor-reviews` |\n| **Audience Analysis** | `apify/instagram-followers-count-scraper`, `clockworks/tiktok-followers-scraper`, `apify/facebook-followers-following-scraper` |\n\n---\n\n#### Multi-Actor Workflows\n\nFor complex tasks, chain multiple Actors:\n\n| Workflow | Step 1 | Step 2 |\n|----------|--------|--------|\n| **Lead enrichment** | `compass/crawler-google-places` → | `vdrmota/contact-info-scraper` |\n| **Influencer vetting** | `apify/instagram-profile-scraper` → | `apify/instagram-comment-scraper` |\n| **Competitor deep-dive** | `apify/facebook-pages-scraper` → | `apify/facebook-posts-scraper` |\n| **Local business analysis** | `compass/crawler-google-places` → | `compass/Google-Maps-Reviews-Scraper` |\n\n#### Can't Find a Suitable Actor?\n\nIf none of the Actors above match the user's request, search the Apify Store directly:\n\n```bash\nexport $(grep APIFY_TOKEN .env | xargs) && mcpc --json mcp.apify.com --header \"Authorization: Bearer $APIFY_TOKEN\" tools-call search-actors keywords:=\"SEARCH_KEYWORDS\" limit:=10 offset:=0 category:=\"\" | jq -r '.content[0].text'\n```\n\nReplace `SEARCH_KEYWORDS` with 1-3 simple terms (e.g., \"LinkedIn profiles\", \"Amazon products\", \"Twitter\").\n\n### Step 2: Fetch Actor Schema\n\nFetch the Actor's input schema and details dynamically using mcpc:\n\n```bash\nexport $(grep APIFY_TOKEN .env | xargs) && mcpc --json mcp.apify.com --header \"Authorization: Bearer $APIFY_TOKEN\" tools-call fetch-actor-details actor:=\"ACTOR_ID\" | jq -r \".content\"\n```\n\nReplace `ACTOR_ID` with the selected Actor (e.g., `compass/crawler-google-places`).\n\nThis returns:\n- Actor description and README\n- Required and optional input parameters\n- Output fields (if available)\n\n### Step 3: Ask User Preferences\n\nBefore running, ask:\n1. **Output format**:\n   - **Quick answer** - Display top few results in chat (no file saved)\n   - **CSV** - Full export with all fields\n   - **JSON** - Full export in JSON format\n2. **Number of results**: Based on character of use case\n\n### Step 4: Run the Script\n\n**Quick answer (display in chat, no file):**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT'\n```\n\n**CSV:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.csv \\\n  --format csv\n```\n\n**JSON:**\n```bash\nnode --env-file=.env ${CLAUDE_PLUGIN_ROOT}/reference/scripts/run_actor.js \\\n  --actor \"ACTOR_ID\" \\\n  --input 'JSON_INPUT' \\\n  --output YYYY-MM-DD_OUTPUT_FILE.json \\\n  --format json\n```\n\n### Step 5: Summarize Results and Offer Follow-ups\n\nAfter completion, report:\n- Number of results found\n- File location and name\n- Key fields available\n- **Suggested follow-up workflows** based on results:\n\n| If User Got | Suggest Next |\n|-------------|--------------|\n| Business listings | Enrich with `vdrmota/contact-info-scraper` or get reviews |\n| Influencer profiles | Analyze engagement with comment scrapers |\n| Competitor pages | Deep-dive with post/ad scrapers |\n| Trend data | Validate with platform-specific hashtag scrapers |\n\n\n## Error Handling\n\n`APIFY_TOKEN not found` - Ask user to create `.env` with `APIFY_TOKEN=your_token`\n`mcpc not found` - Ask user to install `npm install -g @apify/mcpc`\n`Actor not found` - Check Actor ID spelling\n`Run FAILED` - Ask user to check Apify console link in error output\n`Timeout` - Reduce input size or increase `--timeout`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "apify",
+          "name": "@apify/mcpc",
+          "detectedFrom": "instructions"
+        }
+      ]
+    }
+  ]
+}

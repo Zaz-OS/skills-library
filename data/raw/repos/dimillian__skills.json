@@ -1,0 +1,229 @@
+{
+  "source": "dimillian/skills",
+  "repoUrl": "https://github.com/dimillian/skills",
+  "skills": [
+    {
+      "skillId": "app-store-changelog",
+      "parsed": {
+        "name": "app-store-changelog",
+        "description": "Create user-facing App Store release notes by collecting and summarizing all user-impacting changes since the last git tag (or a specified ref). Use when asked to generate a comprehensive release changelog, App Store \"What's New\" text, or release notes based on git history or tags.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# App Store Changelog\n\n## Overview\nGenerate a comprehensive, user-facing changelog from git history since the last tag, then translate commits into clear App Store release notes.\n\n## Workflow\n\n### 1) Collect changes\n- Run `scripts/collect_release_changes.sh` from the repo root to gather commits and touched files.\n- If needed, pass a specific tag or ref: `scripts/collect_release_changes.sh v1.2.3 HEAD`.\n- If no tags exist, the script falls back to full history.\n\n### 2) Triage for user impact\n- Scan commits and files to identify user-visible changes.\n- Group changes by theme (New, Improved, Fixed) and deduplicate overlaps.\n- Drop internal-only work (build scripts, refactors, dependency bumps, CI).\n\n### 3) Draft App Store notes\n- Write short, benefit-focused bullets for each user-facing change.\n- Use clear verbs and plain language; avoid internal jargon.\n- Prefer 5 to 10 bullets unless the user requests a different length.\n\n### 4) Validate\n- Ensure every bullet maps back to a real change in the range.\n- Check for duplicates and overly technical wording.\n- Ask for clarification if any change is ambiguous or possibly internal-only.\n\n## Output Format\n- Title (optional): \"What’s New\" or product name + version.\n- Bullet list only; one sentence per bullet.\n- Stick to storefront limits if the user provides one.\n\n## Resources\n- `scripts/collect_release_changes.sh`: Collect commits and touched files since last tag.\n- `references/release-notes-guidelines.md`: Language, filtering, and QA rules for App Store notes."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "gh-issue-fix-flow",
+      "parsed": {
+        "name": "gh-issue-fix-flow",
+        "description": "End-to-end GitHub issue fix workflow using gh, local code changes, builds/tests, and git push. Use when asked to take an issue number, inspect the issue via gh, implement a fix, run XcodeBuildMCP builds/tests, commit with a closing message, and push.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Gh Issue Fix Flow\n\n## Overview\n\nResolve a GitHub issue from intake through fix, validation, and push using gh, local edits, XcodeBuildMCP, and git.\n\n## Workflow\n\n### 1) Intake and issue context\n\n1. Use `gh issue view <id> --repo <owner/repo> --comments` to get the full issue context.\n2. If the repo is unclear, run `gh repo view --json nameWithOwner` to confirm.\n3. Capture reproduction steps, expected behavior, and any maintainer notes.\n\n### 2) Locate the code path\n\n1. Use `rg -n` to locate likely files and entry points.\n2. Read the relevant code paths with `sed -n` or `rg -n` context.\n3. Follow repo-specific conventions (AGENTS/CLAUDE instructions).\n\n### 3) Implement the fix\n\n1. Edit the minimal set of files.\n2. Keep changes aligned with existing architecture and style.\n3. Add tests when behavior changes and test coverage is practical.\n\n### 4) Build and test\n\n1. Use XcodeBuildMCP for required builds/tests:\n   - Set defaults once: `mcp__XcodeBuildMCP__session-set-defaults`.\n   - Build: `mcp__XcodeBuildMCP__build_macos` or `mcp__XcodeBuildMCP__build_sim`.\n   - Tests: prefer targeted schemes (e.g., `mcp__XcodeBuildMCP__test_sim`).\n2. If macOS tests fail due to deployment target mismatches, run the equivalent iOS simulator tests.\n3. Report warnings or failures; do not hide them.\n\n### 5) Commit and push\n\n1. Check for unrelated changes with `git status --short`.\n2. Stage only the fix (exclude unrelated files).\n3. Commit with a closing message: `Fix … (closes #<issue>)`.\n4. Push with `git push`.\n\n### 6) Report back\n\n1. Summarize what changed and where.\n2. Provide test results (including failures).\n3. Note any follow-ups or blocked items."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "system",
+          "org": "git",
+          "name": "git",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "github",
+      "parsed": {
+        "name": "github",
+        "description": "Interact with GitHub using the `gh` CLI. Use `gh issue`, `gh pr`, `gh run`, and `gh api` for issues, PRs, CI runs, and advanced queries.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# GitHub Skill\n\nUse the `gh` CLI to interact with GitHub. Always specify `--repo owner/repo` when not in a git directory, or use URLs directly.\n\n## Pull Requests\n\nCheck CI status on a PR:\n```bash\ngh pr checks 55 --repo owner/repo\n```\n\nList recent workflow runs:\n```bash\ngh run list --repo owner/repo --limit 10\n```\n\nView a run and see which steps failed:\n```bash\ngh run view <run-id> --repo owner/repo\n```\n\nView logs for failed steps only:\n```bash\ngh run view <run-id> --repo owner/repo --log-failed\n```\n\n## API for Advanced Queries\n\nThe `gh api` command is useful for accessing data not available through other subcommands.\n\nGet PR with specific fields:\n```bash\ngh api repos/owner/repo/pulls/55 --jq '.title, .state, .user.login'\n```\n\n## JSON Output\n\nMost commands support `--json` for structured output.  You can use `--jq` to filter:\n\n```bash\ngh issue list --repo owner/repo --json number,title --jq '.[] | \"\\(.number): \\(.title)\"'\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "ios-debugger-agent",
+      "parsed": {
+        "name": "ios-debugger-agent",
+        "description": "Use XcodeBuildMCP to build, run, launch, and debug the current iOS project on a booted simulator. Trigger when asked to run an iOS app, interact with the simulator UI, inspect on-screen state, capture logs/console output, or diagnose runtime behavior using XcodeBuildMCP tools.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# iOS Debugger Agent\n\n## Overview\nUse XcodeBuildMCP to build and run the current project scheme on a booted iOS simulator, interact with the UI, and capture logs. Prefer the MCP tools for simulator control, logs, and view inspection.\n\n## Core Workflow\nFollow this sequence unless the user asks for a narrower action.\n\n### 1) Discover the booted simulator\n- Call `mcp__XcodeBuildMCP__list_sims` and select the simulator with state `Booted`.\n- If none are booted, ask the user to boot one (do not boot automatically unless asked).\n\n### 2) Set session defaults\n- Call `mcp__XcodeBuildMCP__session-set-defaults` with:\n  - `projectPath` or `workspacePath` (whichever the repo uses)\n  - `scheme` for the current app\n  - `simulatorId` from the booted device\n  - Optional: `configuration: \"Debug\"`, `useLatestOS: true`\n\n### 3) Build + run (when requested)\n- Call `mcp__XcodeBuildMCP__build_run_sim`.\n- If the app is already built and only launch is requested, use `mcp__XcodeBuildMCP__launch_app_sim`.\n- If bundle id is unknown:\n  1) `mcp__XcodeBuildMCP__get_sim_app_path`\n  2) `mcp__XcodeBuildMCP__get_app_bundle_id`\n\n## UI Interaction & Debugging\nUse these when asked to inspect or interact with the running app.\n\n- **Describe UI**: `mcp__XcodeBuildMCP__describe_ui` before tapping or swiping.\n- **Tap**: `mcp__XcodeBuildMCP__tap` (prefer `id` or `label`; use coordinates only if needed).\n- **Type**: `mcp__XcodeBuildMCP__type_text` after focusing a field.\n- **Gestures**: `mcp__XcodeBuildMCP__gesture` for common scrolls and edge swipes.\n- **Screenshot**: `mcp__XcodeBuildMCP__screenshot` for visual confirmation.\n\n## Logs & Console Output\n- Start logs: `mcp__XcodeBuildMCP__start_sim_log_cap` with the app bundle id.\n- Stop logs: `mcp__XcodeBuildMCP__stop_sim_log_cap` and summarize important lines.\n- For console output, set `captureConsole: true` and relaunch if required.\n\n## Troubleshooting\n- If build fails, ask whether to retry with `preferXcodebuild: true`.\n- If the wrong app launches, confirm the scheme and bundle id.\n- If UI elements are not hittable, re-run `describe_ui` after layout changes."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "macos-spm-app-packaging",
+      "parsed": {
+        "name": "macos-spm-app-packaging",
+        "description": "Scaffold, build, and package SwiftPM-based macOS apps without an Xcode project. Use when you need a from-scratch macOS app layout, SwiftPM targets/resources, a custom .app bundle assembly script, or signing/notarization/appcast steps outside Xcode.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# macOS SwiftPM App Packaging (No Xcode)\n\n## Overview\nBootstrap a complete SwiftPM macOS app folder, then build, package, and run it without Xcode. Use `assets/templates/bootstrap/` for the starter layout and `references/packaging.md` + `references/release.md` for packaging and release details.\n\n## Two-Step Workflow\n1) Bootstrap the project folder\n   - Copy `assets/templates/bootstrap/` into a new repo.\n   - Rename `MyApp` in `Package.swift`, `Sources/MyApp/`, and `version.env`.\n   - Customize `APP_NAME`, `BUNDLE_ID`, and versions.\n\n2) Build, package, and run the bootstrapped app\n   - Copy scripts from `assets/templates/` into your repo (for example, `Scripts/`).\n   - Build/tests: `swift build` and `swift test`.\n   - Package: `Scripts/package_app.sh`.\n   - Run: `Scripts/compile_and_run.sh` (preferred) or `Scripts/launch.sh`.\n   - Release (optional): `Scripts/sign-and-notarize.sh` and `Scripts/make_appcast.sh`.\n   - Tag + GitHub release (optional): create a git tag, upload the zip/appcast to the GitHub release, and publish.\n\n## Templates\n- `assets/templates/package_app.sh`: Build binaries, create the .app bundle, copy resources, sign.\n- `assets/templates/compile_and_run.sh`: Dev loop to kill running app, package, launch.\n- `assets/templates/build_icon.sh`: Generate .icns from an Icon Composer file (requires Xcode install).\n- `assets/templates/sign-and-notarize.sh`: Notarize, staple, and zip a release build.\n- `assets/templates/make_appcast.sh`: Generate Sparkle appcast entries for updates.\n- `assets/templates/setup_dev_signing.sh`: Create a stable dev code-signing identity.\n- `assets/templates/launch.sh`: Simple launcher for a packaged .app.\n- `assets/templates/version.env`: Example version file consumed by packaging scripts.\n- `assets/templates/bootstrap/`: Minimal SwiftPM macOS app skeleton (Package.swift, Sources/, version.env).\n\n## Notes\n- Keep entitlements and signing configuration explicit; edit the template scripts instead of reimplementing.\n- Remove Sparkle steps if you do not use Sparkle for updates.\n- Sparkle relies on the bundle build number (`CFBundleVersion`), so `BUILD_NUMBER` in `version.env` must increase for each update.\n- For menu bar apps, set `MENU_BAR_APP=1` when packaging to emit `LSUIElement` in Info.plist."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": true
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "react-component-performance",
+      "parsed": {
+        "name": "react-component-performance",
+        "description": "Analyze and optimize React component performance issues (slow renders, re-render thrash, laggy lists, expensive computations). Use when asked to profile or improve a React component, reduce re-renders, or speed up UI updates in React apps.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# React Component Performance\n\n## Overview\n\nIdentify render hotspots, isolate expensive updates, and apply targeted optimizations without changing UI behavior.\n\n## Workflow\n\n1. Reproduce or describe the slowdown.\n2. Identify what triggers re-renders (state updates, props churn, effects).\n3. Isolate fast-changing state from heavy subtrees.\n4. Stabilize props and handlers; memoize where it pays off.\n5. Reduce expensive work (computation, DOM size, list length).\n6. Validate with profiling; avoid speculative changes.\n\n## Checklist\n\n- Measure: use React DevTools Profiler or log renders; capture baseline.\n- Find churn: identify state updated on a timer, scroll, input, or animation.\n- Split: move ticking state into a child; keep heavy lists static.\n- Memoize: wrap leaf rows with `memo` only when props are stable.\n- Stabilize props: use `useCallback`/`useMemo` for handlers and derived values.\n- Avoid derived work in render: precompute, or compute inside memoized helpers.\n- Control list size: window/virtualize long lists; avoid rendering hidden items.\n- Keys: ensure stable keys; avoid index when order can change.\n- Effects: verify dependency arrays; avoid effects that re-run on every render.\n- Style/layout: watch for expensive layout thrash or large Markdown/diff renders.\n\n## Optimization Patterns\n\n- **Isolate ticking state**: move a timer/animation into a child component so the parent list does not re-render every tick.\n- **Stabilize callbacks**: prefer `useCallback` for handlers passed to memoized rows.\n- **Split rows**: extract list rows into memoized components with narrow props.\n- **Defer heavy rendering**: lazy-render or collapse expensive content until expanded.\n- **Prefer derived data outside render**: compute summaries with `useMemo` or helper functions when inputs are stable.\n\n## Example Reference\n\nLoad `references/examples.md` when the user wants a concrete refactor example."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "swift-concurrency-expert",
+      "parsed": {
+        "name": "swift-concurrency-expert",
+        "description": "Swift Concurrency review and remediation for Swift 6.2+. Use when asked to review Swift Concurrency usage, improve concurrency compliance, or fix Swift concurrency compiler errors in a feature or file.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Swift Concurrency Expert\n\n## Overview\n\nReview and fix Swift Concurrency issues in Swift 6.2+ codebases by applying actor isolation, Sendable safety, and modern concurrency patterns with minimal behavior changes.\n\n## Workflow\n\n### 1. Triage the issue\n\n- Capture the exact compiler diagnostics and the offending symbol(s).\n- Check project concurrency settings: Swift language version (6.2+), strict concurrency level, and whether approachable concurrency (default actor isolation / main-actor-by-default) is enabled.\n- Identify the current actor context (`@MainActor`, `actor`, `nonisolated`) and whether a default actor isolation mode is enabled.\n- Confirm whether the code is UI-bound or intended to run off the main actor.\n\n### 2. Apply the smallest safe fix\n\nPrefer edits that preserve existing behavior while satisfying data-race safety.\n\nCommon fixes:\n- **UI-bound types**: annotate the type or relevant members with `@MainActor`.\n- **Protocol conformance on main actor types**: make the conformance isolated (e.g., `extension Foo: @MainActor SomeProtocol`).\n- **Global/static state**: protect with `@MainActor` or move into an actor.\n- **Background work**: move expensive work into a `@concurrent` async function on a `nonisolated` type or use an `actor` to guard mutable state.\n- **Sendable errors**: prefer immutable/value types; add `Sendable` conformance only when correct; avoid `@unchecked Sendable` unless you can prove thread safety.\n\n\n## Reference material\n\n- See `references/swift-6-2-concurrency.md` for Swift 6.2 changes, patterns, and examples.\n- See `references/approachable-concurrency.md` when the project is opted into approachable concurrency mode.\n- See `references/swiftui-concurrency-tour-wwdc.md` for SwiftUI-specific concurrency guidance."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "swiftui-liquid-glass",
+      "parsed": {
+        "name": "swiftui-liquid-glass",
+        "description": "Implement, review, or improve SwiftUI features using the iOS 26+ Liquid Glass API. Use when asked to adopt Liquid Glass in new SwiftUI UI, refactor an existing feature to Liquid Glass, or review Liquid Glass usage for correctness, performance, and design alignment.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# SwiftUI Liquid Glass\n\n## Overview\nUse this skill to build or review SwiftUI features that fully align with the iOS 26+ Liquid Glass API. Prioritize native APIs (`glassEffect`, `GlassEffectContainer`, glass button styles) and Apple design guidance. Keep usage consistent, interactive where needed, and performance aware.\n\n## Workflow Decision Tree\nChoose the path that matches the request:\n\n### 1) Review an existing feature\n- Inspect where Liquid Glass should be used and where it should not.\n- Verify correct modifier order, shape usage, and container placement.\n- Check for iOS 26+ availability handling and sensible fallbacks.\n\n### 2) Improve a feature using Liquid Glass\n- Identify target components for glass treatment (surfaces, chips, buttons, cards).\n- Refactor to use `GlassEffectContainer` where multiple glass elements appear.\n- Introduce interactive glass only for tappable or focusable elements.\n\n### 3) Implement a new feature using Liquid Glass\n- Design the glass surfaces and interactions first (shape, prominence, grouping).\n- Add glass modifiers after layout/appearance modifiers.\n- Add morphing transitions only when the view hierarchy changes with animation.\n\n## Core Guidelines\n- Prefer native Liquid Glass APIs over custom blurs.\n- Use `GlassEffectContainer` when multiple glass elements coexist.\n- Apply `.glassEffect(...)` after layout and visual modifiers.\n- Use `.interactive()` for elements that respond to touch/pointer.\n- Keep shapes consistent across related elements for a cohesive look.\n- Gate with `#available(iOS 26, *)` and provide a non-glass fallback.\n\n## Review Checklist\n- **Availability**: `#available(iOS 26, *)` present with fallback UI.\n- **Composition**: Multiple glass views wrapped in `GlassEffectContainer`.\n- **Modifier order**: `glassEffect` applied after layout/appearance modifiers.\n- **Interactivity**: `interactive()` only where user interaction exists.\n- **Transitions**: `glassEffectID` used with `@Namespace` for morphing.\n- **Consistency**: Shapes, tinting, and spacing align across the feature.\n\n## Implementation Checklist\n- Define target elements and desired glass prominence.\n- Wrap grouped glass elements in `GlassEffectContainer` and tune spacing.\n- Use `.glassEffect(.regular.tint(...).interactive(), in: .rect(cornerRadius: ...))` as needed.\n- Use `.buttonStyle(.glass)` / `.buttonStyle(.glassProminent)` for actions.\n- Add morphing transitions with `glassEffectID` when hierarchy changes.\n- Provide fallback materials and visuals for earlier iOS versions.\n\n## Quick Snippets\nUse these patterns directly and tailor shapes/tints/spacing.\n\n```swift\nif #available(iOS 26, *) {\n    Text(\"Hello\")\n        .padding()\n        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))\n} else {\n    Text(\"Hello\")\n        .padding()\n        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))\n}\n```\n\n```swift\nGlassEffectContainer(spacing: 24) {\n    HStack(spacing: 24) {\n        Image(systemName: \"scribble.variable\")\n            .frame(width: 72, height: 72)\n            .font(.system(size: 32))\n            .glassEffect()\n        Image(systemName: \"eraser.fill\")\n            .frame(width: 72, height: 72)\n            .font(.system(size: 32))\n            .glassEffect()\n    }\n}\n```\n\n```swift\nButton(\"Confirm\") { }\n    .buttonStyle(.glassProminent)\n```\n\n## Resources\n- Reference guide: `references/liquid-glass.md`\n- Prefer Apple docs for up-to-date API details."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "swiftui-performance-audit",
+      "parsed": {
+        "name": "swiftui-performance-audit",
+        "description": "Audit and improve SwiftUI runtime performance from code review and architecture. Use for requests to diagnose slow rendering, janky scrolling, high CPU/memory usage, excessive view updates, or layout thrash in SwiftUI apps, and to provide guidance for user-run Instruments profiling when code review alone is insufficient.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# SwiftUI Performance Audit\n\n## Overview\n\nAudit SwiftUI view performance end-to-end, from instrumentation and baselining to root-cause analysis and concrete remediation steps.\n\n## Workflow Decision Tree\n\n- If the user provides code, start with \"Code-First Review.\"\n- If the user only describes symptoms, ask for minimal code/context, then do \"Code-First Review.\"\n- If code review is inconclusive, go to \"Guide the User to Profile\" and ask for a trace or screenshots.\n\n## 1. Code-First Review\n\nCollect:\n- Target view/feature code.\n- Data flow: state, environment, observable models.\n- Symptoms and reproduction steps.\n\nFocus on:\n- View invalidation storms from broad state changes.\n- Unstable identity in lists (`id` churn, `UUID()` per render).\n- Top-level conditional view swapping (`if/else` returning different root branches).\n- Heavy work in `body` (formatting, sorting, image decoding).\n- Layout thrash (deep stacks, `GeometryReader`, preference chains).\n- Large images without downsampling or resizing.\n- Over-animated hierarchies (implicit animations on large trees).\n\nProvide:\n- Likely root causes with code references.\n- Suggested fixes and refactors.\n- If needed, a minimal repro or instrumentation suggestion.\n\n## 2. Guide the User to Profile\n\nExplain how to collect data with Instruments:\n- Use the SwiftUI template in Instruments (Release build).\n- Reproduce the exact interaction (scroll, navigation, animation).\n- Capture SwiftUI timeline and Time Profiler.\n- Export or screenshot the relevant lanes and the call tree.\n\nAsk for:\n- Trace export or screenshots of SwiftUI lanes + Time Profiler call tree.\n- Device/OS/build configuration.\n\n## 3. Analyze and Diagnose\n\nPrioritize likely SwiftUI culprits:\n- View invalidation storms from broad state changes.\n- Unstable identity in lists (`id` churn, `UUID()` per render).\n- Top-level conditional view swapping (`if/else` returning different root branches).\n- Heavy work in `body` (formatting, sorting, image decoding).\n- Layout thrash (deep stacks, `GeometryReader`, preference chains).\n- Large images without downsampling or resizing.\n- Over-animated hierarchies (implicit animations on large trees).\n\nSummarize findings with evidence from traces/logs.\n\n## 4. Remediate\n\nApply targeted fixes:\n- Narrow state scope (`@State`/`@Observable` closer to leaf views).\n- Stabilize identities for `ForEach` and lists.\n- Move heavy work out of `body` (precompute, cache, `@State`).\n- Use `equatable()` or value wrappers for expensive subtrees.\n- Downsample images before rendering.\n- Reduce layout complexity or use fixed sizing where possible.\n\n## Common Code Smells (and Fixes)\n\nLook for these patterns during code review.\n\n### Expensive formatters in `body`\n\n```swift\nvar body: some View {\n    let number = NumberFormatter() // slow allocation\n    let measure = MeasurementFormatter() // slow allocation\n    Text(measure.string(from: .init(value: meters, unit: .meters)))\n}\n```\n\nPrefer cached formatters in a model or a dedicated helper:\n\n```swift\nfinal class DistanceFormatter {\n    static let shared = DistanceFormatter()\n    let number = NumberFormatter()\n    let measure = MeasurementFormatter()\n}\n```\n\n### Computed properties that do heavy work\n\n```swift\nvar filtered: [Item] {\n    items.filter { $0.isEnabled } // runs on every body eval\n}\n```\n\nPrefer precompute or cache on change:\n\n```swift\n@State private var filtered: [Item] = []\n// update filtered when inputs change\n```\n\n### Sorting/filtering in `body` or `ForEach`\n\n```swift\nList {\n    ForEach(items.sorted(by: sortRule)) { item in\n        Row(item)\n    }\n}\n```\n\nPrefer sort once before view updates:\n\n```swift\nlet sortedItems = items.sorted(by: sortRule)\n```\n\n### Inline filtering in `ForEach`\n\n```swift\nForEach(items.filter { $0.isEnabled }) { item in\n    Row(item)\n}\n```\n\nPrefer a prefiltered collection with stable identity.\n\n### Unstable identity\n\n```swift\nForEach(items, id: \\.self) { item in\n    Row(item)\n}\n```\n\nAvoid `id: \\.self` for non-stable values; use a stable ID.\n\n### Top-level conditional view swapping\n\n```swift\nvar content: some View {\n    if isEditing {\n        editingView\n    } else {\n        readOnlyView\n    }\n}\n```\n\nPrefer one stable base view and localize conditions to sections/modifiers (for example inside `toolbar`, row content, `overlay`, or `disabled`). This reduces root identity churn and helps SwiftUI diffing stay efficient.\n\n### Image decoding on the main thread\n\n```swift\nImage(uiImage: UIImage(data: data)!)\n```\n\nPrefer decode/downsample off the main thread and store the result.\n\n### Broad dependencies in observable models\n\n```swift\n@Observable class Model {\n    var items: [Item] = []\n}\n\nvar body: some View {\n    Row(isFavorite: model.items.contains(item))\n}\n```\n\nPrefer granular view models or per-item state to reduce update fan-out.\n\n## 5. Verify\n\nAsk the user to re-run the same capture and compare with baseline metrics.\nSummarize the delta (CPU, frame drops, memory peak) if provided.\n\n## Outputs\n\nProvide:\n- A short metrics table (before/after if available).\n- Top issues (ordered by impact).\n- Proposed fixes with estimated effort.\n\n## References\n\nAdd Apple documentation and WWDC resources under `references/` as they are supplied by the user.\n- Optimizing SwiftUI performance with Instruments: `references/optimizing-swiftui-performance-instruments.md`\n- Understanding and improving SwiftUI performance: `references/understanding-improving-swiftui-performance.md`\n- Understanding hangs in your app: `references/understanding-hangs-in-your-app.md`\n- Demystify SwiftUI performance (WWDC23): `references/demystify-swiftui-performance-wwdc23.md`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "swiftui-ui-patterns",
+      "parsed": {
+        "name": "swiftui-ui-patterns",
+        "description": "Best practices and example-driven guidance for building SwiftUI views and components. Use when creating or refactoring SwiftUI UI, designing tab architecture with TabView, composing screens, or needing component-specific patterns and examples.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# SwiftUI UI Patterns\n\n## Quick start\n\nChoose a track based on your goal:\n\n### Existing project\n\n- Identify the feature or screen and the primary interaction model (list, detail, editor, settings, tabbed).\n- Find a nearby example in the repo with `rg \"TabView\\(\"` or similar, then read the closest SwiftUI view.\n- Apply local conventions: prefer SwiftUI-native state, keep state local when possible, and use environment injection for shared dependencies.\n- Choose the relevant component reference from `references/components-index.md` and follow its guidance.\n- Build the view with small, focused subviews and SwiftUI-native data flow.\n\n### New project scaffolding\n\n- Start with `references/app-scaffolding-wiring.md` to wire TabView + NavigationStack + sheets.\n- Add a minimal `AppTab` and `RouterPath` based on the provided skeletons.\n- Choose the next component reference based on the UI you need first (TabView, NavigationStack, Sheets).\n- Expand the route and sheet enums as new screens are added.\n\n## General rules to follow\n\n- Use modern SwiftUI state (`@State`, `@Binding`, `@Observable`, `@Environment`) and avoid unnecessary view models.\n- Prefer composition; keep views small and focused.\n- Use async/await with `.task` and explicit loading/error states.\n- Maintain existing legacy patterns only when editing legacy files.\n- Follow the project's formatter and style guide.\n- **Sheets**: Prefer `.sheet(item:)` over `.sheet(isPresented:)` when state represents a selected model. Avoid `if let` inside a sheet body. Sheets should own their actions and call `dismiss()` internally instead of forwarding `onCancel`/`onConfirm` closures.\n\n## Workflow for a new SwiftUI view\n\n1. Define the view's state and its ownership location.\n2. Identify dependencies to inject via `@Environment`.\n3. Sketch the view hierarchy and extract repeated parts into subviews.\n4. Implement async loading with `.task` and explicit state enum if needed.\n5. Add accessibility labels or identifiers when the UI is interactive.\n6. Validate with a build and update usage callsites if needed.\n\n## Component references\n\nUse `references/components-index.md` as the entry point. Each component reference should include:\n- Intent and best-fit scenarios.\n- Minimal usage pattern with local conventions.\n- Pitfalls and performance notes.\n- Paths to existing examples in the current repo.\n\n## Sheet patterns\n\n### Item-driven sheet (preferred)\n\n```swift\n@State private var selectedItem: Item?\n\n.sheet(item: $selectedItem) { item in\n    EditItemSheet(item: item)\n}\n```\n\n### Sheet owns its actions\n\n```swift\nstruct EditItemSheet: View {\n    @Environment(\\.dismiss) private var dismiss\n    @Environment(Store.self) private var store\n\n    let item: Item\n    @State private var isSaving = false\n\n    var body: some View {\n        VStack {\n            Button(isSaving ? \"Saving…\" : \"Save\") {\n                Task { await save() }\n            }\n        }\n    }\n\n    private func save() async {\n        isSaving = true\n        await store.save(item)\n        dismiss()\n    }\n}\n```\n\n## Adding a new component reference\n\n- Create `references/<component>.md`.\n- Keep it short and actionable; link to concrete files in the current repo.\n- Update `references/components-index.md` with the new entry."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "swiftui-view-refactor",
+      "parsed": {
+        "name": "swiftui-view-refactor",
+        "description": "Refactor and review SwiftUI view files for consistent structure, dependency injection, and Observation usage. Use when asked to clean up a SwiftUI view’s layout/ordering, handle view models safely (non-optional when possible), or standardize how dependencies and @Observable state are initialized and passed.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# SwiftUI View Refactor\n\n## Overview\nApply a consistent structure and dependency pattern to SwiftUI views, with a focus on ordering, Model-View (MV) patterns, careful view model handling, and correct Observation usage.\n\n## Core Guidelines\n\n### 1) View ordering (top → bottom)\n- Environment\n- `private`/`public` `let`\n- `@State` / other stored properties\n- computed `var` (non-view)\n- `init`\n- `body`\n- computed view builders / other view helpers\n- helper / async functions\n\n### 2) Prefer MV (Model-View) patterns\n- Default to MV: Views are lightweight state expressions; models/services own business logic.\n- Favor `@State`, `@Environment`, `@Query`, and `task`/`onChange` for orchestration.\n- Inject services and shared models via `@Environment`; keep views small and composable.\n- Split large views into subviews rather than introducing a view model.\n\n### 3) Split large bodies and view properties\n- If `body` grows beyond a screen or has multiple logical sections, split it into smaller subviews.\n- Extract large computed view properties (`var header: some View { ... }`) into dedicated `View` types when they carry state or complex branching.\n- It's fine to keep related subviews as computed view properties in the same file; extract to a standalone `View` struct only when it structurally makes sense or when reuse is intended.\n- Prefer passing small inputs (data, bindings, callbacks) over reusing the entire parent view state.\n\nExample (extracting a section):\n\n```swift\nvar body: some View {\n    VStack(alignment: .leading, spacing: 16) {\n        HeaderSection(title: title, isPinned: isPinned)\n        DetailsSection(details: details)\n        ActionsSection(onSave: onSave, onCancel: onCancel)\n    }\n}\n```\n\nExample (long body → shorter body + computed views in the same file):\n\n```swift\nvar body: some View {\n    List {\n        header\n        filters\n        results\n        footer\n    }\n}\n\nprivate var header: some View {\n    VStack(alignment: .leading, spacing: 6) {\n        Text(title).font(.title2)\n        Text(subtitle).font(.subheadline)\n    }\n}\n\nprivate var filters: some View {\n    ScrollView(.horizontal, showsIndicators: false) {\n        HStack {\n            ForEach(filterOptions, id: \\.self) { option in\n                FilterChip(option: option, isSelected: option == selectedFilter)\n                    .onTapGesture { selectedFilter = option }\n            }\n        }\n    }\n}\n```\n\nExample (extracting a complex computed view):\n\n```swift\nprivate var header: some View {\n    HeaderSection(title: title, subtitle: subtitle, status: status)\n}\n\nprivate struct HeaderSection: View {\n    let title: String\n    let subtitle: String?\n    let status: Status\n\n    var body: some View {\n        VStack(alignment: .leading, spacing: 4) {\n            Text(title).font(.headline)\n            if let subtitle { Text(subtitle).font(.subheadline) }\n            StatusBadge(status: status)\n        }\n    }\n}\n```\n\n### 3b) Keep a stable view tree (avoid top-level conditional view swapping)\n- Avoid patterns where a computed view (or `body`) returns completely different root branches using `if/else`.\n- Prefer a single stable base view, and place conditions inside sections/modifiers (`overlay`, `opacity`, `disabled`, `toolbar`, row content, etc.).\n- Root-level branch swapping can cause identity churn, broader invalidation, and extra recomputation in SwiftUI.\n\nPrefer:\n\n```swift\nvar body: some View {\n    List {\n        documentsListContent\n    }\n    .toolbar {\n        if canEdit {\n            editToolbar\n        }\n    }\n}\n```\n\nAvoid:\n\n```swift\nvar documentsListView: some View {\n    if canEdit {\n        editableDocumentsList\n    } else {\n        readOnlyDocumentsList\n    }\n}\n```\n\n### 4) View model handling (only if already present)\n- Do not introduce a view model unless the request or existing code clearly calls for one.\n- If a view model exists, make it non-optional when possible.\n- Pass dependencies to the view via `init`, then pass them into the view model in the view's `init`.\n- Avoid `bootstrapIfNeeded` patterns.\n\nExample (Observation-based):\n\n```swift\n@State private var viewModel: SomeViewModel\n\ninit(dependency: Dependency) {\n    _viewModel = State(initialValue: SomeViewModel(dependency: dependency))\n}\n```\n\n### 5) Observation usage\n- For `@Observable` reference types, store them as `@State` in the root view.\n- Pass observables down explicitly as needed; avoid optional state unless required.\n\n## Workflow\n\n1) Reorder the view to match the ordering rules.\n2) Favor MV: move lightweight orchestration into the view using `@State`, `@Environment`, `@Query`, `task`, and `onChange`.\n3) Ensure stable view structure: avoid top-level `if`-based branch swapping; move conditions to localized sections/modifiers.\n4) If a view model exists, replace optional view models with a non-optional `@State` view model initialized in `init` by passing dependencies from the view.\n5) Confirm Observation usage: `@State` for root `@Observable` view models, no redundant wrappers.\n6) Keep behavior intact: do not change layout or business logic unless requested.\n\n## Notes\n\n- Prefer small, explicit helpers over large conditional blocks.\n- Keep computed view builders below `body` and non-view computed vars above `init`.\n- For MV-first guidance and rationale, see `references/mv-patterns.md`.\n\n## Large-view handling\n\n- When a SwiftUI view file exceeds ~300 lines, split it using extensions to group related helpers. Move async functions and helper functions into dedicated `private` extensions, separated with `// MARK: -` comments that describe their purpose (e.g., `// MARK: - Actions`, `// MARK: - Subviews`, `// MARK: - Helpers`). Keep the main `struct` focused on stored properties, init, and `body`, with view-building computed vars also grouped via marks when the file is long."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    }
+  ]
+}

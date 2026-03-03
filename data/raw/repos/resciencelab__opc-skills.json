@@ -1,0 +1,361 @@
+{
+  "source": "resciencelab/opc-skills",
+  "repoUrl": "https://github.com/resciencelab/opc-skills",
+  "skills": [
+    {
+      "skillId": "archive",
+      "parsed": {
+        "name": "archive",
+        "description": "Archive session learnings, debugging solutions, and deployment logs to .archive/yyyy-mm-dd/ as indexed markdown with searchable tags. Use when completing a significant task, resolving a tricky bug, deploying, or when the user says \"archive this\". Maintains .archive/MEMORY.md index for cross-session knowledge reuse.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Archive Skill\n\nCapture, index, and reuse project knowledge across sessions.\n\n## When to Archive\n\n- After completing a significant task (deploy, migration, major feature)\n- After resolving a tricky debugging session\n- When the user says \"archive this\"\n- After any multi-step process with learnings worth preserving\n\n## When to Consult Archives\n\n- Before debugging infrastructure, deploy, or CI issues\n- Before repeating a process done in a past session\n- When encountering an error that may have been solved before\n\n**Search**: `grep -ri \"keyword\" .archive/`\n**Index**: `.archive/MEMORY.md`\n\n## Archive Workflow\n\n1. Read `.archive/MEMORY.md` — check for related existing archives\n2. Create `.archive/YYYY-MM-DD/` directory if needed\n3. Write markdown file with YAML frontmatter (see `references/TEMPLATE.md`)\n4. **Update `.archive/MEMORY.md`**: add one-line entry under the right category\n5. If related archives exist, add `related` field in frontmatter\n\n## Lookup Workflow\n\n1. Read `.archive/MEMORY.md` to find relevant entries\n2. Read the specific archive file for detailed context\n3. Apply learnings to current task\n\n## Categories\n\n- **infrastructure** — AWS, ECS, IAM, networking, secrets, CloudWatch\n- **release** — TestFlight, versioning, Git Flow, CHANGELOG\n- **debugging** — Bug fixes, error resolution, gotchas\n- **feature** — Feature design, implementation notes\n- **design** — UI/UX, icons, visual design\n\n## Rules\n\n- `.archive/` must be in `.gitignore` — local-only notes\n- Keep entries concise but reproducible\n- Focus on **problems, fixes, and exact commands**\n- Always update MEMORY.md after creating an archive\n- Use descriptive filenames (e.g., `cloudwatch-logging.md` not `session.md`)\n- Include YAML frontmatter with `tags`, `category`, and optional `related`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "banner-creator",
+      "parsed": {
+        "name": "banner-creator",
+        "description": "Create banners using AI image generation. Discuss format/style, generate variations, iterate with user feedback, crop to target ratio. Use when user wants to create a banner, header, hero image, cover image, GitHub banner, Twitter header, or readme banner.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Banner Creator Skill\n\nCreate professional banners through AI image generation with an iterative design process.\n\n## Prerequisites\n\n**Required API Keys (set in environment):**\n- `GEMINI_API_KEY` - Get from [Google AI Studio](https://aistudio.google.com/apikey)\n\n**Required Skills:**\n- `nanobanana` - AI image generation (Gemini 3 Pro Image)\n\n\n\n## File Output Location\n\nAll generated files should be saved to the `.skill-archive` directory:\n\n```\n.skill-archive/banner-creator/<yyyy-mm-dd-summaryname>/\n```\n\n**Example:**\n```\n.skill-archive/banner-creator/2026-01-19-opc-banner/\n  banner-01.png\n  banner-02.png\n  ...\n  banner-03-cropped.png\n  preview.html\n```\n\n## Workflow\n\n### Step 1: Discovery & Requirements\n\nBefore generating, gather requirements from user:\n\n**Ask about:**\n1. **Purpose** - Where will the banner be used?\n   - GitHub README\n   - Twitter/X header\n   - LinkedIn banner\n   - Website hero\n   - YouTube channel art\n\n2. **Target ratio/size** - See [references/formats.md](./references/formats.md):\n   - `2:1` (1280x640) - GitHub README\n   - `3:1` (1500x500) - Twitter header\n   - `16:9` (1920x1080) - Website hero\n\n3. **Style preference**:\n   - Match existing logo/brand?\n   - Pixel art / 8-bit retro\n   - Minimalist / flat design\n   - Gradient / modern\n   - Illustrated / artistic\n\n4. **Content elements**:\n   - Brand name / project name?\n   - Tagline / slogan?\n   - Logo character to include?\n\n5. **Color preferences**:\n   - Existing brand colors?\n   - Let AI decide?\n\n**Wait for user confirmation before proceeding!**\n\n### Step 2: Generate Banner Variations\n\nGenerate 20 banner variations using the `nanobanana` skill:\n\n```bash\n# Generate single banner\npython3 <nanobanana_skill_dir>/scripts/generate.py \"{style} banner for {brand}, {description}, {text elements}\" \\\n  --ratio 21:9 -o .skill-archive/banner-creator/<date-name>/banner-01.png\n\n# Batch generate 20 banners\npython3 <nanobanana_skill_dir>/scripts/batch_generate.py \"{style} banner for {brand}, {description}, {text elements}\" \\\n  -n 20 --ratio 21:9 -d .skill-archive/banner-creator/<date-name> -p banner\n```\n\n**Guidelines:**\n- Generate at `21:9` ratio (widest available), crop later to target\n- Use batch_generate.py for multiple variations (includes auto-delay)\n- Use sequential naming: `banner-01.png`, `banner-02.png`, etc.\n\n**Image Editing (for incorporating existing logo):**\n```bash\npython3 <nanobanana_skill_dir>/scripts/generate.py \"add {logo character} to the left side of the banner\" \\\n  -i /path/to/existing-logo.png --ratio 21:9 -o banner-with-logo.png\n```\n\n### Step 3: Create HTML Preview\n\nCopy the preview template and open in browser:\n\n```bash\ncp <skill_dir>/templates/preview.html .skill-archive/banner-creator/<yyyy-mm-dd-summaryname>/preview.html\n```\n\nThen open in default browser:\n\n```bash\nopen .skill-archive/banner-creator/<yyyy-mm-dd-summaryname>/preview.html\n```\n\n**IMPORTANT:** Update the HTML to include the correct number of banners generated.\n\n### Step 4: Iterate with User\n\nAsk user which banners they prefer:\n- \"Which banners do you like? (e.g., #3, #7, #15)\"\n- \"What do you like about them?\"\n- \"Any changes you'd want?\"\n\nBased on feedback:\n1. Generate 10-20 more variations of favorite styles\n2. Use naming: `banner-{original}-v{n}.png` (e.g., `banner-03-v1.png`)\n3. Update HTML preview\n4. Repeat until user selects final banner\n\n### Step 5: Crop to Target Ratio\n\nOnce user approves a banner, crop to target size:\n\n```bash\npython3 <skill_dir>/scripts/crop_banner.py {input.png} {output.png} --ratio 2:1 --width 1280\n```\n\n**Common targets:**\n- GitHub README: `--ratio 2:1 --width 1280` → 1280x640\n- Twitter header: `--ratio 3:1 --width 1500` → 1500x500\n- Website hero: `--ratio 16:9 --width 1920` → 1920x1080\n\n### Step 6: Deliver Final Assets\n\nPresent final deliverables:\n\n```\n## Final Banner Assets\n\n| File | Description | Size |\n|------|-------------|------|\n| banner-03.png | Original (21:9) | 2016x864 |\n| banner-03-cropped.png | GitHub README (2:1) | 1280x640 |\n\nAll files saved to: `.skill-archive/banner-creator/<yyyy-mm-dd-summaryname>/`\nCopy final banner to user's desired location.\n```\n\n## Quick Reference\n\n### Common Prompt Patterns\n\n**With Text:**\n```\nWide banner for {brand}, {style} style, featuring \"{text}\" prominently displayed, {colors}, {scene/elements}\n```\n\n**With Character:**\n```\nWide banner featuring {character description}, {style} style, {scene}, text \"{brand name}\" on {position}, {colors}\n```\n\n**Abstract/Gradient:**\n```\nAbstract {style} banner, {colors} gradient, geometric patterns, modern tech feel, text \"{brand}\" centered\n```\n\n**Scene-based:**\n```\n{Style} illustration banner, {scene description}, {character} in {action}, \"{brand}\" text overlay, {colors}\n```\n\n### Supported Aspect Ratios\n\nGenerate at widest ratio, then crop:\n- `21:9` - Ultra-wide (recommended for generation)\n- `16:9` - Wide\n- `3:2` - Standard wide\n\n## References\n\n- [references/formats.md](./references/formats.md) - Common banner sizes by platform\n- [examples/opc-banner-creation.md](./examples/opc-banner-creation.md) - Full example conversation"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "domain-hunter",
+      "parsed": {
+        "name": "domain-hunter",
+        "description": "Search domains, compare prices, find promo codes, get purchase recommendations. Use when user wants to buy a domain, check domain prices, find domain deals, compare registrars, or search for .ai/.com domains.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Domain Hunter Skill\n\nHelp users find and purchase domain names at the best price.\n\n## Workflow\n\n### Step 1: Generate Domain Ideas & Check Availability\n\nBased on the user's project description, generate 5-10 creative domain name suggestions.\n\n**Guidelines:**\n- Keep names short (under 15 characters)\n- Make them memorable and brandable\n- Consider: `{action}{noun}`, `{noun}{suffix}`, `{prefix}{keyword}`\n- Common suffixes: app, io, hq, ly, ify, now, hub\n\n**CRITICAL: Always check availability before presenting domains to user!**\n\nUse one of these methods to verify availability:\n\n**Method 1: WHOIS check (most reliable)**\n```bash\n# Check if domain is available via whois\nwhois {domain}.{tld} 2>/dev/null | grep -i \"no match\\|not found\\|available\\|no data found\" && echo \"AVAILABLE\" || echo \"TAKEN\"\n```\n\n**Method 2: Registrar search page**\nOpen the registrar's domain search in browser to verify:\n```bash\nopen \"https://www.spaceship.com/domains/?search={domain}.{tld}\"\n```\n\n**Method 3: Bulk check via Namecheap/Dynadot**\n- https://www.namecheap.com/domains/registration/results/?domain={domain}\n- https://www.dynadot.com/domain/search?domain={domain}\n\n**IMPORTANT:** \n- Only present domains that are confirmed AVAILABLE\n- Mark any uncertain domains with \"(unverified)\" \n- Present suggestions to user and **wait for confirmation** before proceeding\n- Ask user to pick their preferred options or provide feedback\n- Only move to Step 2 after user approves domain name(s)\n\n### Step 2: Compare Prices\n\nUse **WebSearch** to find current prices:\n\n```\nWebSearch: \"cheapest .{tld} domain registrar 2026 site:tld-list.com\"\nWebSearch: \".{tld} domain price comparison tldes.com\"\n```\n\n**Key price comparison sites:**\n- tld-list.com/tld/{tld}\n- tldes.com/{tld}\n- domaintyper.com/{tld}-domain\n\n### Step 3: Find Promo Codes\n\nUse **Twitter skill** to search registrar accounts:\n\n```bash\ncd <twitter_skill_directory>\npython3 scripts/search_tweets.py \"from:{registrar} promo code\" --type Latest --limit 15\npython3 scripts/search_tweets.py \"{registrar} promo code coupon\" --type Latest --limit 15\n```\n\nUse **Reddit skill** to search domain communities:\n\n```bash\ncd <reddit_skill_directory>\npython3 scripts/search_posts.py \"{registrar} promo code\" --limit 15\npython3 scripts/search_posts.py \"{registrar} coupon discount\" --subreddit Domains --limit 10\n```\n\n**Major registrar Twitter handles:**\n- @spaceship, @Dynadot, @Namecheap, @Porkbun, @namesilo, @Cloudflare\n\n### Step 4: Recommend\n\nPresent final recommendation in this format:\n\n```\n## Recommendation\n\n**Domain:** example.ai\n**Best Registrar:** Spaceship\n**Price:** $68.98/year (2-year minimum = $137.96)\n**Promo Code:** None available for .ai\n**Purchase Link:** https://www.spaceship.com/\n\n### Price Comparison\n| Registrar | Year 1 | Renewal | 2-Year Total |\n|-----------|--------|---------|--------------|\n| Spaceship | $68.98 | $68.98  | $137.96      |\n| Cloudflare| $70.00 | $70.00  | $140.00      |\n| Porkbun   | $71.40 | $72.40  | $143.80      |\n```\n\n## Important Notes\n\n1. **Premium TLDs** (.ai, .io) rarely have promo codes - wholesale costs are too high\n2. **.ai domains** require 2-year minimum registration\n3. **Cloudflare** offers at-cost pricing with no markup\n4. **Renewal prices** often differ from registration - always check both\n5. **WHOIS privacy** is free at most registrars (Cloudflare, Namecheap, Porkbun)\n\n## References\n\n- [references/registrars.md](./references/registrars.md) - Detailed registrar comparison\n- [references/spaceship-api.md](./references/spaceship-api.md) - Spaceship API for automated domain operations"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "logo-creator",
+      "parsed": {
+        "name": "logo-creator",
+        "description": "Create logos using AI image generation. Discuss style/ratio, generate variations, iterate with user feedback, crop, remove background, and export as SVG. Use when user wants to create a logo, icon, favicon, brand mark, mascot, emblem, or design a logo.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Logo Creator Skill\n\nCreate professional logos through AI image generation with an iterative design process.\n\n## Prerequisites\n\n**Required API Keys (set in environment):**\n- `GEMINI_API_KEY` - Get from [Google AI Studio](https://aistudio.google.com/apikey)\n- `REMOVE_BG_API_KEY` - Get from [remove.bg](https://www.remove.bg/api)\n- `RECRAFT_API_KEY` - Get from [recraft.ai](https://www.recraft.ai/)\n\n**Required Skills:**\n- `nanobanana` - AI image generation (Gemini 3 Pro Image)\n\n\n\n## File Output Location\n\nAll generated files should be saved to the `.skill-archive` directory:\n\n```\n.skill-archive/logo-creator/<yyyy-mm-dd-summaryname>/\n```\n\n**Example:**\n```\n.skill-archive/logo-creator/2026-01-18-opc-logo/\n  logo-01.png\n  logo-02.png\n  ...\n  logo-09-cropped.png\n  logo-09-nobg.png\n  logo-09.svg\n  preview.html\n```\n\n**Guidelines:**\n- Use current date in format `yyyy-mm-dd`\n- Add short summary name (project/brand name, kebab-case)\n- Create directory before generating first logo\n- Keep all variations and iterations in same folder\n- Final approved logo should be copied to user's desired location\n\n## Workflow\n\n### Step 1: Discovery & Requirements\n\nBefore generating, gather requirements from user:\n\n**Ask about:**\n1. **Project/Brand name** - What is the logo for?\n2. **Style preference** - See [references/styles.md](./references/styles.md) for options:\n   - Pixel art / 8-bit retro\n   - Minimalist / flat design\n   - 3D / isometric\n   - Hand-drawn / sketch\n   - Mascot / character\n   - Monogram / lettermark\n   - Abstract / geometric\n\n3. **Aspect ratio** - Default is 1:1 (square), options:\n   - `1:1` - Square (favicons, app icons)\n   - `16:9` - Wide (headers, banners)\n   - `4:3` - Standard\n   - `2:3` - Portrait\n\n4. **Color preferences**:\n   - Monochrome (black & white)\n   - Specific brand colors\n   - Let AI decide\n\n5. **Reference images** - Any existing logos or styles to reference?\n\n**Wait for user confirmation before proceeding!**\n\n### Step 2: Generate Logo Variations\n\nGenerate 20 logo variations (default) using the `nanobanana` skill:\n\n```bash\n# Generate single logo\npython3 <nanobanana_skill_dir>/scripts/generate.py \"{style} logo for {brand}, {description}, {colors}\" \\\n  --ratio 1:1 -o .skill-archive/logo-creator/<date-name>/logo-01.png\n\n# Batch generate 20 logos\npython3 <nanobanana_skill_dir>/scripts/batch_generate.py \"{style} logo for {brand}, {description}, {colors}\" \\\n  -n 20 --ratio 1:1 -d .skill-archive/logo-creator/<date-name> -p logo\n```\n\n**Guidelines:**\n- Use batch_generate.py for multiple variations (includes auto-delay)\n- Save to `.skill-archive/logo-creator/<yyyy-mm-dd-summaryname>/` directory\n- Use sequential naming: `logo-01.png`, `logo-02.png`, etc.\n\n**Prompt Tips:**\n- Include style keywords: \"pixel art\", \"minimalist\", \"8-bit\", \"flat design\"\n- Specify colors: \"black on white\", \"monochrome\", \"blue gradient\"\n- Add context: \"tech startup\", \"food brand\", \"gaming company\"\n- Request format: \"icon\", \"emblem\", \"mascot\", \"lettermark\"\n\n### Step 3: Create HTML Preview\n\nCopy the preview template and open in browser:\n\n```bash\ncp <skill_dir>/templates/preview.html .skill-archive/logo-creator/<yyyy-mm-dd-summaryname>/preview.html\n```\n\nThen open in default browser:\n\n```bash\nopen .skill-archive/logo-creator/<yyyy-mm-dd-summaryname>/preview.html\n```\n\n**IMPORTANT:** Update the HTML to include the correct number of logos generated.\n\n### Step 4: Iterate with User\n\nAsk user which logos they prefer:\n- \"Which logos do you like? (e.g., #5, #12, #18)\"\n- \"What do you like about them?\"\n- \"Any changes you'd want?\"\n\nBased on feedback:\n1. Generate 10-20 more variations of favorite styles\n2. Use naming: `logo-{original}-v{n}.png` (e.g., `logo-05-v1.png`)\n3. Update HTML preview\n4. Repeat until user selects final logo\n\n### Step 5: Finalize Logo\n\nOnce user approves a logo, process it:\n\n**5a. Crop whitespace (make 1:1 with no margins):**\n```bash\npython3 <skill_dir>/scripts/crop_logo.py {input.png} {output-cropped.png}\n```\n\n**5b. Remove background:**\n```bash\npython3 <skill_dir>/scripts/remove_bg.py {input.png} {output-nobg.png}\n```\n\n**5c. Convert to SVG:**\n```bash\npython3 <skill_dir>/scripts/vectorize.py {input.png} {output.svg}\n```\n\n### Step 6: Deliver Final Assets\n\nPresent final deliverables:\n\n```\n## Final Logo Assets\n\n| File | Description | Size |\n|------|-------------|------|\n| logo.png | Original | 1024x1024 |\n| logo-cropped.png | No margins, 1:1 | ~800x800 |\n| logo-nobg.png | Transparent background | ~800x800 |\n| logo.svg | Vector (scalable) | ~20KB |\n\nAll files saved to: `.skill-archive/logo-creator/<yyyy-mm-dd-summaryname>/`\nCopy final logo to user's desired location.\n```\n\n## Quick Reference\n\n### Common Prompt Patterns\n\n**Pixel Art:**\n```\nPixel art {subject} logo, 8-bit retro style, black pixels on white background, {size}x{size} grid, minimalist icon\n```\n\n**Minimalist:**\n```\nMinimalist {subject} logo, flat design, clean lines, {color} on white, simple geometric shapes\n```\n\n**Mascot:**\n```\nCute {animal/character} mascot logo, friendly expression, {style} style, {colors}, suitable for brand icon\n```\n\n**Lettermark:**\n```\nLetter \"{letter}\" logo, modern typography, {style} design, {colors}, clean professional look\n```\n\n### Supported Aspect Ratios\n\n- `1:1` - Square (default for logos)\n- `2:3`, `3:2` - Portrait/Landscape\n- `3:4`, `4:3` - Standard\n- `4:5`, `5:4` - Photo\n- `9:16`, `16:9` - Wide\n- `21:9` - Ultra-wide\n\n## References\n\n- [references/styles.md](./references/styles.md) - Logo style guide with prompt examples\n- [examples/opc-logo-creation.md](./examples/opc-logo-creation.md) - Full example conversation"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "imagemagick",
+          "name": "imagemagick",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "pip",
+          "name": "pip",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "pip",
+          "org": "pip",
+          "name": "pipx",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "pip",
+          "org": "Pillow",
+          "name": "Pillow",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "nanobanana",
+      "parsed": {
+        "name": "nanobanana",
+        "description": "Generate and edit images using Google Gemini 3 Pro Image (Nano Banana Pro). Supports text-to-image, image editing, various aspect ratios, and high-resolution output (2K/4K). Use when user wants to generate images, create images, use Gemini image generation, or do AI image generation.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Nano Banana - AI Image Generation\n\nGenerate and edit images using Google's Gemini 3 Pro Image model (`gemini-3-pro-image-preview`, nicknamed \"Nano Banana Pro\" 🍌).\n\n## Prerequisites\n\n**Required:**\n- `GEMINI_API_KEY` - Get from [Google AI Studio](https://aistudio.google.com/apikey)\n- Python 3.10+ with `google-genai` package\n\n**Install dependencies:**\n```bash\npip install google-genai pillow\n```\n\n## Quick Start\n\n### Generate an image:\n```bash\npython3 <skill_dir>/scripts/generate.py \"a cute robot mascot, pixel art style\" -o robot.png\n```\n\n### Edit an existing image:\n```bash\npython3 <skill_dir>/scripts/generate.py \"make the background blue\" -i input.jpg -o output.png\n```\n\n### Generate with specific aspect ratio:\n```bash\npython3 <skill_dir>/scripts/generate.py \"cinematic landscape\" --ratio 21:9 -o landscape.png\n```\n\n### Generate high-resolution 4K image:\n```bash\npython3 <skill_dir>/scripts/generate.py \"professional product photo\" --size 4K -o product.png\n```\n\n## Script Reference\n\n### `scripts/generate.py`\n\nMain image generation script.\n\n```\nUsage: generate.py [OPTIONS] PROMPT\n\nArguments:\n  PROMPT              Text prompt for image generation\n\nOptions:\n  -o, --output PATH   Output file path (default: auto-generated)\n  -i, --input PATH    Input image for editing (optional)\n  -r, --ratio RATIO   Aspect ratio (1:1, 16:9, 9:16, 21:9, etc.)\n  -s, --size SIZE     Image size: 2K or 4K (default: standard)\n  --search            Enable Google Search grounding for accuracy\n  -v, --verbose       Show detailed output\n```\n\n**Supported aspect ratios:**\n- `1:1` - Square (default)\n- `2:3`, `3:2` - Portrait/Landscape\n- `3:4`, `4:3` - Standard\n- `4:5`, `5:4` - Photo\n- `9:16`, `16:9` - Widescreen\n- `21:9` - Ultra-wide/Cinematic\n\n### `scripts/batch_generate.py`\n\nGenerate multiple images with sequential naming.\n\n```\nUsage: batch_generate.py [OPTIONS] PROMPT\n\nArguments:\n  PROMPT              Text prompt for image generation\n\nOptions:\n  -n, --count N       Number of images to generate (default: 10)\n  -d, --dir PATH      Output directory\n  -p, --prefix STR    Filename prefix (default: \"image\")\n  -r, --ratio RATIO   Aspect ratio\n  -s, --size SIZE     Image size (2K/4K)\n  --delay SECONDS     Delay between generations (default: 3)\n```\n\n**Example:**\n```bash\npython3 <skill_dir>/scripts/batch_generate.py \"pixel art logo\" -n 20 -d ./logos -p logo\n```\n\n## Python API\n\nYou can also use the module directly:\n\n```python\nfrom generate import generate_image, edit_image\n\n# Generate image\nresult = generate_image(\n    prompt=\"a futuristic city at night\",\n    output_path=\"city.png\",\n    aspect_ratio=\"16:9\",\n    image_size=\"4K\"\n)\n\n# Edit existing image\nresult = edit_image(\n    prompt=\"add flying cars to the sky\",\n    input_path=\"city.png\",\n    output_path=\"city_edited.png\"\n)\n```\n\n## Environment Variables\n\n| Variable | Description | Default |\n|----------|-------------|---------|\n| `GEMINI_API_KEY` | Google Gemini API key | Required |\n| `IMAGE_OUTPUT_DIR` | Default output directory | `./nanobanana-images` |\n\n## Features\n\n### Text-to-Image Generation\nCreate images from text descriptions. The model excels at:\n- Photorealistic images\n- Artistic styles (pixel art, illustration, etc.)\n- Product photography\n- Landscapes and scenes\n\n### Image Editing\nTransform existing images with natural language:\n- Style transfer\n- Object addition/removal\n- Background changes\n- Color adjustments\n\n### High-Resolution Output\n- **Standard**: Fast generation, good quality\n- **2K**: Enhanced detail (2048px)\n- **4K**: Maximum quality (3840px), best for text rendering\n\n### Google Search Grounding\nEnable `--search` for factually accurate images involving:\n- Real people, places, landmarks\n- Current events\n- Specific products or brands\n\n## Best Practices\n\n### Prompt Writing\n\n**Good prompts include:**\n- Subject description\n- Style/aesthetic\n- Lighting and mood\n- Composition details\n- Color palette\n\n**Example:**\n```\n\"A cozy coffee shop interior, warm lighting, vintage aesthetic, \nwooden furniture, plants on shelves, morning sunlight through windows, \nsoft focus background, 35mm film photography style\"\n```\n\n### Batch Generation Tips\n\n1. Generate 10-20 variations to explore options\n2. Use consistent prompts for style coherence\n3. Add 3-5 second delays to avoid rate limits\n4. Review results and iterate on best candidates\n\n## Rate Limits\n\n- Gemini API has usage quotas\n- Add delays between batch generations\n- Check your quota at [Google AI Studio](https://aistudio.google.com/)\n\n## Troubleshooting\n\n**\"API key not found\"**\n- Set `GEMINI_API_KEY` environment variable\n- Or pass via `--api-key` option\n\n**\"No image in response\"**\n- Prompt may have triggered safety filters\n- Try rephrasing to avoid sensitive content\n\n**\"Rate limit exceeded\"**\n- Wait a few seconds and retry\n- Reduce batch size or add longer delays\n\n## References\n\n- [references/prompts.md](./references/prompts.md) - Prompt examples by category\n- [examples/](./examples/) - Example usage scripts"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "pip",
+          "name": "pip",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "pip",
+          "name": "pipx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "google-genai",
+          "name": "google-genai",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "producthunt",
+      "parsed": {
+        "name": "producthunt",
+        "description": "Search and retrieve content from Product Hunt. Get posts, topics, users, and collections via the GraphQL API. Use when user mentions Product Hunt, PH, or product launches.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# ProductHunt Skill\n\nGet posts, topics, users, and collections from Product Hunt via the official GraphQL API.\n\n## Prerequisites\n\nSet access token in `~/.zshrc`:\n```bash\nexport PRODUCTHUNT_ACCESS_TOKEN=\"your_developer_token\"\n```\n\nGet your token from: https://www.producthunt.com/v2/oauth/applications\n\n**Quick Check**:\n```bash\ncd <skill_directory>\npython3 scripts/get_posts.py --limit 3\n```\n\n## Commands\n\nAll commands run from the skill directory.\n\n### Posts\n```bash\npython3 scripts/get_post.py chatgpt                    # Get post by slug\npython3 scripts/get_post.py 12345                      # Get post by ID\npython3 scripts/get_posts.py --limit 20                # Today's featured posts\npython3 scripts/get_posts.py --topic ai --limit 10     # Posts in topic\npython3 scripts/get_posts.py --after 2026-01-01        # Posts after date\npython3 scripts/get_post_comments.py POST_ID --limit 20\n```\n\n### Topics\n```bash\npython3 scripts/get_topic.py artificial-intelligence  # Get topic by slug\npython3 scripts/get_topics.py --query \"AI\" --limit 20 # Search topics\npython3 scripts/get_topics.py --limit 50              # Popular topics\n```\n\n### Users\n```bash\npython3 scripts/get_user.py rrhoover                  # Get user by username\npython3 scripts/get_user_posts.py rrhoover --limit 20 # User's posts\n```\n\n### Collections\n```bash\npython3 scripts/get_collection.py SLUG_OR_ID          # Get collection\npython3 scripts/get_collections.py --featured --limit 20\n```\n\n## API Info\n- **Endpoint**: https://api.producthunt.com/v2/api/graphql\n- **Type**: GraphQL\n- **Rate Limits**: 6250 complexity points / 15 min\n- **Docs**: https://api.producthunt.com/v2/docs"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "reddit",
+      "parsed": {
+        "name": "reddit",
+        "description": "Search and retrieve content from Reddit. Get posts, comments, subreddit info, and user profiles via the public JSON API. Use when user mentions Reddit, a subreddit, or r/ links.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Reddit Skill\n\nGet posts, comments, subreddit info, and user profiles from Reddit via the public JSON API.\n\n## Prerequisites\n\n**No API key required!** Reddit's public JSON API works without authentication.\n\n**Quick Check**:\n```bash\ncd <skill_directory>\npython3 scripts/get_posts.py python --limit 3\n```\n\n## Commands\n\nAll commands run from the skill directory.\n\n### Subreddit Posts\n```bash\npython3 scripts/get_posts.py python --limit 20           # Hot posts (default)\npython3 scripts/get_posts.py python --sort new --limit 20\npython3 scripts/get_posts.py python --sort top --time week\npython3 scripts/get_posts.py python --sort top --time all --limit 10\n```\n\n### Search Posts\n```bash\npython3 scripts/search_posts.py \"AI agent\" --limit 20\npython3 scripts/search_posts.py \"MCP server\" --subreddit ClaudeAI --limit 10\npython3 scripts/search_posts.py \"async python\" --sort top --time year\n```\n\n### Subreddit Info\n```bash\npython3 scripts/get_subreddit.py python\npython3 scripts/get_subreddit.py ClaudeAI\n```\n\n### Post & Comments\n```bash\npython3 scripts/get_post.py abc123                       # Get post by ID\npython3 scripts/get_post.py abc123 --comments 50         # With more comments\n```\n\n### User Profile\n```bash\npython3 scripts/get_user.py spez\npython3 scripts/get_user.py spez --posts 10              # Include recent posts\n```\n\n## Sort Options\n\n| Sort | Description | Time Options |\n|------|-------------|--------------|\n| `hot` | Trending posts (default) | - |\n| `new` | Latest posts | - |\n| `top` | Highest voted | hour, day, week, month, year, all |\n| `rising` | Gaining traction | - |\n| `controversial` | Mixed votes | hour, day, week, month, year, all |\n\n## API Info\n- **Method**: Public JSON API (no auth needed)\n- **Trick**: Append `.json` to any Reddit URL\n- **Rate Limit**: 100 requests/minute\n- **Docs**: https://www.reddit.com/dev/api"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "requesthunt",
+      "parsed": {
+        "name": "requesthunt",
+        "description": "Generate user demand research reports from real user feedback. Scrape and analyze feature requests, complaints, and questions from Reddit, X, and GitHub. Use when user wants to do demand research, find feature requests, analyze user demand, or run RequestHunt queries.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# RequestHunt Skill\n\nGenerate user demand research reports by collecting and analyzing real user feedback from Reddit, X (Twitter), and GitHub.\n\n## Prerequisites\n\nSet API key in `~/.zshrc`:\n```bash\nexport REQUESTHUNT_API_KEY=\"your_api_key\"\n```\n\nGet your key from: https://requesthunt.com/settings/api\n\n**Quick Check**:\n```bash\ncd <skill_directory>\npython3 scripts/get_usage.py\n```\n\n## Research Workflow\n\nThis skill helps you generate comprehensive user demand research reports. Follow this workflow:\n\n### Step 1: Define Scope\n\nBefore collecting data, clarify with the user:\n1. **Research Goal**: What domain/area to investigate? (e.g., AI coding assistants, project management tools)\n2. **Specific Products**: Any products/competitors to focus on? (e.g., Cursor, GitHub Copilot)\n3. **Platform Preference**: Which platforms to prioritize? (reddit, x, github)\n4. **Time Range**: How recent should the feedback be?\n5. **Report Purpose**: Product planning / competitive analysis / market research?\n\n### Step 2: Collect Data\n\n```bash\n# 1. Trigger realtime scrape for the topic\npython3 scripts/scrape_topic.py \"ai-coding-assistant\" --platforms reddit,x,github\n\n# 2. Search with expansion for more data\npython3 scripts/search_requests.py \"code completion\" --expand --limit 50\n\n# 3. List requests filtered by topic\npython3 scripts/list_requests.py --topic \"ai-tools\" --limit 100\n```\n\n### Step 3: Generate Report\n\nAnalyze collected data and generate a structured Markdown report:\n\n```markdown\n# [Topic] User Demand Research Report\n\n## Overview\n- Scope: ...\n- Data Sources: Reddit (X), X (Y), GitHub (Z)\n- Time Range: ...\n\n## Key Findings\n\n### 1. Top Feature Requests\n| Rank | Request | Sources | Representative Quote |\n|------|---------|---------|---------------------|\n\n### 2. Pain Points Analysis\n- **Pain Point A**: ...\n\n### 3. Competitive Comparison (if specified)\n| Feature | Product A | Product B | User Expectations |\n\n### 4. Opportunities\n- ...\n\n## Methodology\nBased on N real user feedbacks collected via RequestHunt...\n```\n\n## Commands\n\nAll commands run from the skill directory.\n\n### List Requests\n```bash\npython3 scripts/list_requests.py --limit 20                    # Recent requests\npython3 scripts/list_requests.py --topic \"ai-tools\" --limit 10 # By topic\npython3 scripts/list_requests.py --platforms reddit,github     # By platform\npython3 scripts/list_requests.py --category \"Developer Tools\"  # By category\npython3 scripts/list_requests.py --sortBy top --limit 20       # Top voted\n```\n\n### Search Requests\n```bash\npython3 scripts/search_requests.py \"authentication\" --limit 20\npython3 scripts/search_requests.py \"oauth\" --expand            # With realtime expansion\npython3 scripts/search_requests.py \"API rate limit\" --expand --platforms reddit,x\n```\n\n### Get Topics\n```bash\npython3 scripts/get_topics.py                                  # List all topics by category\n```\n\n### Check Usage\n```bash\npython3 scripts/get_usage.py                                   # View API usage stats\n```\n\n### Scrape Topic (Realtime)\n```bash\npython3 scripts/scrape_topic.py \"developer-tools\"              # Default: reddit,x\npython3 scripts/scrape_topic.py \"ai-assistant\" --platforms reddit,x,github\n```\n\n## API Info\n- **Base URL**: https://requesthunt.com\n- **Auth**: Bearer token (API key)\n- **Rate Limits**: \n  - Cached requests: 1000/month\n  - Realtime requests: 500/month (scraping is expensive)\n- **Docs**: https://requesthunt.com/docs"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "seo-geo",
+      "parsed": {
+        "name": "seo-geo",
+        "description": "SEO & GEO (Generative Engine Optimization) for websites. Analyze keywords, generate schema markup, optimize for AI search engines (ChatGPT, Perplexity, Gemini, Copilot, Claude) and traditional search (Google, Bing). Use when user wants to improve search visibility, search optimization, search ranking, AI visibility, ChatGPT ranking, Google AI Overview, indexing, JSON-LD, meta tags, or keyword research.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# SEO/GEO Optimization Skill\n\nComprehensive SEO and GEO (Generative Engine Optimization) for websites. Optimize for both traditional search engines (Google, Bing) and AI search engines (ChatGPT, Perplexity, Gemini, Copilot, Claude).\n\n## Quick Reference\n\n**GEO = Generative Engine Optimization** - Optimizing content to be cited by AI search engines.\n\n**Key Insight:** AI search engines don't rank pages - they **cite sources**. Being cited is the new \"ranking #1\".\n\n## Workflow\n\n### Step 1: Website Audit\n\nGet the target URL and analyze current SEO/GEO status.\n\n**Basic SEO Audit (Free):**\n```bash\npython3 scripts/seo_audit.py \"https://example.com\"\n```\n**Use this for**: Quick technical SEO check (title, meta, H1, robots, sitemap, load time). No API needed.\n\n---\n\n**Check Meta Tags:**\n```bash\ncurl -sL \"https://example.com\" | grep -E \"<title>|<meta name=\\\"description\\\"|<meta property=\\\"og:|application/ld\\+json\" | head -20\n```\n\n**Use this for**: Quick check of essential meta tags and schema markup on any webpage.\n\n---\n\n**Check robots.txt:**\n```bash\ncurl -s \"https://example.com/robots.txt\"\n```\n\n**Use this for**: Verify which bots are allowed/blocked. Critical for ensuring AI search engines can crawl your site.\n\n---\n\n**Check sitemap:**\n```bash\ncurl -s \"https://example.com/sitemap.xml\" | head -50\n```\n\n**Use this for**: Verify sitemap structure and ensure all important pages are included for search engine discovery.\n\n**Verify AI Bot Access:**\n```\n# These bots should be allowed in robots.txt:\n- Googlebot (Google)\n- Bingbot (Bing/Copilot)\n- PerplexityBot (Perplexity)\n- ChatGPT-User (ChatGPT with browsing)\n- ClaudeBot / anthropic-ai (Claude)\n- GPTBot (OpenAI)\n```\n\n### Step 2: Keyword Research\n\nUse **WebSearch** to research target keywords:\n\n```\nWebSearch: \"{keyword} keyword difficulty site:ahrefs.com OR site:semrush.com\"\nWebSearch: \"{keyword} search volume 2026\"\nWebSearch: \"site:{competitor.com} {keyword}\"\n```\n\n**Analyze:**\n- Search volume and difficulty\n- Competitor keyword strategies\n- Long-tail keyword opportunities\n- International keyword conflicts (e.g., \"OPC\" = industrial automation in English markets)\n\n### Step 3: GEO Optimization (AI Search Engines)\n\nApply the **9 Princeton GEO Methods** (see [references/geo-research.md](./references/geo-research.md)):\n\n| Method | Visibility Boost | How to Apply |\n|--------|-----------------|--------------|\n| **Cite Sources** | +40% | Add authoritative citations and references |\n| **Statistics Addition** | +37% | Include specific numbers and data points |\n| **Quotation Addition** | +30% | Add expert quotes with attribution |\n| **Authoritative Tone** | +25% | Use confident, expert language |\n| **Easy-to-understand** | +20% | Simplify complex concepts |\n| **Technical Terms** | +18% | Include domain-specific terminology |\n| **Unique Words** | +15% | Increase vocabulary diversity |\n| **Fluency Optimization** | +15-30% | Improve readability and flow |\n| ~~Keyword Stuffing~~ | **-10%** | **AVOID - hurts visibility** |\n\n**Best Combination:** Fluency + Statistics = Maximum boost\n\n**Generate FAQPage Schema** (+40% AI visibility):\n```json\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"FAQPage\",\n  \"mainEntity\": [{\n    \"@type\": \"Question\",\n    \"name\": \"What is [topic]?\",\n    \"acceptedAnswer\": {\n      \"@type\": \"Answer\",\n      \"text\": \"According to [source], [answer with statistics].\"\n    }\n  }]\n}\n```\n\n**Optimize Content Structure:**\n- Use \"answer-first\" format (direct answer at top)\n- Clear H1 > H2 > H3 hierarchy\n- Bullet points and numbered lists\n- Tables for comparison data\n- Short paragraphs (2-3 sentences max)\n\n### Step 4: Traditional SEO Optimization\n\n**Meta Tags Template:**\n```html\n<title>{Primary Keyword} - {Brand} | {Secondary Keyword}</title>\n<meta name=\"description\" content=\"{Compelling description with keyword, 150-160 chars}\">\n<meta name=\"keywords\" content=\"{keyword1}, {keyword2}, {keyword3}\">\n\n<!-- Open Graph -->\n<meta property=\"og:title\" content=\"{Title}\">\n<meta property=\"og:description\" content=\"{Description}\">\n<meta property=\"og:image\" content=\"{Image URL 1200x630}\">\n<meta property=\"og:url\" content=\"{Canonical URL}\">\n<meta property=\"og:type\" content=\"website\">\n\n<!-- Twitter Cards -->\n<meta name=\"twitter:card\" content=\"summary_large_image\">\n<meta name=\"twitter:title\" content=\"{Title}\">\n<meta name=\"twitter:description\" content=\"{Description}\">\n<meta name=\"twitter:image\" content=\"{Image URL}\">\n```\n\n**JSON-LD Schema** (see [references/schema-templates.md](./references/schema-templates.md)):\n- WebPage / Article for content pages\n- FAQPage for FAQ sections\n- Product for product pages\n- Organization for about pages\n- SoftwareApplication for tools/apps\n\n**Check Content:**\n- [ ] H1 contains primary keyword\n- [ ] Images have descriptive alt text\n- [ ] Internal links to related content\n- [ ] External links have `rel=\"noopener noreferrer\"`\n- [ ] Content is mobile-friendly\n- [ ] Page loads in < 3 seconds\n\n### Step 5: Validate & Monitor\n\n**Schema Validation:**\n```bash\n# Open Google Rich Results Test\nopen \"https://search.google.com/test/rich-results?url={encoded_url}\"\n\n# Open Schema.org Validator\nopen \"https://validator.schema.org/?url={encoded_url}\"\n```\n\n**Check Indexing Status:**\n```bash\n# Google (use Search Console API or manual check)\nopen \"https://www.google.com/search?q=site:{domain}\"\n\n# Bing\nopen \"https://www.bing.com/search?q=site:{domain}\"\n```\n\n**Generate Report:**\n```markdown\n## SEO/GEO Optimization Report\n\n### Current Status\n- Meta Tags: ✅/❌\n- Schema Markup: ✅/❌\n- AI Bot Access: ✅/❌\n- Mobile Friendly: ✅/❌\n- Page Speed: X seconds\n\n### Recommendations\n1. [Priority 1 action]\n2. [Priority 2 action]\n3. [Priority 3 action]\n\n### GEO Optimizations Applied\n- [ ] FAQPage schema added\n- [ ] Statistics included\n- [ ] Citations added\n- [ ] Answer-first structure\n```\n\n## Platform-Specific Optimization\n\nSee [references/platform-algorithms.md](./references/platform-algorithms.md) for detailed ranking factors.\n\n### ChatGPT\n- Focus on **branded domain authority** (cited 11% more than third-party)\n- Update content within **30 days** (3.2x more citations)\n- Build **backlinks** (>350K referring domains = 8.4 avg citations)\n- Match content style to ChatGPT's response format\n\n### Perplexity\n- Allow **PerplexityBot** in robots.txt\n- Use **FAQ Schema** (higher citation rate)\n- Host **PDF documents** (prioritized for citation)\n- Focus on **semantic relevance** over keywords\n\n### Google AI Overview (SGE)\n- Optimize for **E-E-A-T** (Experience, Expertise, Authority, Trust)\n- Use **structured data** (Schema markup)\n- Build **topical authority** (content clusters + internal linking)\n- Include **authoritative citations** (+132% visibility)\n\n### Microsoft Copilot / Bing\n- Ensure **Bing indexing** (required for citation)\n- Optimize for **Microsoft ecosystem** (LinkedIn, GitHub mentions help)\n- Page speed **< 2 seconds**\n- Clear **entity definitions**\n\n### Claude AI\n- Ensure **Brave Search indexing** (Claude uses Brave, not Google)\n- High **factual density** (data-rich content preferred)\n- Clear **structural clarity** (easy to extract)\n\n## Skill Dependencies\n\nThis skill works best with:\n- **twitter skill** - Search SEO experts for latest tips\n- **reddit skill** - Search r/SEO, r/bigseo for discussions\n- **WebSearch** - Keyword research and competitor analysis\n\n## References\n\n- [references/platform-algorithms.md](./references/platform-algorithms.md) - Detailed ranking factors for each platform\n- [references/geo-research.md](./references/geo-research.md) - Princeton GEO research (9 methods)\n- [references/schema-templates.md](./references/schema-templates.md) - JSON-LD templates\n- [references/seo-checklist.md](./references/seo-checklist.md) - Complete SEO audit checklist\n- [references/tools-and-apis.md](./references/tools-and-apis.md) - Tools and API reference\n- [examples/opc-skills-case-study.md](./examples/opc-skills-case-study.md) - Real-world optimization example"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "twitter",
+      "parsed": {
+        "name": "twitter",
+        "description": "Search and retrieve content from Twitter/X. Get user info, tweets, replies, followers, communities, spaces, and trends via twitterapi.io. Use when user mentions Twitter, X, or tweets.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Twitter/X Skill\n\nGet user profiles, tweets, replies, followers/following, communities, spaces, and trends from Twitter/X via twitterapi.io.\n\n## Prerequisites\n\nSet API key in `~/.zshrc`:\n```bash\nexport TWITTERAPI_API_KEY=\"your_api_key\"\n```\n\n**Quick Check**:\n```bash\ncd <skill_directory>\npython3 scripts/get_user_info.py elonmusk\n```\n\n## Commands\n\nAll commands run from the skill directory.\n\n### User Endpoints\n```bash\npython3 scripts/get_user_info.py USERNAME\npython3 scripts/get_user_about.py USERNAME\npython3 scripts/batch_get_users.py USER_ID1,USER_ID2\npython3 scripts/get_user_tweets.py USERNAME --limit 20\npython3 scripts/get_user_mentions.py USERNAME --limit 20\npython3 scripts/get_followers.py USERNAME --limit 100\npython3 scripts/get_following.py USERNAME --limit 100\npython3 scripts/get_verified_followers.py USERNAME --limit 20\npython3 scripts/check_relationship.py USER1 USER2\npython3 scripts/search_users.py \"query\" --limit 20\n```\n\n### Tweet Endpoints\n```bash\npython3 scripts/get_tweet.py TWEET_ID [TWEET_ID2...]\npython3 scripts/search_tweets.py \"query\" --type Latest --limit 20\npython3 scripts/get_tweet_replies.py TWEET_ID --limit 20\npython3 scripts/get_tweet_quotes.py TWEET_ID --limit 20\npython3 scripts/get_tweet_retweeters.py TWEET_ID --limit 50\npython3 scripts/get_tweet_thread.py TWEET_ID\npython3 scripts/get_article.py TWEET_ID\n```\n\n### List Endpoints\n```bash\npython3 scripts/get_list_followers.py LIST_ID --limit 20\npython3 scripts/get_list_members.py LIST_ID --limit 20\n```\n\n### Community Endpoints\n```bash\npython3 scripts/get_community.py COMMUNITY_ID\npython3 scripts/get_community_members.py COMMUNITY_ID --limit 20\npython3 scripts/get_community_moderators.py COMMUNITY_ID\npython3 scripts/get_community_tweets.py COMMUNITY_ID --limit 20\npython3 scripts/search_community_tweets.py \"query\" --limit 20\n```\n\n### Other Endpoints\n```bash\npython3 scripts/get_space.py SPACE_ID\npython3 scripts/get_trends.py --woeid 1  # Worldwide\n```\n\n## Search Query Syntax\n\n```bash\n# Basic search\npython3 scripts/search_tweets.py \"AI agent\"\n\n# From specific user\npython3 scripts/search_tweets.py \"from:elonmusk\"\n\n# Date range\npython3 scripts/search_tweets.py \"AI since:2024-01-01 until:2024-12-31\"\n\n# Exclude retweets\npython3 scripts/search_tweets.py \"AI -filter:retweets\"\n\n# With media\npython3 scripts/search_tweets.py \"AI filter:media\"\n\n# Minimum engagement\npython3 scripts/search_tweets.py \"AI min_faves:1000\"\n```\n\n## API: twitterapi.io\n- Base URL: https://api.twitterapi.io/twitter\n- Auth: X-API-Key header\n- Pricing: ~$0.15-0.18/1k requests\n- Docs: https://docs.twitterapi.io/"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,402 @@
+{
+  "source": "andrelandgraf/fullstackrecipes",
+  "repoUrl": "https://github.com/andrelandgraf/fullstackrecipes",
+  "skills": [
+    {
+      "skillId": "ai-agent-workflow",
+      "parsed": {
+        "name": "ai-agent-workflow",
+        "description": "Build resumable multi-agent workflows with durable execution, tool loops, and automatic stream recovery on client reconnection.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Multi-Agent Workflows\n\nBuild resumable multi-agent workflows with durable execution, tool loops, and automatic stream recovery on client reconnection.\n\n## Prerequisites\n\nComplete these recipes first (in order):\n\n### Type-Safe Environment Configuration with better-env\n\nUse better-env config modules for type-safe server/public env access, feature flags, and either-or credential constraints.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/config-schema-setup\n```\n\n### Neon + Drizzle Setup\n\nConnect a Next.js app to Neon Postgres using Drizzle ORM with optimized connection pooling for Vercel serverless functions.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/neon-drizzle-setup\n```\n\n### Better Auth Setup\n\nAdd user authentication using Better Auth with Drizzle ORM and Neon Postgres. Base setup with email/password authentication.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/better-auth-setup\n```\n\n### AI Chat Persistence with Neon\n\nPersist AI chat conversations to Neon Postgres with full support for AI SDK message parts including tools, reasoning, and streaming. Uses UUID v7 for chronologically-sortable IDs.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/ai-chat-persistence\n```\n\n### Pino Logging Setup\n\nConfigure structured logging with Pino. Outputs human-readable colorized logs in development and structured JSON in production for log aggregation services.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/pino-logging-setup\n```\n\n## Cookbook - Complete These Recipes in Order\n\n### Workflow Development Kit Setup\n\nInstall and configure the Workflow Development Kit for resumable, durable AI agent workflows with step-level persistence, stream resumption, and agent orchestration.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/workflow-setup\n```\n\n### Resumable AI Response Streams\n\nAdd automatic stream recovery to AI chat with WorkflowChatTransport, start/resume API endpoints, and the useResumableChat hook.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/resumable-ai-streams\n```\n\n### Custom Durable Agent\n\nBuild a custom durable AI agent with full control over streamText options, provider configs, and tool loops. Compatible with the Workflow Development Kit.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/custom-durable-agent\n```\n\n### Working with Workflows\n\nCreate and run durable workflows with steps, streaming, and agent execution. Covers starting, resuming, and persisting workflow results.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/using-workflows\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "ai-chat",
+      "parsed": {
+        "name": "ai-chat",
+        "description": "Build a complete AI chat application with database persistence, chat list management, and automatic title generation.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# AI Chat\n\nBuild a complete AI chat application with database persistence, chat list management, and automatic title generation.\n\n## Prerequisites\n\nComplete these recipes first (in order):\n\n### Type-Safe Environment Configuration with better-env\n\nUse better-env config modules for type-safe server/public env access, feature flags, and either-or credential constraints.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/config-schema-setup\n```\n\n### Neon + Drizzle Setup\n\nConnect a Next.js app to Neon Postgres using Drizzle ORM with optimized connection pooling for Vercel serverless functions.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/neon-drizzle-setup\n```\n\n### Next.js on Vercel\n\nCreate a Next.js app running on Bun, configure the development environment, and deploy to Vercel with automatic deployments on push.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/nextjs-on-vercel\n```\n\n### Shadcn UI & Theming\n\nAdd Shadcn UI components with dark mode support using next-themes. Includes theme provider and CSS variables configuration.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/shadcn-ui-setup\n```\n\n### Authentication\n\nComplete authentication system with Better Auth, email verification, password reset, protected routes, and account management.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/authentication\n```\n\n### URL State with nuqs\n\nSync React state to URL query parameters for shareable filters, search queries, and deep links to modal dialogs. Preserves UI state on browser back/forward navigation.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/nuqs-setup\n```\n\n### Pino Logging Setup\n\nConfigure structured logging with Pino. Outputs human-readable colorized logs in development and structured JSON in production for log aggregation services.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/pino-logging-setup\n```\n\n### Workflow Development Kit Setup\n\nInstall and configure the Workflow Development Kit for resumable, durable AI agent workflows with step-level persistence, stream resumption, and agent orchestration.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/workflow-setup\n```\n\n## Cookbook - Complete These Recipes in Order\n\n### AI Chat Persistence with Neon\n\nPersist AI chat conversations to Neon Postgres with full support for AI SDK message parts including tools, reasoning, and streaming. Uses UUID v7 for chronologically-sortable IDs.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/ai-chat-persistence\n```\n\n### Chat List & Management\n\nBuild a chat list page with search, rename, and delete functionality. Uses nuqs for URL-synced filters and deep-linkable modal dialogs.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/chat-list\n```\n\n### Automatic Chat Naming\n\nGenerate descriptive chat titles from the first message using a fast LLM. Runs as a background workflow step after the main response to avoid delaying the experience.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/chat-naming\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "authentication",
+      "parsed": {
+        "name": "authentication",
+        "description": "Complete authentication system with Better Auth, email verification, password reset, protected routes, and account management.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Authentication\n\nComplete authentication system with Better Auth, email verification, password reset, protected routes, and account management.\n\n## Prerequisites\n\nComplete these recipes first (in order):\n\n### Type-Safe Environment Configuration with better-env\n\nUse better-env config modules for type-safe server/public env access, feature flags, and either-or credential constraints.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/config-schema-setup\n```\n\n### Neon + Drizzle Setup\n\nConnect a Next.js app to Neon Postgres using Drizzle ORM with optimized connection pooling for Vercel serverless functions.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/neon-drizzle-setup\n```\n\n### Next.js on Vercel\n\nCreate a Next.js app running on Bun, configure the development environment, and deploy to Vercel with automatic deployments on push.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/nextjs-on-vercel\n```\n\n### Shadcn UI & Theming\n\nAdd Shadcn UI components with dark mode support using next-themes. Includes theme provider and CSS variables configuration.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/shadcn-ui-setup\n```\n\n## Cookbook - Complete These Recipes in Order\n\n### Resend Setup\n\nConfigure Resend for transactional emails like password resets and email verification.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/resend-setup\n```\n\n### Better Auth Setup\n\nAdd user authentication using Better Auth with Drizzle ORM and Neon Postgres. Base setup with email/password authentication.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/better-auth-setup\n```\n\n### Better Auth Emails\n\nAdd email verification, password reset, and account management emails to Better Auth using Resend.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/better-auth-emails\n```\n\n### Better Auth Components\n\nAdd UI components and pages for authentication flows including sign in, sign up, forgot password, reset password, and email verification.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/better-auth-components\n```\n\n### Better Auth Profile & Account\n\nAdd a complete account settings page with profile editing, password changes, email updates, session management, and account deletion.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/better-auth-profile\n```\n\n### Better Auth Protected Routes\n\nAdd server-side route protection to enforce authentication on specific pages while keeping others public.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/better-auth-protected-routes\n```\n\n### Working with Authentication\n\nUse Better Auth for client and server-side authentication. Covers session access, protected routes, sign in/out, and fetching user data.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/using-authentication\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "base-app-setup",
+      "parsed": {
+        "name": "base-app-setup",
+        "description": "Complete setup guide for a Next.js app with Shadcn UI, Neon Postgres, Drizzle ORM, and AI SDK.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Base App Setup\n\nComplete setup guide for a Next.js app with Shadcn UI, Neon Postgres, Drizzle ORM, and AI SDK.\n\n## Cookbook - Complete These Recipes in Order\n\n### Next.js on Vercel\n\nCreate a Next.js app running on Bun, configure the development environment, and deploy to Vercel with automatic deployments on push.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/nextjs-on-vercel\n```\n\n### Editor and Linting Setup\n\nConfigure Prettier for code formatting and TypeScript for typechecking. Includes VSCode settings and EditorConfig for consistent code style. Skips ESLint/Biome to avoid config complexity.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/code-style-setup\n```\n\n### AI Coding Agent Configuration\n\nConfigure AI coding agents like Cursor, GitHub Copilot, or Claude Code with project-specific patterns, coding guidelines, and MCP servers for consistent AI-assisted development.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/agent-setup\n```\n\n### Shadcn UI & Theming\n\nAdd Shadcn UI components with dark mode support using next-themes. Includes theme provider and CSS variables configuration.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/shadcn-ui-setup\n```\n\n### Assertion Helper\n\nTypeScript assertion function for runtime type narrowing with descriptive error messages. Based on tiny-invariant.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/assert\n```\n\n### Type-Safe Environment Configuration with better-env\n\nUse better-env config modules for type-safe server/public env access, feature flags, and either-or credential constraints.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/config-schema-setup\n```\n\n### Build-Time Environment Validation with better-env\n\nValidate all env-backed config modules with better-env before build and in CI.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/env-validation\n```\n\n### Neon + Drizzle Setup\n\nConnect a Next.js app to Neon Postgres using Drizzle ORM with optimized connection pooling for Vercel serverless functions.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/neon-drizzle-setup\n```\n\n### AI SDK & Simple Chat\n\nInstall the Vercel AI SDK with AI Elements components. Build a streaming chat interface with the useChat hook.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/ai-sdk-setup\n```\n\n### Working with Drizzle\n\nWrite type-safe database queries with Drizzle ORM. Covers select, insert, update, delete, relational queries, and adding new tables.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/using-drizzle-queries\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "observability-monitoring",
+      "parsed": {
+        "name": "observability-monitoring",
+        "description": "Complete observability stack with structured logging, error tracking, and web analytics.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Observability & Monitoring\n\nComplete observability stack with structured logging, error tracking, and web analytics.\n\n## Cookbook - Complete These Recipes in Order\n\n### Pino Logging Setup\n\nConfigure structured logging with Pino. Outputs human-readable colorized logs in development and structured JSON in production for log aggregation services.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/pino-logging-setup\n```\n\n### Sentry Setup\n\nConfigure Sentry for error tracking, performance monitoring, and log aggregation. Integrates with Pino to forward logs to Sentry automatically.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/sentry-setup\n```\n\n### Vercel Web Analytics\n\nAdd privacy-focused web analytics with Vercel Web Analytics. Track page views, visitors, and custom events with zero configuration.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/vercel-analytics-setup\n```\n\n### Working with Logging\n\nUse structured logging with Pino throughout your application. Covers log levels, context, and workflow-safe logging patterns.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/using-logging\n```\n\n### Working with Sentry\n\nCapture exceptions, add context, create performance spans, and use structured logging with Sentry.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/using-sentry\n```\n\n### Working with Analytics\n\nTrack custom events and conversions with Vercel Web Analytics. Covers common events, form tracking, and development testing.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/using-analytics\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "og-image-generation",
+      "parsed": {
+        "name": "og-image-generation",
+        "description": "Generate dynamic social preview images using Next.js file conventions and the next/og library. Server-rendered JSX images cached at build time.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# OG Image Generation\n\nGenerate dynamic social preview images using Next.js file conventions and the next/og library. Server-rendered JSX images cached at build time.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/og-image-generation\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "ralph-loop",
+      "parsed": {
+        "name": "ralph-loop",
+        "description": "Complete setup for automated agent-driven development. Define features as user stories with testable acceptance criteria, then run AI agents in a loop until all stories pass.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Ralph Loop\n\nComplete setup for automated agent-driven development. Define features as user stories with testable acceptance criteria, then run AI agents in a loop until all stories pass.\n\n## Prerequisites\n\nComplete these recipes first (in order):\n\n### AI Coding Agent Configuration\n\nConfigure AI coding agents like Cursor, GitHub Copilot, or Claude Code with project-specific patterns, coding guidelines, and MCP servers for consistent AI-assisted development.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/agent-setup\n```\n\n## Cookbook - Complete These Recipes in Order\n\n### User Stories Setup\n\nCreate a structured format for documenting feature requirements as user stories. JSON files with testable acceptance criteria that AI agents can verify and track.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/user-stories-setup\n```\n\n### Working with User Stories\n\nDocument and track feature implementation with user stories. Workflow for authoring stories, building features, and marking acceptance criteria as passing.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/using-user-stories\n```\n\n### Ralph Agent Loop\n\nSet up automated agent-driven development with Ralph. Run AI agents in a loop to implement features from user stories, verify acceptance criteria, and log progress for the next agent.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/ralph-setup\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "shiki-code-blocks",
+      "parsed": {
+        "name": "shiki-code-blocks",
+        "description": "Syntax highlight code blocks with Shiki. Supports server-side rendering in RSC and automatic light/dark theme switching.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Shiki Code Blocks\n\nSyntax highlight code blocks with Shiki. Supports server-side rendering in RSC and automatic light/dark theme switching.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/shiki-code-blocks\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "stripe-subscriptions",
+      "parsed": {
+        "name": "stripe-subscriptions",
+        "description": "Complete subscription billing system with Stripe integration, feature flags for plan gating, webhook handling, and billing portal.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Stripe Subscriptions\n\nComplete subscription billing system with Stripe integration, feature flags for plan gating, webhook handling, and billing portal.\n\n## Prerequisites\n\nComplete these recipes first (in order):\n\n### Type-Safe Environment Configuration with better-env\n\nUse better-env config modules for type-safe server/public env access, feature flags, and either-or credential constraints.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/config-schema-setup\n```\n\n### Neon + Drizzle Setup\n\nConnect a Next.js app to Neon Postgres using Drizzle ORM with optimized connection pooling for Vercel serverless functions.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/neon-drizzle-setup\n```\n\n### Pino Logging Setup\n\nConfigure structured logging with Pino. Outputs human-readable colorized logs in development and structured JSON in production for log aggregation services.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/pino-logging-setup\n```\n\n## Cookbook - Complete These Recipes in Order\n\n### Feature Flags with Flags SDK\n\nImplement feature flags using the Vercel Flags SDK with server-side evaluation, environment-based toggles, and Vercel Toolbar integration.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/feature-flags-setup\n```\n\n### Stripe Subscriptions DB Sync\n\nComplete subscription system with Stripe, Vercel Flags for plan configuration, webhook handling for syncing subscription state to Postgres, usage tracking, and billing portal integration.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/stripe-sync\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "testing",
+      "parsed": {
+        "name": "testing",
+        "description": "Complete testing setup with Neon database branching, Playwright browser tests, integration tests, and unit tests. Isolated branches with automatic TTL cleanup.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Testing\n\nComplete testing setup with Neon database branching, Playwright browser tests, integration tests, and unit tests. Isolated branches with automatic TTL cleanup.\n\n## Prerequisites\n\nComplete these recipes first (in order):\n\n### Type-Safe Environment Configuration with better-env\n\nUse better-env config modules for type-safe server/public env access, feature flags, and either-or credential constraints.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/config-schema-setup\n```\n\n### Neon + Drizzle Setup\n\nConnect a Next.js app to Neon Postgres using Drizzle ORM with optimized connection pooling for Vercel serverless functions.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/neon-drizzle-setup\n```\n\n## Cookbook - Complete These Recipes in Order\n\n### Neon Test Branches\n\nCreate isolated Neon database branches for testing. Schema-only branches with auto-cleanup via TTL, test server orchestration, and environment variable management.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/neon-test-branches\n```\n\n### Unit Tests with Bun\n\nConfigure unit testing with Bun's built-in test runner. Fast, Jest-compatible syntax, co-located test files, and mocking support.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/unit-tests\n```\n\n### Integration Tests\n\nTest API routes by importing handlers directly with Bun's test runner. Fast, reliable tests without HTTP overhead.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/integration-tests\n```\n\n### Browser Tests with Playwright\n\nEnd-to-end browser testing with Playwright. Test user interactions, form validation, navigation, and visual feedback with full browser automation.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/playwright-tests\n```\n\n### Working with Tests\n\nTesting strategy and workflow. Tests run in parallel with isolated data per suite. Prioritize Playwright for UI, integration tests for APIs, unit tests for logic.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/using-tests\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "url-state-management",
+      "parsed": {
+        "name": "url-state-management",
+        "description": "Sync React state to URL query parameters for shareable filters, search, and deep-linkable dialogs with nuqs.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# URL State Management\n\nSync React state to URL query parameters for shareable filters, search, and deep-linkable dialogs with nuqs.\n\n## Prerequisites\n\nComplete these recipes first (in order):\n\n### Next.js on Vercel\n\nCreate a Next.js app running on Bun, configure the development environment, and deploy to Vercel with automatic deployments on push.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/nextjs-on-vercel\n```\n\n## Cookbook - Complete These Recipes in Order\n\n### URL State with nuqs\n\nSync React state to URL query parameters for shareable filters, search queries, and deep links to modal dialogs. Preserves UI state on browser back/forward navigation.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/nuqs-setup\n```\n\n### Working with nuqs\n\nManage React state in URL query parameters with nuqs. Covers Suspense boundaries, parsers, clearing state, and deep-linkable dialogs.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/using-nuqs\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "use-fullstackrecipes",
+      "parsed": {
+        "name": "use-fullstackrecipes",
+        "description": "Discover and follow recipes via MCP resources for setup guides, skills, and cookbooks. The meta-skill for using fullstackrecipes effectively.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Building with fullstackrecipes\n\nDiscover and follow recipes via MCP resources for setup guides, skills, and cookbooks. The meta-skill for using fullstackrecipes effectively.\n\n```bash\ncurl -H \"Accept: text/markdown\" https://fullstackrecipes.com/api/recipes/use-fullstackrecipes\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        }
+      ]
+    }
+  ]
+}

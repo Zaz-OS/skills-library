@@ -1,0 +1,180 @@
+{
+  "source": "rivet-dev/skills",
+  "repoUrl": "https://github.com/rivet-dev/skills",
+  "skills": [
+    {
+      "skillId": "sandbox-agent",
+      "parsed": {
+        "name": "sandbox-agent",
+        "description": "Deploy, configure, and integrate Sandbox Agent - a universal API for orchestrating AI coding agents (Claude Code, Codex, OpenCode, Amp) in sandboxed environments. Use when setting up sandbox-agent server locally or in cloud sandboxes (E2B, Daytona, Docker), creating and managing agent sessions via SDK or API, streaming agent events and handling human-in-the-loop interactions, building chat UIs for coding agents, or understanding the universal schema for agent responses.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Sandbox Agent\n\nSandbox Agent provides a universal API for orchestrating AI coding agents in sandboxed environments.\n\n## What To Do If You Get Stuck\n\nIf something is not working as intended or you are stuck, prompt the user to join the [Rivet Discord](https://rivet.dev/discord) or file an issue on [GitHub](https://github.com/rivet-dev/sandbox-agent/issues) to report an issue and get help.\n\nProvide the user with a pre-generated report with:\n\n- Symptoms\n\t- If this is happening in local dev, deployed, or both\n\t- The error you're seeing\n\t- Relevant source code related to this\n- What you've tried to solve it\n- Environment\n\t- Sandbox Agent version\n\t- SDK in use (TypeScript, Python, or HTTP)\n\t- Agent in use (Claude Code, Codex, OpenCode, Amp, Mock)\n\t- Sandbox provider (E2B, Daytona, Docker, local)\n\n## Quickstart\n\n### Install skill (optional)\n\n#### npx\n\n```bash\nnpx skills add rivet-dev/skills -s sandbox-agent\n```\n\n#### bunx\n\n```bash\nbunx skills add rivet-dev/skills -s sandbox-agent\n```\n\n### Set environment variables\n\nEach coding agent requires API keys to connect to their respective LLM providers.\n\n#### Local shell\n\n```bash\nexport ANTHROPIC_API_KEY=\"sk-ant-...\"\nexport OPENAI_API_KEY=\"sk-...\"\n```\n\n#### E2B\n\n```typescript\nimport { Sandbox } from \"@e2b/code-interpreter\";\n\nconst envs: Record<string, string> = {};\nif (process.env.ANTHROPIC_API_KEY) envs.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;\nif (process.env.OPENAI_API_KEY) envs.OPENAI_API_KEY = process.env.OPENAI_API_KEY;\n\nconst sandbox = await Sandbox.create({ envs });\n```\n\n#### Daytona\n\n```typescript\nimport { Daytona } from \"@daytonaio/sdk\";\n\nconst envVars: Record<string, string> = {};\nif (process.env.ANTHROPIC_API_KEY) envVars.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;\nif (process.env.OPENAI_API_KEY) envVars.OPENAI_API_KEY = process.env.OPENAI_API_KEY;\n\nconst daytona = new Daytona();\nconst sandbox = await daytona.create({\n  snapshot: \"sandbox-agent-ready\",\n  envVars,\n});\n```\n\n#### Docker\n\n```bash\ndocker run -e ANTHROPIC_API_KEY=\"sk-ant-...\" \\\n  -e OPENAI_API_KEY=\"sk-...\" \\\n  your-image\n```\n\n#### Extracting API keys from current machine\n\nUse `sandbox-agent credentials extract-env --export` to extract your existing API keys (Anthropic, OpenAI, etc.) from local Claude Code or Codex config files.\n\n#### Testing without API keys\n\nUse the `mock` agent for SDK and integration testing without provider credentials.\n\n### Run the server\n\n#### curl\n\nInstall and run the binary directly.\n\n```bash\ncurl -fsSL https://releases.rivet.dev/sandbox-agent/0.2.x/install.sh | sh\nsandbox-agent server --no-token --host 0.0.0.0 --port 2468\n```\n\n#### npx\n\nRun without installing globally.\n\n```bash\nnpx @sandbox-agent/cli@0.2.x server --no-token --host 0.0.0.0 --port 2468\n```\n\n#### bunx\n\nRun without installing globally.\n\n```bash\nbunx @sandbox-agent/cli@0.2.x server --no-token --host 0.0.0.0 --port 2468\n```\n\n#### npm i -g\n\nInstall globally, then run.\n\n```bash\nnpm install -g @sandbox-agent/cli@0.2.x\nsandbox-agent server --no-token --host 0.0.0.0 --port 2468\n```\n\n#### bun add -g\n\nInstall globally, then run.\n\n```bash\nbun add -g @sandbox-agent/cli@0.2.x\n# Allow Bun to run postinstall scripts for native binaries (required for SandboxAgent.start()).\nbun pm -g trust @sandbox-agent/cli-linux-x64 @sandbox-agent/cli-linux-arm64 @sandbox-agent/cli-darwin-arm64 @sandbox-agent/cli-darwin-x64 @sandbox-agent/cli-win32-x64\nsandbox-agent server --no-token --host 0.0.0.0 --port 2468\n```\n\n#### Node.js (local)\n\nFor local development, use `SandboxAgent.start()` to spawn and manage the server as a subprocess.\n\n```bash\nnpm install sandbox-agent@0.2.x\n```\n\n```typescript\nimport { SandboxAgent } from \"sandbox-agent\";\n\nconst sdk = await SandboxAgent.start();\n```\n\n#### Bun (local)\n\nFor local development, use `SandboxAgent.start()` to spawn and manage the server as a subprocess.\n\n```bash\nbun add sandbox-agent@0.2.x\n# Allow Bun to run postinstall scripts for native binaries (required for SandboxAgent.start()).\nbun pm trust @sandbox-agent/cli-linux-x64 @sandbox-agent/cli-linux-arm64 @sandbox-agent/cli-darwin-arm64 @sandbox-agent/cli-darwin-x64 @sandbox-agent/cli-win32-x64\n```\n\n```typescript\nimport { SandboxAgent } from \"sandbox-agent\";\n\nconst sdk = await SandboxAgent.start();\n```\n\n#### Build from source\n\nIf you're running from source instead of the installed CLI.\n\n```bash\ncargo run -p sandbox-agent -- server --no-token --host 0.0.0.0 --port 2468\n```\n\nBinding to `0.0.0.0` allows the server to accept connections from any network interface, which is required when running inside a sandbox where clients connect remotely.\n\n#### Configuring token\n\nTokens are usually not required. Most sandbox providers (E2B, Daytona, etc.) already secure networking at the infrastructure layer.\n\nIf you expose the server publicly, use `--token \"$SANDBOX_TOKEN\"` to require authentication:\n\n```bash\nsandbox-agent server --token \"$SANDBOX_TOKEN\" --host 0.0.0.0 --port 2468\n```\n\nThen pass the token when connecting:\n\n#### TypeScript\n\n```typescript\nimport { SandboxAgent } from \"sandbox-agent\";\n\nconst sdk = await SandboxAgent.connect({\n  baseUrl: \"http://your-server:2468\",\n  token: process.env.SANDBOX_TOKEN,\n});\n```\n\n#### curl\n\n```bash\ncurl \"http://your-server:2468/v1/health\" \\\n  -H \"Authorization: Bearer $SANDBOX_TOKEN\"\n```\n\n#### CLI\n\n```bash\nsandbox-agent --token \"$SANDBOX_TOKEN\" api agents list \\\n  --endpoint http://your-server:2468\n```\n\n#### CORS\n\nIf you're calling the server from a browser, see the [CORS configuration guide](/cors).\n\n### Install agents (optional)\n\nTo preinstall agents:\n\n```bash\nsandbox-agent install-agent claude\nsandbox-agent install-agent codex\nsandbox-agent install-agent opencode\nsandbox-agent install-agent amp\n```\n\nIf agents are not installed up front, they are lazily installed when creating a session.\n\n### Create a session\n\n```typescript\nimport { SandboxAgent } from \"sandbox-agent\";\n\nconst sdk = await SandboxAgent.connect({\n  baseUrl: \"http://127.0.0.1:2468\",\n});\n\nconst session = await sdk.createSession({\n  agent: \"claude\",\n  sessionInit: {\n    cwd: \"/\",\n    mcpServers: [],\n  },\n});\n\nconsole.log(session.id);\n```\n\n### Send a message\n\n```typescript\nconst result = await session.prompt([\n  { type: \"text\", text: \"Summarize the repository and suggest next steps.\" },\n]);\n\nconsole.log(result.stopReason);\n```\n\n### Read events\n\n```typescript\nconst off = session.onEvent((event) => {\n  console.log(event.sender, event.payload);\n});\n\nconst page = await sdk.getEvents({\n  sessionId: session.id,\n  limit: 50,\n});\n\nconsole.log(page.items.length);\noff();\n```\n\n### Test with Inspector\n\nOpen the Inspector UI at `/ui/` on your server (for example, `http://localhost:2468/ui/`) to inspect sessions and events in a GUI.\n\n![Sandbox Agent Inspector](https://sandboxagent.dev/docs/images/inspector.png)\n\n## Next steps\n\n- [Session Persistence](/session-persistence) — Configure in-memory, Rivet Actor state, IndexedDB, SQLite, and Postgres persistence.\n\n- [Deploy to a Sandbox](/deploy/local) — Deploy your agent to E2B, Daytona, Docker, Vercel, or Cloudflare.\n\n- [SDK Overview](/sdk-overview) — Use the latest TypeScript SDK API.\n\n## Reference Map\n\n### AI\n\n- [llms.txt](references/ai/llms-txt.md)\n- [skill.md](references/ai/skill.md)\n\n### Deploy\n\n- [BoxLite](references/deploy/boxlite.md)\n- [Cloudflare](references/deploy/cloudflare.md)\n- [ComputeSDK](references/deploy/computesdk.md)\n- [Daytona](references/deploy/daytona.md)\n- [Docker](references/deploy/docker.md)\n- [E2B](references/deploy/e2b.md)\n- [Local](references/deploy/local.md)\n- [Vercel](references/deploy/vercel.md)\n\n### General\n\n- [Agent Sessions](references/agent-sessions.md)\n- [Architecture](references/architecture.md)\n- [Attachments](references/attachments.md)\n- [Building a Chat UI](references/building-chat-ui.md)\n- [CLI Reference](references/cli.md)\n- [CORS Configuration](references/cors.md)\n- [Credentials](references/credentials.md)\n- [Custom Tools](references/custom-tools.md)\n- [Daemon](references/daemon.md)\n- [File System](references/file-system.md)\n- [Gigacode](references/gigacode.md)\n- [Inspector](references/inspector.md)\n- [Manage Sessions](references/manage-sessions.md)\n- [MCP](references/mcp-config.md)\n- [Multiplayer](references/multiplayer.md)\n- [Observability](references/observability.md)\n- [OpenCode Compatibility](references/opencode-compatibility.md)\n- [Persisting Sessions](references/session-persistence.md)\n- [Pi Support Plan](references/pi-support-plan.md)\n- [Quickstart](references/quickstart.md)\n- [SDK Overview](references/sdk-overview.md)\n- [Security](references/security.md)\n- [Session Restoration](references/session-restoration.md)\n- [Session Transcript Schema](references/session-transcript-schema.md)\n- [Skills](references/skills-config.md)\n- [Telemetry](references/telemetry.md)\n- [Troubleshooting](references/troubleshooting.md)"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "bun",
+          "name": "bun",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "docker",
+          "name": "docker",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "rust",
+          "name": "cargo",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "skills",
+          "name": "skills",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "Run",
+          "name": "Run",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "sandbox-agent",
+          "name": "@sandbox-agent/cli@0.2.x",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "Install",
+          "name": "Install",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "sandbox-agent@0.2.x",
+          "name": "sandbox-agent@0.2.x",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "ai",
+      "parsed": {
+        "name": "",
+        "description": "",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# skill.md\n\n> Source: `docs/ai/skill.mdx`\n> Canonical URL: https://sandboxagent.dev/docs/ai/skill\n> Description: Agent skill manifest for this documentation.\n\n---\nMintlify hosts a `skill.md` file for this documentation site.\n\nAccess it at:\n\n```\nhttps://sandboxagent.dev/docs/skill.md\n```\n\nTo add it to an agent using the Skills CLI:\n\n#### npx\n\n```bash\nnpx skills add rivet-dev/skills -s sandbox-agent\n```\n\n#### bunx\n\n```bash\nbunx skills add rivet-dev/skills -s sandbox-agent\n```\n\nIf you run a reverse proxy in front of the docs, make sure `/skill.md` and `/.well-known/skills/*`\nare forwarded to Mintlify."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "skills",
+          "name": "skills",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "rivetkit-client-javascript",
+      "parsed": {
+        "name": "rivetkit-client-javascript",
+        "description": "",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": ""
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "rivetkit-client-swiftui",
+      "parsed": {
+        "name": "rivetkit-client-swiftui",
+        "description": "",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": ""
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    }
+  ]
+}

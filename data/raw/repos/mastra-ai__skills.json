@@ -1,0 +1,38 @@
+{
+  "source": "mastra-ai/skills",
+  "repoUrl": "https://github.com/mastra-ai/skills",
+  "skills": [
+    {
+      "skillId": "mastra",
+      "parsed": {
+        "name": "mastra",
+        "description": "Comprehensive Mastra framework guide. Teaches how to find current documentation, verify API signatures, and build agents and workflows. Covers documentation lookup strategies (embedded docs, remote docs), core concepts (agents vs workflows, tools, memory, RAG), TypeScript requirements, and common patterns. Use this skill for all Mastra development to ensure you're using current APIs from the installed version or latest documentation.",
+        "compatibility": null,
+        "license": "Apache-2.0",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Mastra Framework Guide\n\nBuild AI applications with Mastra. This skill teaches you how to find current documentation and build agents and workflows.\n\n## ⚠️ Critical: Do not trust internal knowledge\n\nEverything you know about Mastra is likely outdated or wrong. Never rely on memory. Always verify against current documentation.\n\nYour training data contains obsolete APIs, deprecated patterns, and incorrect usage. Mastra evolves rapidly - APIs change between versions, constructor signatures shift, and patterns get refactored.\n\n## Prerequisites\n\nBefore writing any Mastra code, check if packages are installed:\n\n```bash\nls node_modules/@mastra/\n```\n\n- **If packages exist:** Use embedded docs first (most reliable)\n- **If no packages:** Install first or use remote docs\n\n## Documentation lookup guide\n\n### Quick Reference\n\n| User Question                       | First Check                                                      | How To                                         |\n| ----------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------- |\n| \"Create/install Mastra project\"     | [`references/create-mastra.md`](references/create-mastra.md)     | Setup guide with CLI and manual steps          |\n| \"How do I use Agent/Workflow/Tool?\" | [`references/embedded-docs.md`](references/embedded-docs.md)     | Look up in `node_modules/@mastra/*/dist/docs/` |\n| \"How do I use X?\" (no packages)     | [`references/remote-docs.md`](references/remote-docs.md)         | Fetch from `https://mastra.ai/llms.txt`        |\n| \"I'm getting an error...\"           | [`references/common-errors.md`](references/common-errors.md)     | Common errors and solutions                    |\n| \"Upgrade from v0.x to v1.x\"         | [`references/migration-guide.md`](references/migration-guide.md) | Version upgrade workflows                      |\n\n### Priority order for writing code\n\n⚠️ Never write code without checking current docs first.\n\n1. **Embedded docs first** (if packages installed)\n\n   Look up current docs in `node_modules` for a package. Example of looking up \"Agent\" docs in `@mastra/core`:\n\n   ```bash\n   grep -r \"Agent\" node_modules/@mastra/core/dist/docs/references\n   ```\n\n   - **Why:** Matches your EXACT installed version\n   - **Most reliable source of truth**\n   - **See:** [`references/embedded-docs.md`](references/embedded-docs.md)\n\n2. **Source code second** (if packages installed)\n\n   If you can't find what you need in the embedded docs, look directly at the source code. This is more time consuming but can provide insights into implementation details.\n\n   ```bash\n   # Check what's available\n   cat node_modules/@mastra/core/dist/docs/assets/SOURCE_MAP.json | grep '\"Agent\"'\n\n   # Read the actual type definition\n   cat node_modules/@mastra/core/dist/[path-from-source-map]\n   ```\n\n   - **Why:** Ultimate source of truth if docs are missing or unclear\n   - **Use when:** Embedded docs don't cover your question\n   - **See:** [`references/embedded-docs.md`](references/embedded-docs.md)\n\n3. **Remote docs third** (if packages not installed)\n\n   You can fetch the latest docs from the Mastra website:\n\n   ```bash\n   https://mastra.ai/llms.txt\n   ```\n\n   - **Why:** Latest published docs (may be ahead of installed version)\n   - **Use when:** Packages not installed or exploring new features\n   - **See:** [`references/remote-docs.md`](references/remote-docs.md)\n\n## Core concepts\n\n### Agents vs workflows\n\n**Agent**: Autonomous, makes decisions, uses tools\nUse for: Open-ended tasks (support, research, analysis)\n\n**Workflow**: Structured sequence of steps\nUse for: Defined processes (pipelines, approvals, ETL)\n\n### Key components\n\n- **Tools**: Extend agent capabilities (APIs, databases, external services)\n- **Memory**: Maintain context (message history, working memory, semantic recall)\n- **RAG**: Query external knowledge (vector stores, graph relationships)\n- **Storage**: Persist data (Postgres, LibSQL, MongoDB)\n\n## Critical requirements\n\n### TypeScript config\n\nMastra requires **ES2022 modules**. CommonJS will fail.\n\n```json\n{\n  \"compilerOptions\": {\n    \"target\": \"ES2022\",\n    \"module\": \"ES2022\",\n    \"moduleResolution\": \"bundler\"\n  }\n}\n```\n\n### Model format\n\nAlways use `\"provider/model-name\"`:\n\n- `\"openai/gpt-5.2\"`\n- `\"anthropic/claude-sonnet-4-5\"`\n- `\"google/gemini-2.5-pro\"`\n\n## When you see errors\n\n**Type errors often mean your knowledge is outdated.**\n\n**Common signs of outdated knowledge:**\n\n- `Property X does not exist on type Y`\n- `Cannot find module`\n- `Type mismatch` errors\n- Constructor parameter errors\n\n**What to do:**\n\n1. Check [`references/common-errors.md`](references/common-errors.md)\n2. Verify current API in embedded docs\n3. Don't assume the error is a user mistake - it might be your outdated knowledge\n\n## Development workflow\n\n**Always verify before writing code:**\n\n1. **Check packages installed**\n\n   ```bash\n   ls node_modules/@mastra/\n   ```\n\n2. **Look up current API**\n   - If installed → Use embedded docs [`references/embedded-docs.md`](references/embedded-docs.md)\n   - If not → Use remote docs [`references/remote-docs.md`](references/remote-docs.md)\n\n3. **Write code based on current docs**\n\n4. **Test in Studio**\n   ```bash\n   npm run dev  # http://localhost:4111\n   ```\n\n## Resources\n\n- **Setup**: [`references/create-mastra.md`](references/create-mastra.md)\n- **Embedded docs lookup**: [`references/embedded-docs.md`](references/embedded-docs.md) - Start here if packages are installed\n- **Remote docs lookup**: [`references/remote-docs.md`](references/remote-docs.md)\n- **Common errors**: [`references/common-errors.md`](references/common-errors.md)\n- **Migrations**: [`references/migration-guide.md`](references/migration-guide.md)"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "mongodb",
+          "name": "mongodb",
+          "detectedFrom": "instructions"
+        }
+      ]
+    }
+  ]
+}

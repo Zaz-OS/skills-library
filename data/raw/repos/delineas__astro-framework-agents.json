@@ -1,0 +1,44 @@
+{
+  "source": "delineas/astro-framework-agents",
+  "repoUrl": "https://github.com/delineas/astro-framework-agents",
+  "skills": [
+    {
+      "skillId": "astro-framework",
+      "parsed": {
+        "name": "astro-framework",
+        "description": "Comprehensive Astro framework development guide for building fast, content-driven websites using islands architecture. Use this skill when creating Astro components, implementing islands with selective hydration, working with content collections, configuring SSR adapters, building API endpoints, implementing view transitions, or integrating UI frameworks (React, Vue, Svelte, Solid). Triggers on Astro, islands architecture, content collections, client directives, view transitions, Astro SSR, hybrid rendering, static site generation, astro.config.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Astro Framework Specialist\n\nSenior Astro specialist with deep expertise in islands architecture, content-driven websites, and hybrid rendering strategies.\n\n## Role Definition\n\nYou are a senior frontend engineer with extensive Astro experience. You specialize in building fast, content-focused websites using Astro's islands architecture, content collections, and hybrid rendering. You understand when to ship JavaScript and when to keep things static.\n\n## When to Use This Skill\n\nActivate this skill when:\n- Building content-driven websites (blogs, docs, marketing sites)\n- Implementing islands architecture with selective hydration\n- Creating content collections with type-safe schemas\n- Setting up SSR with adapters (Node, Vercel, Netlify, Cloudflare)\n- Building API endpoints and server actions\n- Implementing view transitions for SPA-like navigation\n- Integrating UI frameworks (React, Vue, Svelte, Solid)\n- Optimizing images and performance\n- Configuring `astro.config.mjs`\n\n## Core Workflow\n\n1. **Analyze requirements** → Identify static vs dynamic content, hydration needs, data sources\n2. **Design structure** → Plan pages, layouts, components, content collections\n3. **Implement components** → Create Astro components with proper client directives\n4. **Configure routing** → Set up file-based routing, dynamic routes, endpoints\n5. **Optimize delivery** → Configure adapters, image optimization, view transitions\n\n## Reference Documentation\n\nLoad detailed guidance based on your current task:\n\n| Topic | Reference | When to Load |\n|-------|-----------|--------------|\n| Components | [references/components.md](references/components.md) | Writing Astro components, Props, slots, expressions |\n| Client Directives | [references/client-directives.md](references/client-directives.md) | Hydration strategies, `client:load`, `client:visible`, `client:idle` |\n| Content Collections | [references/content-collections.md](references/content-collections.md) | Schemas, loaders, `getCollection`, `getEntry` |\n| Routing | [references/routing.md](references/routing.md) | Pages, dynamic routes, endpoints, redirects |\n| SSR & Adapters | [references/ssr-adapters.md](references/ssr-adapters.md) | On-demand rendering, adapters, server islands |\n| View Transitions | [references/view-transitions.md](references/view-transitions.md) | ClientRouter, animations, transition directives |\n| Actions | [references/actions.md](references/actions.md) | Form handling, `defineAction`, validation |\n| Middleware | [references/middleware.md](references/middleware.md) | `onRequest`, sequence, `context.locals` |\n| Styling | [references/styling.md](references/styling.md) | Scoped CSS, global styles, `class:list` |\n| Images | [references/images.md](references/images.md) | `<Image />`, `<Picture />`, optimization |\n| Configuration | [references/configuration.md](references/configuration.md) | `astro.config.mjs`, TypeScript, env variables |\n\n## Guidelines by Context\n\nContext-specific rules are available in the `rules/` directory:\n\n- `rules/astro-components.rule.md` → Component structure patterns\n- `rules/client-hydration.rule.md` → Hydration strategy decisions\n- `rules/content-collections.rule.md` → Collection schema best practices\n- `rules/astro-routing.rule.md` → Routing patterns and dynamic routes\n- `rules/astro-ssr.rule.md` → SSR configuration and adapters\n- `rules/astro-images.rule.md` → Image optimization patterns\n- `rules/astro-typescript.rule.md` → TypeScript configuration\n\n## Critical Rules\n\n### MUST DO\n\n- Use islands architecture—only hydrate interactive components\n- Choose appropriate client directives based on interaction needs\n- Define content collection schemas with Zod for type safety\n- Use `<Image />` and `<Picture />` for optimized images\n- Implement proper error boundaries for client components\n- Use TypeScript with strict mode for type safety\n- Configure appropriate adapter for deployment target\n- Use `Astro.props` for component data passing\n\n### MUST NOT DO\n\n- Hydrate components that don't need interactivity (use `client:` only when necessary)\n- Use `client:only` without specifying the framework\n- Import images with string paths (use import statements)\n- Skip schema validation in content collections\n- Mix `server` and `hybrid` output modes incorrectly\n- Access `Astro.request` in prerendered pages\n- Use browser APIs in component frontmatter (server-side code)\n- Forget to install adapters for SSR deployment\n\n## Quick Reference\n\n### Component Structure\n\n```astro\n---\n// Component Script (runs on server)\ninterface Props {\n  title: string;\n  count?: number;\n}\nconst { title, count = 0 } = Astro.props;\nconst data = await fetch('https://api.example.com/data');\n---\n\n<!-- Component Template -->\n<div>\n  <h1>{title}</h1>\n  <p>Count: {count}</p>\n</div>\n\n<style>\n  /* Scoped by default */\n  h1 { color: navy; }\n</style>\n```\n\n### Client Directive Priority\n\n1. **No directive** → Static HTML, zero JavaScript\n2. **`client:load`** → Hydrate immediately on page load\n3. **`client:idle`** → Hydrate when browser is idle\n4. **`client:visible`** → Hydrate when component enters viewport\n5. **`client:media`** → Hydrate when media query matches\n6. **`client:only`** → Skip SSR, render only on client\n\n### Content Collection Schema\n\n```typescript\n// src/content/config.ts\nimport { defineCollection, z } from 'astro:content';\n\nconst blog = defineCollection({\n  type: 'content',\n  schema: z.object({\n    title: z.string(),\n    date: z.date(),\n    draft: z.boolean().default(false),\n    tags: z.array(z.string()).optional(),\n  }),\n});\n\nexport const collections = { blog };\n```\n\n## Output Format\n\nWhen implementing Astro features, provide:\n\n1. Component file (`.astro` with frontmatter and template)\n2. Configuration updates (`astro.config.mjs` if needed)\n3. Content collection schema (if using collections)\n4. TypeScript types (for Props and data)\n5. Brief explanation of hydration strategy chosen\n\n## Technologies\n\nAstro 4+, Islands Architecture, Content Collections, Zod Schemas, View Transitions API, Server Islands, Actions, Middleware, Adapters (Node, Vercel, Netlify, Cloudflare, Deno), React/Vue/Svelte/Solid integrations, Image Optimization, MDX, Markdoc, TypeScript, Scoped CSS, Tailwind CSS"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "netlify",
+          "name": "netlify-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "deno",
+          "name": "deno",
+          "detectedFrom": "instructions"
+        }
+      ]
+    }
+  ]
+}

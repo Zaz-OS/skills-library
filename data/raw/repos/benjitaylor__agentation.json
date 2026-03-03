@@ -1,0 +1,90 @@
+{
+  "source": "benjitaylor/agentation",
+  "repoUrl": "https://github.com/benjitaylor/agentation",
+  "skills": [
+    {
+      "skillId": "agentation",
+      "parsed": {
+        "name": "agentation",
+        "description": "Add Agentation visual feedback toolbar to a Next.js project",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Agentation Setup\n\nSet up the Agentation annotation toolbar in this project.\n\n## Steps\n\n1. **Check if already installed**\n   - Look for `agentation` in package.json dependencies\n   - If not found, run `npm install agentation` (or pnpm/yarn based on lockfile)\n\n2. **Check if already configured**\n   - Search for `<Agentation` or `import { Agentation }` in src/ or app/\n   - If found, report that Agentation is already set up and exit\n\n3. **Detect framework**\n   - Next.js App Router: has `app/layout.tsx` or `app/layout.js`\n   - Next.js Pages Router: has `pages/_app.tsx` or `pages/_app.js`\n\n4. **Add the component**\n\n   For Next.js App Router, add to the root layout:\n   ```tsx\n   import { Agentation } from \"agentation\";\n\n   // Add inside the body, after children:\n   {process.env.NODE_ENV === \"development\" && <Agentation />}\n   ```\n\n   For Next.js Pages Router, add to _app:\n   ```tsx\n   import { Agentation } from \"agentation\";\n\n   // Add after Component:\n   {process.env.NODE_ENV === \"development\" && <Agentation />}\n   ```\n\n5. **Confirm component setup**\n   - Tell the user the Agentation toolbar component is configured\n\n6. **Recommend MCP server setup**\n   - Explain that for real-time annotation syncing with AI agents, they should also set up the MCP server\n   - Recommend one of the following approaches:\n     - **Universal (supports 9+ agents including Claude Code, Cursor, Codex, Windsurf, etc.):**\n       See [add-mcp](https://github.com/neondatabase/add-mcp) — run `npx add-mcp` and follow the prompts to add `agentation-mcp` as an MCP server\n     - **Claude Code only (interactive wizard):**\n       Run `agentation-mcp init` after installing the package\n   - Tell user to restart their coding agent after MCP setup to load the server\n   - Explain that once configured, annotations will sync to the agent automatically\n\n## Notes\n\n- The `NODE_ENV` check ensures Agentation only loads in development\n- Agentation requires React 18\n- The MCP server runs on port 4747 by default for the HTTP server\n- MCP server exposes tools like `agentation_get_all_pending`, `agentation_resolve`, and `agentation_watch_annotations`\n- Run `agentation-mcp doctor` to verify setup after installing"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "agentation",
+          "name": "agentation",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "add-mcp",
+          "name": "add-mcp",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "agentation-self-driving",
+      "parsed": {
+        "name": "agentation-self-driving",
+        "description": "Autonomous design critique mode using the Agentation annotation toolbar. Use when the user asks to \"critique this page,\" \"add design annotations,\" \"review the UI,\" \"self-driving mode,\" \"auto-annotate,\" or wants an AI agent to autonomously add design feedback annotations to a web page via the browser. Requires the Agentation toolbar to be installed on the target page and agent-browser skill to be available.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "allowed-tools": "Bash(agent-browser:*)"
+        },
+        "body": "# Agentation Self-Driving Mode\n\nAutonomously critique a web page by adding design annotations via the Agentation toolbar — in a visible headed browser so the user can watch the agent work in real time, like watching a self-driving car navigate.\n\n## Launch — Always Headed\n\nThe browser MUST be visible. Never run headless. The user watches you scan, hover, click, and annotate.\n\n**Preflight**: Verify `agent-browser` is available before anything else:\n\n```bash\ncommand -v agent-browser >/dev/null || { echo \"ERROR: agent-browser not found. Install the agent-browser skill first.\"; exit 1; }\n```\n\n**Launch**: Try opening directly first. Only close an existing session if the open command fails with a stale session error — this avoids killing a browser someone else is using:\n\n```bash\n# Try to open. If it fails (stale session), close first then retry.\nagent-browser --headed open <url> 2>&1 || { agent-browser close 2>/dev/null; agent-browser --headed open <url>; }\n```\n\nThen verify the Agentation toolbar is present and expand it:\n\n```bash\n# 1. Check toolbar exists on the page (data-feedback-toolbar is the root marker)\nagent-browser eval \"document.querySelector('[data-feedback-toolbar]') ? 'toolbar found' : 'NOT FOUND'\"\n# If \"NOT FOUND\": Agentation is not installed on this page — stop and tell the user\n\n# 2. Expand ONLY if collapsed (clicking when already expanded collapses it)\nagent-browser eval \"document.querySelector('[data-feedback-toolbar][class*=expanded]') ? 'already expanded' : (document.querySelector('[class*=toggleContent]')?.click(), 'expanding')\"\n\n# 3. Verify: take a snapshot and look for toolbar controls\nagent-browser snapshot -i\n# If expanded: you'll see \"Block page interactions\" checkbox, color buttons (Purple, Blue, etc.)\n# If collapsed: you'll only see the small toggle button — retry step 2\n```\n\n\"Block page interactions\" must be checked (default: on).\n\n> **eval quoting rule**: Always use `[class*=toggleContent]` (no quotes around the attribute value) in eval strings. Do not use double-bang in eval because bash treats it as history expansion. Do not use backslash-escaped inner quotes either, as they break unpredictably across shells.\n\n## Critical: How to Create Annotations\n\n**Standard element clicks (`click @ref`) do NOT trigger annotation dialogs.** The Agentation overlay intercepts pointer events at the coordinate level. Use coordinate-based mouse events — this also makes the interaction visible in the browser as the cursor moves across the page.\n\n> **`@ref` compatibility**: Only `click`, `fill`, `type`, `hover`, `focus`, `check`, `select`, `drag` support `@ref` syntax. The commands `scrollintoview`, `get box`, and `eval` do NOT — they expect CSS selectors. Use `eval` with `querySelector` for scrolling and position lookup.\n\n```bash\n# 1. Take interactive snapshot — identify target element and build a CSS selector\nagent-browser snapshot -i\n# Example: snapshot shows  heading \"Point at bugs.\" [ref=e10]\n# Derive a CSS selector: 'h1', or more specific: 'h1:first-of-type'\n\n# 2. Scroll the element into view via eval (NOT scrollintoview @ref — that breaks)\nagent-browser eval \"document.querySelector('h1').scrollIntoView({block:'center'})\"\n\n# 3. Get its bounding box via eval (NOT get box @ref — that also breaks)\nagent-browser eval \"((r) => r.x+','+r.y+','+r.width+','+r.height)(document.querySelector('h1').getBoundingClientRect())\"\n# Returns: \"383,245,200,40\"  (parse these as x,y,width,height)\n\n# 4. Move cursor to element center, then click\n#    centerX = x + width/2,  centerY = y + height/2\nagent-browser mouse move <centerX> <centerY>\nagent-browser mouse down left\nagent-browser mouse up left\n\n# 5. Get the annotation dialog refs — read the FULL snapshot output\n#    Dialog refs appear at the BOTTOM of the list, don't truncate with head/tail\nagent-browser snapshot -i\n# Look for: textbox \"What should change?\" and \"Cancel\" / \"Add\" buttons\n\n# 6. Type critique — fill and click DO support @ref\nagent-browser fill @<textboxRef> \"Your critique here\"\n\n# 7. Submit (Add button enables after text is filled)\nagent-browser click @<addRef>\n```\n\nIf no dialog appears after clicking, the toolbar may have collapsed. Re-expand (only if collapsed) and retry:\n\n```bash\nagent-browser eval \"document.querySelector('[data-feedback-toolbar][class*=expanded]') ? 'ok' : (document.querySelector('[class*=toggleContent]')?.click(), 'expanded')\"\n```\n\n### Building CSS selectors from snapshots\n\nThe snapshot shows element roles, names, and refs. Map them to CSS selectors:\n\n| Snapshot line | CSS selector |\n|--------------|-------------|\n| `heading \"Point at bugs.\" [ref=e10]` | `h1` or `h1:first-of-type` |\n| `button \"npm install agentation Copy\" [ref=e15]` | `button:has(code)` or by text content via eval |\n| `link \"Star on GitHub\" [ref=e28]` | `a[href*=github]` |\n| `paragraph (long text...) [ref=e20]` | Target by section: `section:nth-of-type(2) p` |\n\nWhen in doubt, use a broader selector and verify with eval:\n```bash\nagent-browser eval \"document.querySelector('h2').textContent\"\n```\n\n## The Loop\n\nWork top-to-bottom through the page. For each annotation:\n\n1. Scroll to the target area via eval (`scrollIntoView`)\n2. Pick a specific element — heading, paragraph, button, section container\n3. Get its bounding box via eval (`getBoundingClientRect`)\n4. Execute the coordinate-click sequence (`mouse move` → `mouse down` → `mouse up`)\n5. Read the **full** snapshot output to find dialog refs at the bottom\n6. Write the critique (`fill @ref`) and submit (`click @ref`)\n7. Verify the annotation was added (see below)\n8. Move to the next area\n\n### Verifying annotations\n\nAfter submitting each annotation, confirm the count increased:\n\n```bash\nagent-browser eval \"document.querySelectorAll('[data-annotation-marker]').length\"\n# Should return the expected count (1 after first, 2 after second, etc.)\n```\n\nIf the count didn't increase, the submission failed silently — re-snapshot and check if the dialog is still open.\n\nAim for 5-8 annotations per page unless told otherwise.\n\n## What to Critique\n\n| Area | What to look for |\n|------|-----------------|\n| **Hero / above the fold** | Headline hierarchy, CTA placement, visual grouping |\n| **Navigation** | Label styling, category grouping, visual weight |\n| **Demo / illustrations** | Clarity, depth, animation readability |\n| **Content sections** | Spacing rhythm, callout treatments, typography hierarchy |\n| **Key taglines** | Whether resonant lines get enough visual emphasis |\n| **CTAs and footer** | Conversion weight, visual separation, final actions |\n\n## Critique Style\n\n2-3 sentences max per annotation:\n\n- **Specific and actionable**: \"Stack the install command below the subheading at 16px\" not \"fix the layout\"\n- **1-2 concrete alternatives**: Reference CSS values, layout patterns, or design systems\n- **Name the principle**: Visual hierarchy, Gestalt grouping, whitespace, emphasis, conversion design\n- **Reference comparable products**: \"Like how Stripe/Linear/Vercel handles this\"\n\nBad: \"This section needs work\"\nGood: \"This bullet list reads like docs, not a showcase. Use a 3-column card grid with icons — similar to Stripe's guidelines pattern. Creates visual rhythm and scannability.\"\n\n## Install\n\nThe skill must be symlinked into `~/.claude/skills/` for Claude Code to discover it:\n\n```bash\nln -s \"$(pwd)/skills/agentation-self-driving\" ~/.claude/skills/agentation-self-driving\n```\n\nRestart Claude Code after installing. Verify with `/agentation-self-driving` — if it loads the skill instructions, the symlink is working.\n\n## Troubleshooting\n\n- **\"Browser not launched. Call launch first.\"**: Stale session from a previous run — run `agent-browser close 2>/dev/null` then retry the `--headed open` command\n- **Toolbar not found on page**: Agentation isn't installed — run `/agentation` to set it up first\n- **No dialog after clicking**: Toolbar collapsed — re-expand with the state-aware eval (check `[class*=expanded]` first), retry\n- **Wrong element targeted**: Click Cancel, scroll to intended element, retry with correct coordinates\n- **Add button stays disabled**: Text wasn't filled — re-snapshot and fill the textbox\n- **Page navigated**: \"Block page interactions\" is off — enable via toolbar settings\n- **Annotation count didn't increase**: Submission failed — dialog may still be open, re-snapshot and check\n- **Interrupted mid-run (Ctrl+C)**: The browser stays open with whatever state it was in. Run `agent-browser close` to clean up before starting a new session\n\n## agent-browser Pitfalls\n\nThese will silently break the workflow if you're not aware of them:\n\n| Pitfall | What happens | Fix |\n|---------|-------------|-----|\n| `scrollintoview @ref` | Crashes: \"Unsupported token @ref while parsing css selector\" | Use `eval \"document.querySelector('sel').scrollIntoView({block:'center'})\"` |\n| `get box @ref` | Same crash — `get box` parses refs as CSS selectors | Use `eval \"((r)=>r.x+','+r.y+','+r.width+','+r.height)(document.querySelector('sel').getBoundingClientRect())\"` |\n| `eval` with double-bang | Bash expands double-bang as history substitution before the command runs | Use `expr !== null` or `expr ? true : false` instead |\n| `eval` with backslash-escaped quotes | Escaped inner quotes break across shells | Drop the quotes: `[class*=toggleContent]` works for simple values without spaces |\n| `snapshot -i \\| head -50` | Annotation dialog refs (`textbox \"What should change?\"`, `Add`, `Cancel`) appear at the BOTTOM of the snapshot | Always read the **full** snapshot output — never truncate |\n| `click @ref` on overlay elements | The click goes through to the real DOM, bypassing the Agentation overlay | Use `mouse move` → `mouse down left` → `mouse up left` for coordinate-based clicks that the overlay intercepts |\n| `--headed open` fails with \"Browser not launched\" | Stale sessions from previous runs block new launches | Run `agent-browser close 2>/dev/null` then retry the open command |\n\n**Rule of thumb**: `@ref` works for interaction commands (`click`, `fill`, `type`, `hover`). For everything else (`eval`, `get`, `scrollintoview`), use CSS selectors via `querySelector` in an eval.\n\n## Two-Session Workflow (Full Self-Driving)\n\nWith MCP connected (toolbar shows \"MCP Connected\"), annotations auto-send to any listening agent. This enables:\n\n- **Session 1** (this skill): Watches the page, adds critique annotations in the visible browser\n- **Session 2**: Runs `agentation_watch_annotations` in a loop, receives annotations, edits code to address each one\n\nThe user watches Session 1 drive through the page in the browser while Session 2 fixes issues in the codebase — fully autonomous design review and implementation."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "agentation",
+          "name": "agentation",
+          "detectedFrom": "instructions"
+        }
+      ]
+    }
+  ]
+}

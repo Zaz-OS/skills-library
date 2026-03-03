@@ -1,0 +1,63 @@
+{
+  "source": "denolfe/dotfiles",
+  "repoUrl": "https://github.com/denolfe/dotfiles",
+  "skills": [
+    {
+      "skillId": "markdown-formatting",
+      "parsed": {
+        "name": "markdown-formatting",
+        "description": "Format and lint markdown and MDX files using markdownlint with comprehensive rule knowledge for automated and manual fixes. Use when working with .md or .mdx files, formatting documentation, linting markdown/MDX, or when user mentions markdown issues, formatting problems, or documentation standards.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Markdown & MDX Formatting & Linting\n\nFormat and lint markdown and MDX files using markdownlint CLI tools with comprehensive understanding of all markdown rules.\n\n## Quick Start\n\n```bash\n# Check if markdownlint is available\nwhich markdownlint || which markdownlint\n\n# Install if needed\npnpm add -D markdownlint\n# or\nnpm install -g markdownlint\n\n# Auto-fix files (markdown and MDX)\nmarkdownlint --fix \"**/*.{md,mdx}\"\n\n# Check specific files\nmarkdownlint README.md docs/**/*.md content/**/*.mdx\n```\n\n## Configuration Detection\n\nCheck for config files in this order:\n\n1. `.markdownlint.json`\n2. `.markdownlint.jsonc`\n3. `.markdownlint.yaml`\n4. `.markdownlintrc`\n5. `markdownlint` key in `package.json`\n\n## Common Workflow\n\n1. **Detect environment**: Check for markdownlint CLI\n2. **Find config**: Look for config files\n3. **Run linter**: Identify issues\n4. **Apply fixes**: Auto-fix or manual\n5. **Verify**: Re-run to confirm\n\n## Most Common Issues & Quick Fixes\n\n### Headings\n\n- **MD001**: Heading levels increment (# → ## → ### not # → ###)\n- **MD018/MD019**: Single space after hash (`# Heading` not `#Heading`)\n- **MD022**: Blank lines around headings\n- **MD025**: Single H1 per document\n- **MD041**: First line should be H1\n\n```markdown\n<!-- Good heading structure -->\n# Main Title\n\n## Section\n\n### Subsection\n\nContent here...\n```\n\n### Lists\n\n- **MD004**: Consistent list markers (all `-` or all `*`)\n- **MD007**: Nested lists indent 2 spaces\n- **MD030**: Single space after list marker\n- **MD032**: Blank lines around lists\n\n```markdown\n<!-- Good list structure -->\n- Item 1\n  - Nested item\n  - Another nested\n- Item 2\n```\n\n### Whitespace\n\n- **MD009**: No trailing spaces\n- **MD010**: Use spaces not tabs\n- **MD012**: Single blank lines (not multiple)\n- **MD047**: File ends with newline\n\n### Links & Images\n\n- **MD034**: Wrap bare URLs in `<>`: `<http://example.com>`\n- **MD042**: Links need text: `[Link Text](url)` not `[](url)`\n- **MD045**: Images need alt text: `![Description](image.png)`\n\n### Code Blocks\n\n- **MD031**: Blank lines around code blocks\n- **MD040**: Specify language for code blocks\n\n````markdown\n<!-- Good code block -->\nText before\n\n```javascript\nconst code = 'here';\n```\n\nText after\n````\n\n## CLI Commands\n\n```bash\n# Fix all markdown and MDX files\nmarkdownlint --fix \"**/*.{md,mdx}\"\n\n# Fix specific files\nmarkdownlint --fix README.md CHANGELOG.md content/blog.mdx\n\n# Check without fixing\nmarkdownlint \"**/*.{md,mdx}\"\n\n# Use specific config\nmarkdownlint --config .markdownlint.json \"**/*.{md,mdx}\"\n\n# Ignore specific rules\nmarkdownlint --disable MD013 MD033 \"**/*.{md,mdx}\"\n\n# Output JSON for parsing\nmarkdownlint --json \"**/*.{md,mdx}\"\n```\n\n## Common Patterns\n\n### Fix Multiple Issues at Once\n\n```markdown\n<!-- Before -->\n#Title\nSome text with trailing spaces\n Tab indented line\n\n- Item 1\n* Item 2\nVisit http://example.com\n\n<!-- After -->\n# Title\n\nSome text with trailing spaces\n    Space indented line\n\n- Item 1\n- Item 2\n\nVisit <http://example.com>\n```\n\n### Add to package.json\n\n```json\n{\n  \"scripts\": {\n    \"lint:md\": \"markdownlint \\\"**/*.{md,mdx}\\\" --ignore node_modules\",\n    \"lint:md:fix\": \"markdownlint \\\"**/*.{md,mdx}\\\" --ignore node_modules --fix\"\n  }\n}\n```\n\n## Detailed Rules Reference\n\nFor comprehensive documentation of all markdown rules with examples and fixes, see [rules-reference.md](./rules-reference.md).\n\n## Resources\n\n- [markdownlint GitHub](https://github.com/DavidAnson/markdownlint)\n- [markdownlint Rules](https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md)"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "pnpm",
+          "name": "pnpm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "markdownlint",
+          "name": "markdownlint",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "zellij",
+      "parsed": {
+        "name": "zellij",
+        "description": "Read from and write to other zellij panes. Use when user references another pane or needs to run commands in adjacent panes.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Zellij Pane Controller\n\nRead from and write to other zellij terminal panes using `zellij action` commands.\n\n## Writing to Panes\n\n**Send command (with Enter to execute):**\n\n```bash\n~/.claude/skills/zellij/tools/zellij-send.sh $'ls -la\\n'\n```\n\n**Send text (without Enter, for partial input):**\n\n```bash\n~/.claude/skills/zellij/tools/zellij-send.sh \"partial text\"\n```\n\n**Specify direction:**\n\n```bash\n~/.claude/skills/zellij/tools/zellij-send.sh right $'echo hello\\n'\n~/.claude/skills/zellij/tools/zellij-send.sh left \"some text\"\n```\n\nDirections: `next` (default), `left`, `right`, `up`, `down`\n\n## Reading from Panes\n\n**View adjacent pane (visible screen):**\n\n```bash\n~/.claude/skills/zellij/tools/zellij-dump.sh next\n```\n\n**View pane in specific direction:**\n\n```bash\n~/.claude/skills/zellij/tools/zellij-dump.sh left\n~/.claude/skills/zellij/tools/zellij-dump.sh right\n~/.claude/skills/zellij/tools/zellij-dump.sh up\n~/.claude/skills/zellij/tools/zellij-dump.sh down\n```\n\n**Include full scrollback:**\n\n```bash\n~/.claude/skills/zellij/tools/zellij-dump.sh next --full\n```\n\n## Layout Info\n\n**Show tabs and panes:**\n\n```bash\n~/.claude/skills/zellij/tools/zellij-info.sh\n```\n\n## Creating Panes\n\n**New pane (auto direction):**\n\n```bash\n~/.claude/skills/zellij/tools/zellij-new-pane.sh\n```\n\n**New pane with direction:**\n\n```bash\n~/.claude/skills/zellij/tools/zellij-new-pane.sh right\n~/.claude/skills/zellij/tools/zellij-new-pane.sh down\n```\n\n**New pane and run command:**\n\n```bash\n~/.claude/skills/zellij/tools/zellij-new-pane.sh \"npm run dev\"\n~/.claude/skills/zellij/tools/zellij-new-pane.sh down \"tail -f /var/log/app.log\"\n```\n\n## Limitations\n\n- **Flicker on read/write**: Uses focus shift (zellij limitation)\n- **Requires zellij session**: Only works inside zellij"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    }
+  ]
+}

@@ -1,0 +1,232 @@
+{
+  "source": "tavily-ai/skills",
+  "repoUrl": "https://github.com/tavily-ai/skills",
+  "skills": [
+    {
+      "skillId": "crawl",
+      "parsed": {
+        "name": "crawl",
+        "description": "Crawl any website and save pages as local markdown files. Use when you need to download documentation, knowledge bases, or web content for offline access or analysis. No code required - just provide a URL.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Crawl Skill\n\nCrawl websites to extract content from multiple pages. Ideal for documentation, knowledge bases, and site-wide content extraction.\n\n## Authentication\n\nThe script uses OAuth via the Tavily MCP server. **No manual setup required** - on first run, it will:\n1. Check for existing tokens in `~/.mcp-auth/`\n2. If none found, automatically open your browser for OAuth authentication\n\n> **Note:** You must have an existing Tavily account. The OAuth flow only supports login — account creation is not available through this flow. [Sign up at tavily.com](https://tavily.com) first if you don't have an account.\n\n### Alternative: API Key\n\nIf you prefer using an API key, get one at https://tavily.com and add to `~/.claude/settings.json`:\n```json\n{\n  \"env\": {\n    \"TAVILY_API_KEY\": \"tvly-your-api-key-here\"\n  }\n}\n```\n\n## Quick Start\n\n### Using the Script\n\n```bash\n./scripts/crawl.sh '<json>' [output_dir]\n```\n\n**Examples:**\n```bash\n# Basic crawl\n./scripts/crawl.sh '{\"url\": \"https://docs.example.com\"}'\n\n# Deeper crawl with limits\n./scripts/crawl.sh '{\"url\": \"https://docs.example.com\", \"max_depth\": 2, \"limit\": 50}'\n\n# Save to files\n./scripts/crawl.sh '{\"url\": \"https://docs.example.com\", \"max_depth\": 2}' ./docs\n\n# Focused crawl with path filters\n./scripts/crawl.sh '{\"url\": \"https://example.com\", \"max_depth\": 2, \"select_paths\": [\"/docs/.*\", \"/api/.*\"], \"exclude_paths\": [\"/blog/.*\"]}'\n\n# With semantic instructions (for agentic use)\n./scripts/crawl.sh '{\"url\": \"https://docs.example.com\", \"instructions\": \"Find API documentation\", \"chunks_per_source\": 3}'\n```\n\nWhen `output_dir` is provided, each crawled page is saved as a separate markdown file.\n\n### Basic Crawl\n\n```bash\ncurl --request POST \\\n  --url https://api.tavily.com/crawl \\\n  --header \"Authorization: Bearer $TAVILY_API_KEY\" \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    \"url\": \"https://docs.example.com\",\n    \"max_depth\": 1,\n    \"limit\": 20\n  }'\n```\n\n### Focused Crawl with Instructions\n\n```bash\ncurl --request POST \\\n  --url https://api.tavily.com/crawl \\\n  --header \"Authorization: Bearer $TAVILY_API_KEY\" \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    \"url\": \"https://docs.example.com\",\n    \"max_depth\": 2,\n    \"instructions\": \"Find API documentation and code examples\",\n    \"chunks_per_source\": 3,\n    \"select_paths\": [\"/docs/.*\", \"/api/.*\"]\n  }'\n```\n\n## API Reference\n\n### Endpoint\n\n```\nPOST https://api.tavily.com/crawl\n```\n\n### Headers\n\n| Header | Value |\n|--------|-------|\n| `Authorization` | `Bearer <TAVILY_API_KEY>` |\n| `Content-Type` | `application/json` |\n\n### Request Body\n\n| Field | Type | Default | Description |\n|-------|------|---------|-------------|\n| `url` | string | Required | Root URL to begin crawling |\n| `max_depth` | integer | 1 | Levels deep to crawl (1-5) |\n| `max_breadth` | integer | 20 | Links per page |\n| `limit` | integer | 50 | Total pages cap |\n| `instructions` | string | null | Natural language guidance for focus |\n| `chunks_per_source` | integer | 3 | Chunks per page (1-5, requires instructions) |\n| `extract_depth` | string | `\"basic\"` | `basic` or `advanced` |\n| `format` | string | `\"markdown\"` | `markdown` or `text` |\n| `select_paths` | array | null | Regex patterns to include |\n| `exclude_paths` | array | null | Regex patterns to exclude |\n| `allow_external` | boolean | true | Include external domain links |\n| `timeout` | float | 150 | Max wait (10-150 seconds) |\n\n### Response Format\n\n```json\n{\n  \"base_url\": \"https://docs.example.com\",\n  \"results\": [\n    {\n      \"url\": \"https://docs.example.com/page\",\n      \"raw_content\": \"# Page Title\\n\\nContent...\"\n    }\n  ],\n  \"response_time\": 12.5\n}\n```\n\n## Depth vs Performance\n\n| Depth | Typical Pages | Time |\n|-------|---------------|------|\n| 1 | 10-50 | Seconds |\n| 2 | 50-500 | Minutes |\n| 3 | 500-5000 | Many minutes |\n\n**Start with `max_depth=1`** and increase only if needed.\n\n## Crawl for Context vs Data Collection\n\n**For agentic use (feeding results into context):** Always use `instructions` + `chunks_per_source`. This returns only relevant chunks instead of full pages, preventing context window explosion.\n\n**For data collection (saving to files):** Omit `chunks_per_source` to get full page content.\n\n## Examples\n\n### For Context: Agentic Research (Recommended)\n\nUse when feeding crawl results into an LLM context:\n\n```bash\ncurl --request POST \\\n  --url https://api.tavily.com/crawl \\\n  --header \"Authorization: Bearer $TAVILY_API_KEY\" \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    \"url\": \"https://docs.example.com\",\n    \"max_depth\": 2,\n    \"instructions\": \"Find API documentation and authentication guides\",\n    \"chunks_per_source\": 3\n  }'\n```\n\nReturns only the most relevant chunks (max 500 chars each) per page - fits in context without overwhelming it.\n\n### For Context: Targeted Technical Docs\n\n```bash\ncurl --request POST \\\n  --url https://api.tavily.com/crawl \\\n  --header \"Authorization: Bearer $TAVILY_API_KEY\" \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    \"url\": \"https://example.com\",\n    \"max_depth\": 2,\n    \"instructions\": \"Find all documentation about authentication and security\",\n    \"chunks_per_source\": 3,\n    \"select_paths\": [\"/docs/.*\", \"/api/.*\"]\n  }'\n```\n\n### For Data Collection: Full Page Archive\n\nUse when saving content to files for later processing:\n\n```bash\ncurl --request POST \\\n  --url https://api.tavily.com/crawl \\\n  --header \"Authorization: Bearer $TAVILY_API_KEY\" \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    \"url\": \"https://example.com/blog\",\n    \"max_depth\": 2,\n    \"max_breadth\": 50,\n    \"select_paths\": [\"/blog/.*\"],\n    \"exclude_paths\": [\"/blog/tag/.*\", \"/blog/category/.*\"]\n  }'\n```\n\nReturns full page content - use the script with `output_dir` to save as markdown files.\n\n## Map API (URL Discovery)\n\nUse `map` instead of `crawl` when you only need URLs, not content:\n\n```bash\ncurl --request POST \\\n  --url https://api.tavily.com/map \\\n  --header \"Authorization: Bearer $TAVILY_API_KEY\" \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    \"url\": \"https://docs.example.com\",\n    \"max_depth\": 2,\n    \"instructions\": \"Find all API docs and guides\"\n  }'\n```\n\nReturns URLs only (faster than crawl):\n\n```json\n{\n  \"base_url\": \"https://docs.example.com\",\n  \"results\": [\n    \"https://docs.example.com/api/auth\",\n    \"https://docs.example.com/guides/quickstart\"\n  ]\n}\n```\n\n## Tips\n\n- **Always use `chunks_per_source` for agentic workflows** - prevents context explosion when feeding results to LLMs\n- **Omit `chunks_per_source` only for data collection** - when saving full pages to files\n- **Start conservative** (`max_depth=1`, `limit=20`) and scale up\n- **Use path patterns** to focus on relevant sections\n- **Use Map first** to understand site structure before full crawl\n- **Always set a `limit`** to prevent runaway crawls"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "extract",
+      "parsed": {
+        "name": "extract",
+        "description": "Extract content from specific URLs using Tavily's extraction API. Returns clean markdown/text from web pages. Use when you have specific URLs and need their content without writing code.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Extract Skill\n\nExtract clean content from specific URLs. Ideal when you know which pages you want content from.\n\n## Authentication\n\nThe script uses OAuth via the Tavily MCP server. **No manual setup required** - on first run, it will:\n1. Check for existing tokens in `~/.mcp-auth/`\n2. If none found, automatically open your browser for OAuth authentication\n\n> **Note:** You must have an existing Tavily account. The OAuth flow only supports login — account creation is not available through this flow. [Sign up at tavily.com](https://tavily.com) first if you don't have an account.\n\n### Alternative: API Key\n\nIf you prefer using an API key, get one at https://tavily.com and add to `~/.claude/settings.json`:\n```json\n{\n  \"env\": {\n    \"TAVILY_API_KEY\": \"tvly-your-api-key-here\"\n  }\n}\n```\n\n## Quick Start\n\n### Using the Script\n\n```bash\n./scripts/extract.sh '<json>'\n```\n\n**Examples:**\n```bash\n# Single URL\n./scripts/extract.sh '{\"urls\": [\"https://example.com/article\"]}'\n\n# Multiple URLs\n./scripts/extract.sh '{\"urls\": [\"https://example.com/page1\", \"https://example.com/page2\"]}'\n\n# With query focus and chunks\n./scripts/extract.sh '{\"urls\": [\"https://example.com/docs\"], \"query\": \"authentication API\", \"chunks_per_source\": 3}'\n\n# Advanced extraction for JS pages\n./scripts/extract.sh '{\"urls\": [\"https://app.example.com\"], \"extract_depth\": \"advanced\", \"timeout\": 60}'\n```\n\n### Basic Extraction\n\n```bash\ncurl --request POST \\\n  --url https://api.tavily.com/extract \\\n  --header \"Authorization: Bearer $TAVILY_API_KEY\" \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    \"urls\": [\"https://example.com/article\"]\n  }'\n```\n\n### Multiple URLs with Query Focus\n\n```bash\ncurl --request POST \\\n  --url https://api.tavily.com/extract \\\n  --header \"Authorization: Bearer $TAVILY_API_KEY\" \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    \"urls\": [\n      \"https://example.com/ml-healthcare\",\n      \"https://example.com/ai-diagnostics\"\n    ],\n    \"query\": \"AI diagnostic tools accuracy\",\n    \"chunks_per_source\": 3\n  }'\n```\n\n## API Reference\n\n### Endpoint\n\n```\nPOST https://api.tavily.com/extract\n```\n\n### Headers\n\n| Header | Value |\n|--------|-------|\n| `Authorization` | `Bearer <TAVILY_API_KEY>` |\n| `Content-Type` | `application/json` |\n\n### Request Body\n\n| Field | Type | Default | Description |\n|-------|------|---------|-------------|\n| `urls` | array | Required | URLs to extract (max 20) |\n| `query` | string | null | Reranks chunks by relevance |\n| `chunks_per_source` | integer | 3 | Chunks per URL (1-5, requires query) |\n| `extract_depth` | string | `\"basic\"` | `basic` or `advanced` (for JS pages) |\n| `format` | string | `\"markdown\"` | `markdown` or `text` |\n| `include_images` | boolean | false | Include image URLs |\n| `timeout` | float | varies | Max wait (1-60 seconds) |\n\n### Response Format\n\n```json\n{\n  \"results\": [\n    {\n      \"url\": \"https://example.com/article\",\n      \"raw_content\": \"# Article Title\\n\\nContent...\"\n    }\n  ],\n  \"failed_results\": [],\n  \"response_time\": 2.3\n}\n```\n\n## Extract Depth\n\n| Depth | When to Use |\n|-------|-------------|\n| `basic` | Simple text extraction, faster |\n| `advanced` | Dynamic/JS-rendered pages, tables, structured data |\n\n## Examples\n\n### Single URL Extraction\n\n```bash\ncurl --request POST \\\n  --url https://api.tavily.com/extract \\\n  --header \"Authorization: Bearer $TAVILY_API_KEY\" \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    \"urls\": [\"https://docs.python.org/3/tutorial/classes.html\"],\n    \"extract_depth\": \"basic\"\n  }'\n```\n\n### Targeted Extraction with Query\n\n```bash\ncurl --request POST \\\n  --url https://api.tavily.com/extract \\\n  --header \"Authorization: Bearer $TAVILY_API_KEY\" \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    \"urls\": [\n      \"https://example.com/react-hooks\",\n      \"https://example.com/react-state\"\n    ],\n    \"query\": \"useState and useEffect patterns\",\n    \"chunks_per_source\": 2\n  }'\n```\n\n### JavaScript-Heavy Pages\n\n```bash\ncurl --request POST \\\n  --url https://api.tavily.com/extract \\\n  --header \"Authorization: Bearer $TAVILY_API_KEY\" \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    \"urls\": [\"https://app.example.com/dashboard\"],\n    \"extract_depth\": \"advanced\",\n    \"timeout\": 60\n  }'\n```\n\n### Batch Extraction\n\n```bash\ncurl --request POST \\\n  --url https://api.tavily.com/extract \\\n  --header \"Authorization: Bearer $TAVILY_API_KEY\" \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    \"urls\": [\n      \"https://example.com/page1\",\n      \"https://example.com/page2\",\n      \"https://example.com/page3\",\n      \"https://example.com/page4\",\n      \"https://example.com/page5\"\n    ],\n    \"extract_depth\": \"basic\"\n  }'\n```\n\n## Tips\n\n- **Max 20 URLs per request** - batch larger lists\n- **Use `query` + `chunks_per_source`** to get only relevant content\n- **Try `basic` first**, fall back to `advanced` if content is missing\n- **Set longer `timeout`** for slow pages (up to 60s)\n- **Check `failed_results`** for URLs that couldn't be extracted"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "research",
+      "parsed": {
+        "name": "research",
+        "description": "Comprehensive research grounded in web data with explicit citations. Use when you need multi-source synthesis—comparisons, current events, market analysis, detailed reports. ",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Research Skill\n\nConduct comprehensive research on any topic with automatic source gathering, analysis, and response generation with citations.\n\n## Authentication\n\nThe script uses OAuth via the Tavily MCP server. **No manual setup required** - on first run, it will:\n1. Check for existing tokens in `~/.mcp-auth/`\n2. If none found, automatically open your browser for OAuth authentication\n\n> **Note:** You must have an existing Tavily account. The OAuth flow only supports login — account creation is not available through this flow. [Sign up at tavily.com](https://tavily.com) first if you don't have an account.\n\n### Alternative: API Key\n\nIf you prefer using an API key, get one at https://tavily.com and add to `~/.claude/settings.json`:\n```json\n{\n  \"env\": {\n    \"TAVILY_API_KEY\": \"tvly-your-api-key-here\"\n  }\n}\n```\n\n## Quick Start\n\n> **Tip**: Research can take 30-120 seconds. Press **Ctrl+B** to run in the background.\n\n### Using the Script\n\n```bash\n./scripts/research.sh '<json>' [output_file]\n```\n\n**Examples:**\n\n```bash\n# Basic research\n./scripts/research.sh '{\"input\": \"quantum computing trends\"}'\n\n# With pro model for comprehensive analysis\n./scripts/research.sh '{\"input\": \"AI agents comparison\", \"model\": \"pro\"}'\n\n# Save to file\n./scripts/research.sh '{\"input\": \"market analysis for EVs\", \"model\": \"pro\"}' ./ev-report.md\n\n# Quick targeted research\n./scripts/research.sh '{\"input\": \"climate change impacts\", \"model\": \"mini\"}'\n```\n\n## Parameters\n\n| Field | Type | Default | Description |\n|-------|------|---------|-------------|\n| `input` | string | Required | Research topic or question |\n| `model` | string | `\"mini\"` | Model: `mini`, `pro`, `auto` |\n\n## Model Selection\n\n**Rule of thumb**: \"what does X do?\" -> mini. \"X vs Y vs Z\" or \"best way to...\" -> pro.\n\n| Model | Use Case | Speed |\n|-------|----------|-------|\n| `mini` | Single topic, targeted research | ~30s |\n| `pro` | Comprehensive multi-angle analysis | ~60-120s |\n| `auto` | API chooses based on complexity | Varies |\n\n## Examples\n\n### Quick Overview\n\n```bash\n./scripts/research.sh '{\"input\": \"What is retrieval augmented generation?\", \"model\": \"mini\"}'\n```\n\n### Technical Comparison\n\n```bash\n./scripts/research.sh '{\"input\": \"LangGraph vs CrewAI for multi-agent systems\", \"model\": \"pro\"}'\n```\n\n### Market Research\n\n```bash\n./scripts/research.sh '{\"input\": \"Fintech startup landscape 2025\", \"model\": \"pro\"}' fintech-report.md\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "search",
+      "parsed": {
+        "name": "search",
+        "description": "Search the web using Tavily's LLM-optimized search API. Returns relevant results with content snippets, scores, and metadata. Use when you need to find web content on any topic without writing code.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Search Skill\n\nSearch the web and get relevant results optimized for LLM consumption.\n\n## Authentication\n\nThe script uses OAuth via the Tavily MCP server. **No manual setup required** - on first run, it will:\n1. Check for existing tokens in `~/.mcp-auth/`\n2. If none found, automatically open your browser for OAuth authentication\n\n> **Note:** You must have an existing Tavily account. The OAuth flow only supports login — account creation is not available through this flow. [Sign up at tavily.com](https://tavily.com) first if you don't have an account.\n\n### Alternative: API Key\n\nIf you prefer using an API key, get one at https://tavily.com and add to `~/.claude/settings.json`:\n```json\n{\n  \"env\": {\n    \"TAVILY_API_KEY\": \"tvly-your-api-key-here\"\n  }\n}\n```\n\n## Quick Start\n\n### Using the Script\n\n```bash\n./scripts/search.sh '<json>'\n```\n\n**Examples:**\n```bash\n# Basic search\n./scripts/search.sh '{\"query\": \"python async patterns\"}'\n\n# With options\n./scripts/search.sh '{\"query\": \"React hooks tutorial\", \"max_results\": 10}'\n\n# Advanced search with filters\n./scripts/search.sh '{\"query\": \"AI news\", \"time_range\": \"week\", \"max_results\": 10}'\n\n# Domain-filtered search\n./scripts/search.sh '{\"query\": \"machine learning\", \"include_domains\": [\"arxiv.org\", \"github.com\"], \"search_depth\": \"advanced\"}'\n```\n\n### Basic Search\n\n```bash\ncurl --request POST \\\n  --url https://api.tavily.com/search \\\n  --header \"Authorization: Bearer $TAVILY_API_KEY\" \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    \"query\": \"latest developments in quantum computing\",\n    \"max_results\": 5\n  }'\n```\n\n### Advanced Search\n\n```bash\ncurl --request POST \\\n  --url https://api.tavily.com/search \\\n  --header \"Authorization: Bearer $TAVILY_API_KEY\" \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    \"query\": \"machine learning best practices\",\n    \"max_results\": 10,\n    \"search_depth\": \"advanced\",\n    \"include_domains\": [\"arxiv.org\", \"github.com\"]\n  }'\n```\n\n## API Reference\n\n### Endpoint\n\n```\nPOST https://api.tavily.com/search\n```\n\n### Headers\n\n| Header | Value |\n|--------|-------|\n| `Authorization` | `Bearer <TAVILY_API_KEY>` |\n| `Content-Type` | `application/json` |\n\n### Request Body\n\n| Field | Type | Default | Description |\n|-------|------|---------|-------------|\n| `query` | string | Required | Search query (keep under 400 chars) |\n| `max_results` | integer | 10 | Maximum results (0-20) |\n| `search_depth` | string | `\"basic\"` | `ultra-fast`, `fast`, `basic`, `advanced` |\n| `topic` | string | `\"general\"` | Search topic (general only) |\n| `time_range` | string | null | `day`, `week`, `month`, `year` |\n| `start_date` | string | null | Return results after this date (`YYYY-MM-DD`) |\n| `end_date` | string | null | Return results before this date (`YYYY-MM-DD`) |\n| `include_domains` | array | [] | Domains to include (max 300) |\n| `exclude_domains` | array | [] | Domains to exclude (max 150) |\n| `country` | string | null | Boost results from a specific country (general topic only) |\n| `include_raw_content` | boolean | false | Include full page content |\n| `include_images` | boolean | false | Include image results |\n| `include_image_descriptions` | boolean | false | Include descriptions for images |\n| `include_favicon` | boolean | false | Include favicon URL for each result |\n\n### Response Format\n\n```json\n{\n  \"query\": \"latest developments in quantum computing\",\n  \"results\": [\n    {\n      \"title\": \"Page Title\",\n      \"url\": \"https://example.com/page\",\n      \"content\": \"Extracted text snippet...\",\n      \"score\": 0.85\n    }\n  ],\n  \"response_time\": 1.2\n}\n```\n\n## Search Depth\n\n| Depth | Latency | Relevance | Content Type |\n|-------|---------|-----------|--------------|\n| `ultra-fast` | Lowest | Lower | NLP summary |\n| `fast` | Low | Good | Chunks |\n| `basic` | Medium | High | NLP summary |\n| `advanced` | Higher | Highest | Chunks |\n\n**When to use each:**\n- `ultra-fast`: Real-time chat, autocomplete\n- `fast`: Need chunks but latency matters\n- `basic`: General-purpose, balanced\n- `advanced`: Precision matters (default recommendation)\n\n## Examples\n\n### Domain-Filtered Search\n\n```bash\ncurl --request POST \\\n  --url https://api.tavily.com/search \\\n  --header \"Authorization: Bearer $TAVILY_API_KEY\" \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    \"query\": \"Python async best practices\",\n    \"include_domains\": [\"docs.python.org\", \"realpython.com\", \"github.com\"],\n    \"search_depth\": \"advanced\"\n  }'\n```\n\n### Search with Full Content\n\n```bash\ncurl --request POST \\\n  --url https://api.tavily.com/search \\\n  --header \"Authorization: Bearer $TAVILY_API_KEY\" \\\n  --header 'Content-Type: application/json' \\\n  --data '{\n    \"query\": \"React hooks tutorial\",\n    \"max_results\": 3,\n    \"include_raw_content\": true\n  }'\n```\n\n## Tips\n\n- **Keep queries under 400 characters** - Think search query, not prompt\n- **Break complex queries into sub-queries** - Better results than one massive query\n- **Use `include_domains`** to focus on trusted sources\n- **Use `time_range`** for recent information\n- **Filter by `score`** (0-1) to get highest relevance results"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "tavily-best-practices",
+      "parsed": {
+        "name": "tavily-best-practices",
+        "description": "Build production-ready Tavily integrations with best practices baked in. Reference documentation for developers using coding assistants (Claude Code, Cursor, etc.) to implement web search, content extraction, crawling, and research in agentic workflows, RAG systems, or autonomous agents.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Tavily\n\nTavily is a search API designed for LLMs, enabling AI applications to access real-time web data.\n\n## Installation\n\n**Python:**\n```bash\npip install tavily-python\n```\n\n**JavaScript:**\n```bash\nnpm install @tavily/core\n```\n\nSee **[references/sdk.md](references/sdk.md)** for complete SDK reference.\n\n## Client Initialization\n\n```python\nfrom tavily import TavilyClient\n\n# Uses TAVILY_API_KEY env var (recommended)\nclient = TavilyClient()\n\n#With project tracking (for usage organization)\nclient = TavilyClient(project_id=\"your-project-id\")\n\n# Async client for parallel queries\nfrom tavily import AsyncTavilyClient\nasync_client = AsyncTavilyClient()\n```\n\n## Choosing the Right Method\n\n**For custom agents/workflows:**\n\n| Need | Method |\n|------|--------|\n| Web search results | `search()` |\n| Content from specific URLs | `extract()` |\n| Content from entire site | `crawl()` |\n| URL discovery from site | `map()` |\n\n**For out-of-the-box research:**\n\n| Need | Method |\n|------|--------|\n| End-to-end research with AI synthesis | `research()` |\n\n## Quick Reference\n\n### search() - Web Search\n\n```python\nresponse = client.search(\n    query=\"quantum computing breakthroughs\",  # Keep under 400 chars\n    max_results=10,\n    search_depth=\"advanced\"\n)\nprint(response)\n```\nKey parameters: `query`, `max_results`, `search_depth` (ultra-fast/fast/basic/advanced), `include_domains`, `exclude_domains`, `time_range`\n\nSee **[references/search.md](references/search.md)** for complete search reference.\n\n### extract() - URL Content Extraction\n\n```python\n# Simple one-step extraction\nresponse = client.extract(\n    urls=[\"https://docs.example.com\"],\n    extract_depth=\"advanced\"\n)\nprint(response)\n```\nKey parameters: `urls` (max 20), `extract_depth`, `query`, `chunks_per_source` (1-5)\n\nSee **[references/extract.md](references/extract.md)** for complete extract reference.\n\n### crawl() - Site-Wide Extraction\n\n```python\nresponse = client.crawl(\n    url=\"https://docs.example.com\",\n    instructions=\"Find API documentation pages\",  # Semantic focus\n    extract_depth=\"advanced\"\n)\nprint(response)\n```\nKey parameters: `url`, `max_depth`, `max_breadth`, `limit`, `instructions`, `chunks_per_source`, `select_paths`, `exclude_paths`\n\nSee **[references/crawl.md](references/crawl.md)** for complete crawl reference.\n\n### map() - URL Discovery\n\n```python\nresponse = client.map(\n    url=\"https://docs.example.com\"\n)\nprint(response)\n```\n\n### research() - AI-Powered Research\n\n```python\nimport time\n\n# For comprehensive multi-topic research\nresult = client.research(\n    input=\"Analyze competitive landscape for X in SMB market\",\n    model=\"pro\"  # or \"mini\" for focused queries, \"auto\" when unsure\n)\nrequest_id = result[\"request_id\"]\n\n# Poll until completed\nresponse = client.get_research(request_id)\nwhile response[\"status\"] not in [\"completed\", \"failed\"]:\n    time.sleep(10)\n    response = client.get_research(request_id)\n\nprint(response[\"content\"])  # The research report\n```\n\nKey parameters: `input`, `model` (\"mini\"/\"pro\"/\"auto\"), `stream`, `output_schema`, `citation_format`\n\nSee **[references/research.md](references/research.md)** for complete research reference.\n\n## Detailed Guides\n\nFor complete parameters, response fields, patterns, and examples:\n\n- **[references/sdk.md](references/sdk.md)** - Python & JavaScript SDK reference, async patterns, Hybrid RAG\n- **[references/search.md](references/search.md)** - Query optimization, search depth selection, domain filtering, async patterns, post-filtering\n- **[references/extract.md](references/extract.md)** - One-step vs two-step extraction, query/chunks for targeting, advanced mode\n- **[references/crawl.md](references/crawl.md)** - Crawl vs Map, instructions for semantic focus, use cases, Map-then-Extract pattern\n- **[references/research.md](references/research.md)** - Prompting best practices, model selection, streaming, structured output schemas\n- **[references/integrations.md](references/integrations.md)** - LangChain, LlamaIndex, CrewAI, Vercel AI SDK, and framework integrations"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "pip",
+          "name": "pip",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "pip",
+          "name": "pipx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "tavily",
+          "name": "@tavily/core",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "tavily-python",
+          "name": "tavily-python",
+          "detectedFrom": "instructions"
+        }
+      ]
+    }
+  ]
+}

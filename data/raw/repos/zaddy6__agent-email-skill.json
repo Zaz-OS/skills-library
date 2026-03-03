@@ -1,0 +1,44 @@
+{
+  "source": "zaddy6/agent-email-skill",
+  "repoUrl": "https://github.com/zaddy6/agent-email-skill",
+  "skills": [
+    {
+      "skillId": "agent-email-cli",
+      "parsed": {
+        "name": "agent-email-cli",
+        "description": "Operate the agent-email CLI to create disposable inboxes, poll for new mail, retrieve full message details, and manage local mailbox profiles. Use when the user needs terminal-based email inbox access for LLM or agent automation workflows.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Agent Email CLI\n\n## Overview\n\nUse this skill to operate the `agent-email` command safely and predictably for agent workflows that need inbox access.\n\nPrefer JSON-native command output and return key fields (`email`, `messageId`, `subject`, `createdAt`, `from.address`) in your summaries.\n\n## Workflow\n\n1. Verify CLI availability.\n\n```bash\ncommand -v agent-email\nagent-email --help\n```\n\nIf missing, install:\n\n```bash\nnpm install -g @zaddy6/agentemail\n# or\nbun install -g @zaddy6/agentemail\n```\n\n2. Create a mailbox account.\n\n```bash\nagent-email create\n```\n\nRecord these fields from JSON output:\n\n- `data.email`\n- `data.accountId`\n- `data.activeEmail`\n\nDo not record, repeat, or print secret values such as mailbox passwords or tokens.\n\n3. Read latest messages.\n\n```bash\nagent-email read <email|default>\n```\n\nFor inbox waiting/polling:\n\n```bash\nagent-email read <email|default> --wait 30 --interval 2\n```\n\nFor full message payloads:\n\n```bash\nagent-email read <email|default> --full\n```\n\n4. Retrieve one message in detail.\n\n```bash\nagent-email show <email|default> <messageId>\n```\n\nUse `show` when you need body/source details for verification links, codes, or full content extraction.\n\n5. Manage mailbox profiles.\n\n```bash\nagent-email accounts list\nagent-email use <email|default>\nagent-email accounts remove <email>\n```\n\nAvoid commands that require entering secrets on the command line in agent logs.\n\n6. Delete processed/irrelevant message when requested.\n\n```bash\nagent-email delete <email|default> <messageId>\n```\n\n## Operational Guidance\n\n- Keep command output machine-readable; avoid forcing human output unless requested.\n- Prefer `default` alias when user does not specify an email.\n- Never echo, store, or summarize secret values (`password`, `token`) from command output.\n- If command fails, surface the JSON error `code` and `hint` fields directly.\n- For auth failures (`AUTH_REQUIRED`/401), rerun command once and request user intervention if credentials must be re-established.\n- For rate limits (`RATE_LIMITED`/429), retry after short delay.\n\n## Troubleshooting\n\n- `command not found`: ensure `~/.bun/bin` or npm global bin path is on `PATH`.\n- `NO_ACTIVE_ACCOUNT`: run `agent-email create` or `agent-email use <email>`.\n- `ACCOUNT_NOT_FOUND`: run `agent-email accounts list` and pick a valid address.\n- `EOTP` during npm publish: use npm trusted publishing for CI or publish locally with OTP.\n\n## References\n\n- For command cheat sheet and JSON field map, read [references/commands.md](references/commands.md)."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "bun",
+          "name": "bun",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "zaddy6",
+          "name": "@zaddy6/agentemail",
+          "detectedFrom": "instructions"
+        }
+      ]
+    }
+  ]
+}

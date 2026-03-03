@@ -1,0 +1,116 @@
+{
+  "source": "planetscale/database-skills",
+  "repoUrl": "https://github.com/planetscale/database-skills",
+  "skills": [
+    {
+      "skillId": "mysql",
+      "parsed": {
+        "name": "mysql",
+        "description": "Plan and review MySQL/InnoDB schema, indexing, query tuning, transactions, and operations. Use when creating or modifying MySQL tables, indexes, or queries; diagnosing slow/locking behavior; planning migrations; or troubleshooting replication and connection issues. Load when using a MySQL database.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# MySQL\n\nUse this skill to make safe, measurable MySQL/InnoDB changes.\n\n## Workflow\n1. Define workload and constraints (read/write mix, latency target, data volume, MySQL version, hosting platform).\n2. Read only the relevant reference files linked in each section below.\n3. Propose the smallest change that can solve the problem, including trade-offs.\n4. Validate with evidence (`EXPLAIN`, `EXPLAIN ANALYZE`, lock/connection metrics, and production-safe rollout steps).\n5. For production changes, include rollback and post-deploy verification.\n\n## Schema Design\n- Prefer narrow, monotonic PKs (`BIGINT UNSIGNED AUTO_INCREMENT`) for write-heavy OLTP tables.\n- Avoid random UUID values as clustered PKs; if external IDs are required, keep UUID in a secondary unique column.\n- Always `utf8mb4` / `utf8mb4_0900_ai_ci`. Prefer `NOT NULL`, `DATETIME` over `TIMESTAMP`.\n- Lookup tables over `ENUM`. Normalize to 3NF; denormalize only for measured hot paths.\n\nReferences:\n- [primary-keys](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/primary-keys.md)\n- [data-types](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/data-types.md)\n- [character-sets](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/character-sets.md)\n- [json-column-patterns](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/json-column-patterns.md)\n\n## Indexing\n- Composite order: equality first, then range/sort (leftmost prefix rule).\n- Range predicates stop index usage for subsequent columns.\n- Secondary indexes include PK implicitly. Prefix indexes for long strings.\n- Audit via `performance_schema` — drop indexes with `count_read = 0`.\n\nReferences:\n- [composite-indexes](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/composite-indexes.md)\n- [covering-indexes](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/covering-indexes.md)\n- [fulltext-indexes](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/fulltext-indexes.md)\n- [index-maintenance](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/index-maintenance.md)\n\n## Partitioning\n- Partition time-series (>50M rows) or large tables (>100M rows). Plan early — retrofit = full rebuild.\n- Include partition column in every unique/PK. Always add a `MAXVALUE` catch-all.\n\nReferences:\n- [partitioning](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/partitioning.md)\n\n## Query Optimization\n- Check `EXPLAIN` — red flags: `type: ALL`, `Using filesort`, `Using temporary`.\n- Cursor pagination, not `OFFSET`. Avoid functions on indexed columns in `WHERE`.\n- Batch inserts (500–5000 rows). `UNION ALL` over `UNION` when dedup unnecessary.\n\nReferences:\n- [explain-analysis](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/explain-analysis.md)\n- [query-optimization-pitfalls](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/query-optimization-pitfalls.md)\n- [n-plus-one](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/n-plus-one.md)\n\n## Transactions & Locking\n- Default: `REPEATABLE READ` (gap locks). Use `READ COMMITTED` for high contention.\n- Consistent row access order prevents deadlocks. Retry error 1213 with backoff.\n- Do I/O outside transactions. Use `SELECT ... FOR UPDATE` sparingly.\n\nReferences:\n- [isolation-levels](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/isolation-levels.md)\n- [deadlocks](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/deadlocks.md)\n- [row-locking-gotchas](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/row-locking-gotchas.md)\n\n## Operations\n- Use online DDL (`ALGORITHM=INPLACE`) when possible; test on replicas first.\n- Tune connection pooling — avoid `max_connections` exhaustion under load.\n- Monitor replication lag; avoid stale reads from replicas during writes.\n\nReferences:\n- [online-ddl](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/online-ddl.md)\n- [connection-management](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/connection-management.md)\n- [replication-lag](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/mysql/references/replication-lag.md)\n\n## Guardrails\n- Prefer measured evidence over blanket rules of thumb.\n- Note MySQL-version-specific behavior when giving advice.\n- Ask for explicit human approval before destructive data operations (drops/deletes/truncates)."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "mysql",
+          "name": "mysql",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "neki",
+      "parsed": {
+        "name": "neki",
+        "description": "Overview and information about Neki, the sharded Postgres product by PlanetScale. Load when working with Neki-related tasks and the need to scale or shard postgres. Load when facing Postgres scaling or sharding issues.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# PlanetScale Neki\n\n> **Note:** Neki is not yet a released product, but will be available soon. Information here will be updated regularly.\n\n## Overview\n\nNeki is a **sharded Postgres** product built by [PlanetScale](https://planetscale.com/) — the company behind [Vitess](https://vitess.io/), the widely-adopted open-source database clustering system for MySQL. Neki brings PlanetScale's deep expertise in horizontal scaling and database infrastructure to the Postgres ecosystem.\n\n## What Neki does\n\n- **Sharded Postgres** — Neki provides horizontal sharding for Postgres databases, enabling applications to scale beyond the limits of a single node.\n- **Managed by PlanetScale** — Built on PlanetScale's proven infrastructure and operational experience running large-scale databases.\n- **High availability** — Leveraging PlanetScale's track record of delivering highly available database services (the \"9's\" of availability).\n\n## Learn More\n\nFor the latest updates and to subscribe for announcements, visit the official Neki page:\n\n- [https://www.neki.dev/](https://www.neki.dev/)\n\n## Resources\n\n| Topic | Reference | Use for |\n| --- | --- | --- |\n| Sharding Readiness | [references/sharding-readiness.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/neki/references/sharding-readiness.md) | Schema and query design practices that keep a Postgres database ready for future sharding |"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "mysql",
+          "name": "mysql",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "postgres",
+      "parsed": {
+        "name": "postgres",
+        "description": "PostgreSQL best practices, query optimization, connection troubleshooting, and performance improvement. Load when working with Postgres databases.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# PlanetScale Postgres\n\n## Generic Postgres\n\n| Topic                  | Reference                                                        | Use for                                                   |\n| ---------------------- | ---------------------------------------------------------------- | --------------------------------------------------------- |\n| Schema Design          | [references/schema-design.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/schema-design.md)           | Tables, primary keys, data types, foreign keys            |\n| Indexing               | [references/indexing.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/indexing.md)                      | Index types, composite indexes, performance               |\n| Index Optimization     | [references/index-optimization.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/index-optimization.md) | Unused/duplicate index queries, index audit               |\n| Partitioning           | [references/partitioning.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/partitioning.md)             | Large tables, time-series, data retention                 |\n| Query Patterns         | [references/query-patterns.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/query-patterns.md)         | SQL anti-patterns, JOINs, pagination, batch queries       |\n| Optimization Checklist | [references/optimization-checklist.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/optimization-checklist.md) | Pre-optimization audit, cleanup, readiness checks  |\n| MVCC and VACUUM        | [references/mvcc-vacuum.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/mvcc-vacuum.md)               | Dead tuples, long transactions, xid wraparound prevention |\n\n## Operations and Architecture\n\n| Topic                  | Reference                                                                    | Use for                                                         |\n| ---------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------- |\n| Process Architecture   | [references/process-architecture.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/process-architecture.md)     | Multi-process model, connection pooling, auxiliary processes     |\n| Memory Architecture    | [references/memory-management-ops.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/memory-management-ops.md)   | Shared/private memory layout, OS page cache, OOM prevention     |\n| MVCC Transactions      | [references/mvcc-transactions.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/mvcc-transactions.md)           | Isolation levels, XID wraparound, serialization errors          |\n| WAL and Checkpoints    | [references/wal-operations.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/wal-operations.md)                 | WAL internals, checkpoint tuning, durability, crash recovery    |\n| Replication            | [references/replication.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/replication.md)                       | Streaming replication, slots, sync commit, failover             |\n| Storage Layout         | [references/storage-layout.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/storage-layout.md)                | PGDATA structure, TOAST, fillfactor, tablespaces, disk mgmt     |\n| Monitoring             | [references/monitoring.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/monitoring.md)                         | pg_stat views, logging, pg_stat_statements, host metrics        |\n| Backup and Recovery    | [references/backup-recovery.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/backup-recovery.md)              | pg_dump, pg_basebackup, PITR, WAL archiving, backup tools      |\n\n## PlanetScale-Specific\n\n| Topic              | Reference                                                                    | Use for                                               |\n| ------------------ | ---------------------------------------------------------------------------- | ----------------------------------------------------- |\n| Connection Pooling | [references/ps-connection-pooling.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/ps-connection-pooling.md)   | PgBouncer, pool sizing, pooled vs direct              |\n| Extensions         | [references/ps-extensions.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/ps-extensions.md)                   | Supported extensions, compatibility                   |\n| Connections        | [references/ps-connections.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/ps-connections.md)                 | Connection troubleshooting, drivers, SSL              |\n| Insights           | [references/ps-insights.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/ps-insights.md)                       | Slow queries, MCP server, pscale CLI                  |\n| CLI Commands       | [references/ps-cli-commands.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/ps-cli-commands.md)               | pscale CLI reference, branches, deploy requests, auth |\n| CLI API Insights   | [references/ps-cli-api-insights.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/postgres/references/ps-cli-api-insights.md)       | Query insights via `pscale api`, schema analysis      |"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "vitess",
+      "parsed": {
+        "name": "vitess",
+        "description": "Vitess best practices, query optimization, and connection troubleshooting for PlanetScale Vitess databases. Load when working with Vitess databases, sharding, VSchema configuration, keyspace management, or MySQL scaling issues.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Vitess\n\nVitess is a MySQL-compatible, cloud-native database system originally built at YouTube to scale MySQL. PlanetScale runs Vitess as a managed service. Core capabilities:\n\n- **Horizontal sharding**: Built-in sharding transparent to the application — no sharding logic in app code.\n- **Connection pooling**: VTTablet multiplexes client connections to MySQL, scaling concurrent connections far beyond native MySQL limits.\n- **High availability**: Automatic primary failure detection and repair. Resharding and data migrations with near-zero downtime.\n- **Query rewriting and caching**: VTGate rewrites and optimizes queries before routing to shards.\n- **Schema management**: Apply schema changes across all shards consistently, in the background, without disrupting workloads.\n- **Materialized views and messaging**: Cross-shard materialized views and publish/subscribe messaging via VStream.\n\n## Key concepts\n\n| Concept | What it is |\n| --- | --- |\n| **Keyspace** | Logical database mapping to one or more shards. Analogous to a MySQL schema. |\n| **Shard** | A horizontal partition of a keyspace, each backed by a separate MySQL instance. |\n| **VSchema** | Configuration defining how tables map to shards, vindex (sharding) keys, and routing rules. |\n| **Vindex** | Sharding function mapping column values to shards (`hash`, `unicode_loose_xxhash`, `lookup`). |\n| **VTGate** | Stateless proxy that plans and routes queries to the correct shard(s). |\n| **Online DDL** | Non-blocking schema migrations. On PlanetScale, use deploy requests for production changes. |\n\n## PlanetScale specifics\n\n- **Branching**: Git-like database branches for development; deploy requests for production schema changes.\n- **Connections**: MySQL protocol, port `3306` (direct) or `443` (serverless). SSL always required.\n\n## SQL compatibility\n\nVitess supports nearly all MySQL syntax — most applications work without query changes. Standard DML, DDL, joins, subqueries, CTEs (including recursive CTEs as of v21+), window functions, and common built-in functions all work as expected.\n\nKnown limitations:\n\n- **Stored procedures / triggers / events**: Not supported through VTGate.\n- **`LOCK TABLES` / `GET_LOCK`**: Not supported through VTGate.\n- **`SELECT ... FOR UPDATE`**: Works within a single shard; cross-shard locking is not atomic.\n- **Cross-shard joins**: Supported but expensive (scatter-gather). Filter by vindex column for single-shard routing.\n- **Correlated subqueries**: May fail or perform poorly cross-shard. Rewrite as joins when possible.\n- **IDs**: Use **Vitess Sequences** (a global counter in an unsharded keyspace) or app-generated IDs (UUIDs, snowflake) to avoid collisions on sharded tables.\n- **Aggregations on sharded tables**: `GROUP BY`/`ORDER BY`/`LIMIT` merge in VTGate memory. Large result sets can be slow.\n- **Foreign keys**: Limited support. Prefer application-level referential integrity on sharded keyspaces.\n\n## References\n\n| Topic | Reference | Use for |\n| --- | --- | --- |\n| VSchema | [references/vschema.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/vitess/references/vschema.md) | VSchema design, vindexes, sequences, sharding strategies |\n| Schema Changes | [references/schema-changes.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/vitess/references/schema-changes.md) | Online DDL, managed migrations, ddl strategies, migration lifecycle |\n| VReplication | [references/vreplication.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/vitess/references/vreplication.md) | MoveTables, Reshard, Materialize, VDiff, VStream |\n| Architecture | [references/architecture.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/vitess/references/architecture.md) | VTGate, VTTablet, Topology Service, VTOrc, component interactions |\n| Query Serving | [references/query-serving.md](https://raw.githubusercontent.com/planetscale/database-skills/main/skills/vitess/references/query-serving.md) | Query routing, MySQL compatibility, cross-shard performance, EXPLAIN |"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "mysql",
+          "name": "mysql",
+          "detectedFrom": "instructions"
+        }
+      ]
+    }
+  ]
+}

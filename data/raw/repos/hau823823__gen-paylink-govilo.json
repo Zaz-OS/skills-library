@@ -1,0 +1,32 @@
+{
+  "source": "hau823823/gen-paylink-govilo",
+  "repoUrl": "https://github.com/hau823823/gen-paylink-govilo",
+  "skills": [
+    {
+      "skillId": "gen-paylink-govilo",
+      "parsed": {
+        "name": "gen-paylink-govilo",
+        "description": "Upload files to Govilo and generate unlock links via Bot API. Use when: (1) Creating a Govilo unlock link from a ZIP, folder, or individual files, (2) Automating file upload to Govilo R2 storage with presigned URLs, (3) Managing Govilo Bot API interactions (presign → upload → create item). Requires GOVILO_API_KEY and SELLER_ADDRESS env vars. If missing, guides user to register at https://govilo.xyz/.\n",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Govilo To Go\n\nTurn any file into a paid unlock link — one command to package, upload, and collect crypto payments. The last mile of automation: from creation to monetization.\n\n## Before Running\n\nAlways ask the user for these values before executing the CLI — never guess or use placeholders:\n\n1. **title** — What is the product name?\n2. **price** — How much to charge (in USDC)?\n3. **description** — Short description of the product (optional, but always ask)\n\n## CLI Command\n\n> Requires [uv](https://docs.astral.sh/uv/). See [references/setup-guide.md](references/setup-guide.md) for install instructions.\n\nRun from this skill's base directory. Use a **dedicated** env file containing only `GOVILO_API_KEY` (and optionally `SELLER_ADDRESS`). Never point `--env-file` at a project `.env` that contains unrelated secrets.\n\n```bash\ncd <skill_base_directory>\nuv run --env-file <path_to>/.env.govilo create-link \\\n  --input <path>         \\\n  --title \"Product Name\" \\\n  --price \"5.00\"         \\\n  --address \"0x...\"      \\\n  --description \"optional\"\n```\n\nIf no `.env.govilo` exists, create one before running:\n\n```dotenv\nGOVILO_API_KEY=sk_live_xxx\nSELLER_ADDRESS=0x...\n```\n\n`--input` accepts ZIP file, folder, or individual files (repeatable). Non-ZIP inputs are auto-packaged.\n\nAll output is JSON `{\"ok\": true/false, ...}` with exit code 1 on failure.\n\n## Parameters\n\n| Param           | Required | Source                     | Description                |\n| --------------- | -------- | -------------------------- | -------------------------- |\n| `--input`       | Yes      | CLI (repeatable)           | ZIP, folder, or file paths |\n| `--title`       | Yes      | CLI                        | Product title              |\n| `--price`       | Yes      | CLI                        | Price in USDC              |\n| `--address`     | No       | CLI > `SELLER_ADDRESS` env | Seller EVM wallet          |\n| `--description` | No       | CLI                        | Product description        |\n\n## Workflow\n\n1. Validate config (API Key + seller address)\n2. Package inputs → ZIP (if not already ZIP)\n3. `POST /api/v1/bot/uploads/presign` → get upload_url + session_id\n4. `PUT upload_url` → upload ZIP to R2\n5. `POST /api/v1/bot/items` → get unlock_url\n\n## File Limits\n\n- Max ZIP size: 20 MB\n- Max files in ZIP: 20\n\n## Setup\n\nTwo values are required:\n\n| Variable         | Required | Description                              |\n| ---------------- | -------- | ---------------------------------------- |\n| `GOVILO_API_KEY` | Yes      | Bot API key from [govilo.xyz][]          |\n| `SELLER_ADDRESS` | Yes*     | EVM wallet address on **Base chain**     |\n\n[govilo.xyz]: https://govilo.xyz/\n\n*`SELLER_ADDRESS` can also be passed via `--address` CLI parameter.\n\nSee [references/setup-guide.md](references/setup-guide.md) for step-by-step registration and wallet setup instructions.\n\n## API Reference\n\nSee [references/bot-api-quick-ref.md](references/bot-api-quick-ref.md) for Bot API endpoints and error codes."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "astral",
+          "name": "uv",
+          "detectedFrom": "instructions"
+        }
+      ]
+    }
+  ]
+}

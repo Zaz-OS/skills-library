@@ -1,0 +1,75 @@
+{
+  "source": "kadajett/agent-nestjs-skills",
+  "repoUrl": "https://github.com/kadajett/agent-nestjs-skills",
+  "skills": [
+    {
+      "skillId": "kadajett__agent-nestjs-skills",
+      "parsed": {
+        "name": "nestjs-best-practices",
+        "description": "NestJS best practices and architecture patterns for building production-ready applications. This skill should be used when writing, reviewing, or refactoring NestJS code to ensure proper patterns for modules, dependency injection, security, and performance.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# NestJS Best Practices\n\nComprehensive best practices guide for NestJS applications. Contains 40 rules across 10 categories, prioritized by impact to guide automated refactoring and code generation.\n\n## When to Apply\n\nReference these guidelines when:\n\n- Writing new NestJS modules, controllers, or services\n- Implementing authentication and authorization\n- Reviewing code for architecture and security issues\n- Refactoring existing NestJS codebases\n- Optimizing performance or database queries\n- Building microservices architectures\n\n## Rule Categories by Priority\n\n| Priority | Category | Impact | Prefix |\n|----------|----------|--------|--------|\n| 1 | Architecture | CRITICAL | `arch-` |\n| 2 | Dependency Injection | CRITICAL | `di-` |\n| 3 | Error Handling | HIGH | `error-` |\n| 4 | Security | HIGH | `security-` |\n| 5 | Performance | HIGH | `perf-` |\n| 6 | Testing | MEDIUM-HIGH | `test-` |\n| 7 | Database & ORM | MEDIUM-HIGH | `db-` |\n| 8 | API Design | MEDIUM | `api-` |\n| 9 | Microservices | MEDIUM | `micro-` |\n| 10 | DevOps & Deployment | LOW-MEDIUM | `devops-` |\n\n## Quick Reference\n\n### 1. Architecture (CRITICAL)\n\n- `arch-avoid-circular-deps` - Avoid circular module dependencies\n- `arch-feature-modules` - Organize by feature, not technical layer\n- `arch-module-sharing` - Proper module exports/imports, avoid duplicate providers\n- `arch-single-responsibility` - Focused services over \"god services\"\n- `arch-use-repository-pattern` - Abstract database logic for testability\n- `arch-use-events` - Event-driven architecture for decoupling\n\n### 2. Dependency Injection (CRITICAL)\n\n- `di-avoid-service-locator` - Avoid service locator anti-pattern\n- `di-interface-segregation` - Interface Segregation Principle (ISP)\n- `di-liskov-substitution` - Liskov Substitution Principle (LSP)\n- `di-prefer-constructor-injection` - Constructor over property injection\n- `di-scope-awareness` - Understand singleton/request/transient scopes\n- `di-use-interfaces-tokens` - Use injection tokens for interfaces\n\n### 3. Error Handling (HIGH)\n\n- `error-use-exception-filters` - Centralized exception handling\n- `error-throw-http-exceptions` - Use NestJS HTTP exceptions\n- `error-handle-async-errors` - Handle async errors properly\n\n### 4. Security (HIGH)\n\n- `security-auth-jwt` - Secure JWT authentication\n- `security-validate-all-input` - Validate with class-validator\n- `security-use-guards` - Authentication and authorization guards\n- `security-sanitize-output` - Prevent XSS attacks\n- `security-rate-limiting` - Implement rate limiting\n\n### 5. Performance (HIGH)\n\n- `perf-async-hooks` - Proper async lifecycle hooks\n- `perf-use-caching` - Implement caching strategies\n- `perf-optimize-database` - Optimize database queries\n- `perf-lazy-loading` - Lazy load modules for faster startup\n\n### 6. Testing (MEDIUM-HIGH)\n\n- `test-use-testing-module` - Use NestJS testing utilities\n- `test-e2e-supertest` - E2E testing with Supertest\n- `test-mock-external-services` - Mock external dependencies\n\n### 7. Database & ORM (MEDIUM-HIGH)\n\n- `db-use-transactions` - Transaction management\n- `db-avoid-n-plus-one` - Avoid N+1 query problems\n- `db-use-migrations` - Use migrations for schema changes\n\n### 8. API Design (MEDIUM)\n\n- `api-use-dto-serialization` - DTO and response serialization\n- `api-use-interceptors` - Cross-cutting concerns\n- `api-versioning` - API versioning strategies\n- `api-use-pipes` - Input transformation with pipes\n\n### 9. Microservices (MEDIUM)\n\n- `micro-use-patterns` - Message and event patterns\n- `micro-use-health-checks` - Health checks for orchestration\n- `micro-use-queues` - Background job processing\n\n### 10. DevOps & Deployment (LOW-MEDIUM)\n\n- `devops-use-config-module` - Environment configuration\n- `devops-use-logging` - Structured logging\n- `devops-graceful-shutdown` - Zero-downtime deployments\n\n## How to Use\n\nRead individual rule files for detailed explanations and code examples:\n\n```\nrules/arch-avoid-circular-deps.md\nrules/security-validate-all-input.md\nrules/_sections.md\n```\n\nEach rule file contains:\n- Brief explanation of why it matters\n- Incorrect code example with explanation\n- Correct code example with explanation\n- Additional context and references\n\n## Full Compiled Document\n\nFor the complete guide with all rules expanded: `AGENTS.md`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "npm",
+          "org": "ts-node",
+          "name": "ts-node",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "npm",
+          "org": "not",
+          "name": "not",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "npm",
+          "org": "nodemon",
+          "name": "nodemon",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "system",
+          "org": "npx",
+          "name": "npx",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "nestjs-best-practices",
+      "parsed": {
+        "name": "nestjs-best-practices",
+        "description": "",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": ""
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    }
+  ]
+}

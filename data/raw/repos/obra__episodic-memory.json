@@ -1,0 +1,25 @@
+{
+  "source": "obra/episodic-memory",
+  "repoUrl": "https://github.com/obra/episodic-memory",
+  "skills": [
+    {
+      "skillId": "remembering-conversations",
+      "parsed": {
+        "name": "remembering-conversations",
+        "description": "Use when user asks 'how should I...' or 'what's the best approach...' after exploring code, OR when you've tried to solve something and are stuck, OR for unfamiliar workflows, OR when user references past work. Searches conversation history.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Remembering Conversations\n\n**Core principle:** Search before reinventing. Searching costs nothing; reinventing or repeating mistakes costs everything.\n\n## Mandatory: Use the Search Agent\n\n**YOU MUST dispatch the search-conversations agent for any historical search.**\n\nAnnounce: \"Dispatching search agent to find [topic].\"\n\nThen use the Task tool with `subagent_type: \"search-conversations\"`:\n\n```\nTask tool:\n  description: \"Search past conversations for [topic]\"\n  prompt: \"Search for [specific query or topic]. Focus on [what you're looking for - e.g., decisions, patterns, gotchas, code examples].\"\n  subagent_type: \"search-conversations\"\n```\n\nThe agent will:\n1. Search with the `search` tool\n2. Read top 2-5 results with the `show` tool\n3. Synthesize findings (200-1000 words)\n4. Return actionable insights + sources\n\n**Saves 50-100x context vs. loading raw conversations.**\n\n## When to Use\n\nYou often get value out of consulting your episodic memory once you understand what you're being asked. Search memory in these situations:\n\n**After understanding the task:**\n- User asks \"how should I...\" or \"what's the best approach...\"\n- You've explored current codebase and need to make architectural decisions\n- User asks for implementation approach after describing what they want\n\n**When you're stuck:**\n- You've investigated a problem and can't find the solution\n- Facing a complex problem without obvious solution in current code\n- Need to follow an unfamiliar workflow or process\n\n**When historical signals are present:**\n- User says \"last time\", \"before\", \"we discussed\", \"you implemented\"\n- User asks \"why did we...\", \"what was the reason...\"\n- User says \"do you remember...\", \"what do we know about...\"\n\n**Don't search first:**\n- For current codebase structure (use Grep/Read to explore first)\n- For info in current conversation\n- Before understanding what you're being asked to do\n\n## Direct Tool Access (Discouraged)\n\nYou CAN use MCP tools directly, but DON'T:\n- `mcp__plugin_episodic-memory_episodic-memory__search`\n- `mcp__plugin_episodic-memory_episodic-memory__show`\n\nUsing these directly wastes your context window. Always dispatch the agent instead.\n\nSee MCP-TOOLS.md for complete API reference if needed for advanced usage."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    }
+  ]
+}

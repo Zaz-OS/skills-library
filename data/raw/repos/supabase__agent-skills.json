@@ -1,0 +1,57 @@
+{
+  "source": "supabase/agent-skills",
+  "repoUrl": "https://github.com/supabase/agent-skills",
+  "skills": [
+    {
+      "skillId": "supabase-postgres-best-practices",
+      "parsed": {
+        "name": "supabase-postgres-best-practices",
+        "description": "Postgres performance optimization and best practices from Supabase. Use this skill when writing, reviewing, or optimizing Postgres queries, schema designs, or database configurations.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Supabase Postgres Best Practices\n\nComprehensive performance optimization guide for Postgres, maintained by Supabase. Contains rules across 8 categories, prioritized by impact to guide automated query optimization and schema design.\n\n## When to Apply\n\nReference these guidelines when:\n- Writing SQL queries or designing schemas\n- Implementing indexes or query optimization\n- Reviewing database performance issues\n- Configuring connection pooling or scaling\n- Optimizing for Postgres-specific features\n- Working with Row-Level Security (RLS)\n\n## Rule Categories by Priority\n\n| Priority | Category | Impact | Prefix |\n|----------|----------|--------|--------|\n| 1 | Query Performance | CRITICAL | `query-` |\n| 2 | Connection Management | CRITICAL | `conn-` |\n| 3 | Security & RLS | CRITICAL | `security-` |\n| 4 | Schema Design | HIGH | `schema-` |\n| 5 | Concurrency & Locking | MEDIUM-HIGH | `lock-` |\n| 6 | Data Access Patterns | MEDIUM | `data-` |\n| 7 | Monitoring & Diagnostics | LOW-MEDIUM | `monitor-` |\n| 8 | Advanced Features | LOW | `advanced-` |\n\n## How to Use\n\nRead individual rule files for detailed explanations and SQL examples:\n\n```\nreferences/query-missing-indexes.md\nreferences/schema-partial-indexes.md\nreferences/_sections.md\n```\n\nEach rule file contains:\n- Brief explanation of why it matters\n- Incorrect SQL example with explanation\n- Correct SQL example with explanation\n- Optional EXPLAIN output or metrics\n- Additional context and references\n- Supabase-specific notes (when applicable)\n\n## References\n\n- https://www.postgresql.org/docs/current/\n- https://supabase.com/docs\n- https://wiki.postgresql.org/wiki/Performance_Optimization\n- https://supabase.com/docs/guides/database/overview\n- https://supabase.com/docs/guides/auth/row-level-security"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "supabase",
+          "name": "supabase",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "skill-creator",
+      "parsed": {
+        "name": "skill-creator",
+        "description": "",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": ""
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    }
+  ]
+}

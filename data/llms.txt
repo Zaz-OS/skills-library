@@ -1,0 +1,14 @@
+# skills-library
+
+> Searchable catalog of AI agent skills from skills.sh with dependency mapping and content classification.
+
+## Skills Catalog
+- [Full JSON catalog](/api/skills.json): Complete skills data with dependencies, content types, installs, and GitHub stars
+- [Dependencies index](/api/deps.json): Skills grouped by dependency type and package
+
+## Documentation
+- [About this project](/about): How skills-library works and how to contribute
+- [Data format](/api): API documentation for the JSON endpoints
+
+## Optional
+- [Extended catalog](/llms-full.txt): Full descriptions of all skills in plain text

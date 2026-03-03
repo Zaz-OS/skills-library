@@ -1,0 +1,189 @@
+{
+  "source": "spences10/svelte-skills-kit",
+  "repoUrl": "https://github.com/spences10/svelte-skills-kit",
+  "skills": [
+    {
+      "skillId": "ecosystem-guide",
+      "parsed": {
+        "name": "ecosystem-guide",
+        "description": "Guide to spences10's Claude Code ecosystem. Use when user asks which tool to use, how tools relate, or needs help choosing between MCP servers, skills, or CLIs.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Claude Code Ecosystem Guide\n\nA curated set of tools for enhanced Claude Code workflows.\n\n## The Stack\n\n| Tool                  | Type   | Purpose                                                      |\n| --------------------- | ------ | ------------------------------------------------------------ |\n| **toolkit-skills**    | Plugin | Forced-eval hook + core skills (pair with any skills plugin) |\n| **svelte-skills-kit** | Plugin | Svelte/SvelteKit skills (pair with toolkit-skills)           |\n| **ccrecall**          | CLI    | Sync transcripts → SQLite for analytics                      |\n| **mcp-omnisearch**    | MCP    | Unified search (Tavily, Kagi, GitHub, etc.)                  |\n| **mcp-sqlite-tools**  | MCP    | Safe SQLite operations                                       |\n| **mcpick**            | CLI    | Toggle MCP servers dynamically                               |\n| **research**          | Skill  | Verified source research patterns                            |\n| **skill-creator**     | Skill  | Create Claude skills with best practices                     |\n\n## Decision Tree\n\n### \"I want skills to activate reliably\"\n\n→ **toolkit-skills** - Forced-eval hook evaluates every prompt against available skills. Install alongside any skills plugin.\n\n```bash\nclaude plugin install toolkit-skills@claude-code-toolkit\n```\n\n### \"I need to search the web\"\n\n→ **mcp-omnisearch** - Web search, GitHub code search, AI answers\n\n### \"I need to query a database\"\n\n→ **mcp-sqlite-tools** - Read/write SQLite with safety guards\n\n### \"I have too many MCPs eating context\"\n\n→ **mcpick** - Enable/disable servers per-project\n\n### \"I want to track my Claude Code usage\"\n\n→ **ccrecall** - Sync transcripts, query with mcp-sqlite-tools\n\n### \"I'm building with Svelte/SvelteKit\"\n\n→ **svelte-skills-kit** - Runes, routing, data flow patterns (you're here!)\n\n### \"I need to research a topic or verify sources\"\n\n→ **research skill** - Verified source research, repo cloning patterns\n\n### \"I want to create a new Claude skill\"\n\n→ **skill-creator skill** - Progressive disclosure, writing guide, CLI reference\n\n## Recommended Setup\n\n```bash\n# Core: forced-eval hook + ecosystem skills\nclaude plugin install toolkit-skills@claude-code-toolkit\n\n# Svelte/SvelteKit skills\nclaude plugin install svelte-skills@svelte-skills-kit\n```\n\ntoolkit-skills hook ensures skills from any plugin activate on relevant prompts.\n\n## Links\n\n| Tool                | GitHub                                           |\n| ------------------- | ------------------------------------------------ |\n| claude-code-toolkit | https://github.com/spences10/claude-code-toolkit |\n| svelte-skills-kit   | https://github.com/spences10/svelte-skills-kit   |\n| ccrecall            | https://github.com/spences10/ccrecall            |\n| mcp-omnisearch      | https://github.com/spences10/mcp-omnisearch      |\n| mcp-sqlite-tools    | https://github.com/spences10/mcp-sqlite-tools    |\n| mcpick              | https://github.com/spences10/mcpick              |"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "layerchart-svelte5",
+      "parsed": {
+        "name": "layerchart-svelte5",
+        "description": "LayerChart Svelte 5 patterns. Use for chart components with tooltip snippets, Chart context access, and all Svelte 5 snippet patterns for tooltips, gradients, highlights, and axes.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# LayerChart Svelte 5\n\nDocs: **next.layerchart.com** (NOT layerchart.com - that's Svelte 4)\n\n## Install\n\n```bash\nnpm i layerchart@next d3-scale\n```\n\n**CRITICAL**: Use `@next` tag. Stable (1.x) is Svelte 4 only.\n\n## Quick Start\n\n```svelte\n<Chart {data} x=\"date\" y=\"value\" tooltip={{ mode: 'bisect-x' }}>\n\t<Svg><Area class=\"fill-primary/20\" /><Highlight points /></Svg>\n\t<Tooltip.Root>{#snippet children({ data })}{data.value}{/snippet}</Tooltip.Root>\n</Chart>\n```\n\n## Core Patterns\n\n- **Tooltip**: `{#snippet children({ data })}` - NOT `let:data`\n- **Chart context**: `{#snippet children({ context })}`\n- **Gradient**: `{#snippet children({ gradient })}`\n- **Enable tooltip**: `tooltip={{ mode: 'band' | 'bisect-x' }}`\n- **Type data**: `{#snippet children({ data }: { data: MyType })}`\n\n## Tooltip Modes\n\n| Mode         | Use Case               |\n| ------------ | ---------------------- |\n| `band`       | Bar charts (scaleBand) |\n| `bisect-x`   | Time-series area/line  |\n| `quadtree-x` | Area (nearest x)       |\n| `quadtree`   | Scatter plots          |\n\n## References\n\n- [full-patterns.md](references/full-patterns.md) - Area, Bar, Pie,\n  Calendar\n- [tooltip-modes.md](references/tooltip-modes.md) - All modes\n- [graph-patterns.md](references/graph-patterns.md) - ForceGraph,\n  zoom/pan"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "svelte-components",
+      "parsed": {
+        "name": "svelte-components",
+        "description": "Svelte component patterns. Use for web components, component libraries (Bits UI, Ark UI, Melt UI), form patterns, or third-party integration.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Svelte Components\n\n## Quick Start\n\n**Component libraries:** Bits UI (headless) | Ark UI | Melt UI\n(primitives)\n\n**Form trick:** Use `form` attribute when form can't wrap inputs:\n\n```svelte\n<form id=\"my-form\" action=\"/submit\"><!-- outside table --></form>\n<table>\n\t<tr>\n\t\t<td><input form=\"my-form\" name=\"email\" /></td>\n\t\t<td><button form=\"my-form\">Submit</button></td>\n\t</tr>\n</table>\n```\n\n## Web Components\n\n```javascript\n// svelte.config.js\nexport default {\n\tcompilerOptions: {\n\t\tcustomElement: true,\n\t},\n};\n```\n\n```svelte\n<!-- MyButton.svelte -->\n<svelte:options customElement=\"my-button\" />\n\n<button><slot /></button>\n```\n\n## Reference Files\n\n- [component-libraries.md](references/component-libraries.md) - Bits\n  UI, Ark UI setup\n- [web-components.md](references/web-components.md) - Building custom\n  elements\n- [form-patterns.md](references/form-patterns.md) - Advanced form\n  handling\n\n## Notes\n\n- Bits UI 1.0: flexible, unstyled, accessible components for Svelte\n- Form `defaultValue` attribute enables easy form resets\n- Use snippets to wrap rich HTML in custom select options\n- **Last verified:** 2025-01-14\n\n<!--\nPROGRESSIVE DISCLOSURE GUIDELINES:\n- Keep this file ~50 lines total (max ~150 lines)\n- Use 1-2 code blocks only (recommend 1)\n- Keep description <200 chars for Level 1 efficiency\n- Move detailed docs to references/ for Level 3 loading\n- This is Level 2 - quick reference ONLY, not a manual\n-->"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "svelte-deployment",
+      "parsed": {
+        "name": "svelte-deployment",
+        "description": "Svelte deployment guidance. Use for adapters, Vite config, pnpm setup, library authoring, PWA, or production builds.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Svelte Deployment\n\n## Quick Start\n\n**pnpm 10+:** Add prepare script (postinstall disabled by default):\n\n```json\n{\n\t\"scripts\": {\n\t\t\"prepare\": \"svelte-kit sync\"\n\t}\n}\n```\n\n**Vite 7:** Update both packages together:\n\n```bash\npnpm add -D vite@7 @sveltejs/vite-plugin-svelte@6\n```\n\n## Adapters\n\n```bash\n# Static site\npnpm add -D @sveltejs/adapter-static\n\n# Node server\npnpm add -D @sveltejs/adapter-node\n\n# Cloudflare\npnpm add -D @sveltejs/adapter-cloudflare\n```\n\n## Reference Files\n\n- [library-authoring.md](references/library-authoring.md) - Publishing\n  Svelte packages\n- [pwa-setup.md](references/pwa-setup.md) - Offline-first with workbox\n- [cloudflare-gotchas.md](references/cloudflare-gotchas.md) -\n  Streaming issues\n\n## Notes\n\n- Cloudflare may strip `Transfer-Encoding: chunked` (breaks streaming)\n- Library authors: include `svelte` in keywords AND peerDependencies\n- Single-file bundle: `kit.output.bundleStrategy: 'single'`\n- **Last verified:** 2025-01-14\n\n<!--\nPROGRESSIVE DISCLOSURE GUIDELINES:\n- Keep this file ~50 lines total (max ~150 lines)\n- Use 1-2 code blocks only (recommend 1)\n- Keep description <200 chars for Level 1 efficiency\n- Move detailed docs to references/ for Level 3 loading\n- This is Level 2 - quick reference ONLY, not a manual\n-->"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "pnpm",
+          "name": "pnpm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "vite@7",
+          "name": "vite@7",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "sveltejs",
+          "name": "@sveltejs/adapter-static",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "sveltejs",
+          "name": "@sveltejs/adapter-node",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "sveltejs",
+          "name": "@sveltejs/adapter-cloudflare",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "svelte-runes",
+      "parsed": {
+        "name": "svelte-runes",
+        "description": "Svelte runes guidance. Use for reactive state, props, effects, or migration. Covers $state, $derived, $effect, $props, $bindable. Prevents reactivity mistakes.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Svelte Runes\n\n## Quick Start\n\n**Which rune?** Props: `$props()` | Bindable: `$bindable()` |\nComputed: `$derived()` | Side effect: `$effect()` | State: `$state()`\n\n**Key rules:** Runes are top-level only. $derived can be overridden\n(use `const` for read-only). Don't mix Svelte 4/5 syntax.\nObjects/arrays are deeply reactive by default.\n\n## Example\n\n```svelte\n<script>\n\tlet count = $state(0); // Mutable state\n\tconst doubled = $derived(count * 2); // Computed (const = read-only)\n\n\t$effect(() => {\n\t\tconsole.log(`Count is ${count}`); // Side effect\n\t});\n</script>\n\n<button onclick={() => count++}>\n\t{count} (doubled: {doubled})\n</button>\n```\n\n## Reference Files\n\n- [reactivity-patterns.md](references/reactivity-patterns.md) - When\n  to use each rune\n- [migration-gotchas.md](references/migration-gotchas.md) - Svelte 4→5\n  translation\n- [component-api.md](references/component-api.md) - $props, $bindable\n  patterns\n- [snippets-vs-slots.md](references/snippets-vs-slots.md) - New\n  snippet syntax\n- [common-mistakes.md](references/common-mistakes.md) - Anti-patterns\n  with fixes\n\n> For `@attach` and other template directives, see the\n> **svelte-template-directives** skill.\n\n## Notes\n\n- Use `onclick` not `on:click`, `{@render children()}` in layouts\n- `$derived` can be reassigned (5.25+) - use `const` for read-only\n- **Last verified:** 2025-01-11\n\n<!--\nPROGRESSIVE DISCLOSURE GUIDELINES:\n- Keep this file ~50 lines total (max ~150 lines)\n- Use 1-2 code blocks only (recommend 1)\n- Keep description <200 chars for Level 1 efficiency\n- Move detailed docs to references/ for Level 3 loading\n- This is Level 2 - quick reference ONLY, not a manual\n\nLLM WORKFLOW (when editing this file):\n1. Write/edit SKILL.md\n2. Format (if formatter available)\n3. Run: claude-skills-cli validate <path>\n4. If multi-line description warning: run claude-skills-cli doctor <path>\n5. Validate again to confirm\n-->"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "sveltekit-data-flow",
+      "parsed": {
+        "name": "sveltekit-data-flow",
+        "description": "SvelteKit data flow guidance. Use for load functions, form actions, server/client data, and invalidation. Covers +page.server.ts vs +page.ts, serialization, fail(), redirect(), error(), invalidateAll().",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# SvelteKit Data Flow\n\n## Quick Start\n\n**Which file?** Server-only (DB/secrets): `+page.server.ts` |\nUniversal (runs both): `+page.ts` | API: `+server.ts`\n\n**Load decision:** Need server resources? → server load | Need client\nAPIs? → universal load\n\n**Form actions:** Always `+page.server.ts`. Return `fail()` for\nerrors, throw `redirect()` to navigate, throw `error()` for failures.\n\n## Example\n\n```typescript\n// +page.server.ts\nimport { fail, redirect } from '@sveltejs/kit';\n\nexport const load = async ({ locals }) => {\n\tconst user = await db.users.get(locals.userId);\n\treturn { user }; // Must be JSON-serializable\n};\n\nexport const actions = {\n\tdefault: async ({ request }) => {\n\t\tconst data = await request.formData();\n\t\tconst email = data.get('email');\n\n\t\tif (!email) return fail(400, { email, missing: true });\n\n\t\tawait updateEmail(email);\n\t\tthrow redirect(303, '/success');\n\t},\n};\n```\n\n## Reference Files\n\n- [load-functions.md](references/load-functions.md) - Server vs\n  universal\n- [form-actions.md](references/form-actions.md) - Form handling\n  patterns\n- [serialization.md](references/serialization.md) - What can/can't\n  serialize\n- [error-redirect-handling.md](references/error-redirect-handling.md) -\n  fail/redirect/error\n- [client-auth-invalidation.md](references/client-auth-invalidation.md) -\n  invalidateAll() after client-side auth\n\n## Notes\n\n- Server load → universal load via `data` param | ALWAYS\n  `throw redirect()/error()`\n- No class instances/functions from server load (not serializable)\n- **Last verified:** 2025-01-11\n\n<!--\nPROGRESSIVE DISCLOSURE GUIDELINES:\n- Keep this file ~50 lines total (max ~150 lines)\n- Use 1-2 code blocks only (recommend 1)\n- Keep description <200 chars for Level 1 efficiency\n- Move detailed docs to references/ for Level 3 loading\n- This is Level 2 - quick reference ONLY, not a manual\n\nLLM WORKFLOW (when editing this file):\n1. Write/edit SKILL.md\n2. Format (if formatter available)\n3. Run: claude-skills-cli validate <path>\n4. If multi-line description warning: run claude-skills-cli doctor <path>\n5. Validate again to confirm\n-->"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "sveltekit-remote-functions",
+      "parsed": {
+        "name": "sveltekit-remote-functions",
+        "description": "SvelteKit remote functions guidance. Use for command(), query(), form() patterns in .remote.ts files.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# SvelteKit Remote Functions\n\n## Quick Start\n\n**File naming:** `*.remote.ts` for remote function files\n\n**Which function?** One-time action → `command()` | Repeated reads →\n`query()` | Forms → `form()`\n\n## Example\n\n```typescript\n// actions.remote.ts\nimport { command } from \"$app/server\";\nimport * as v from \"valibot\";\n\nexport const delete_user = command(\n  v.object({ id: v.string() }),\n  async ({ id }) => {\n    await db.users.delete(id);\n    return { success: true };\n  }\n);\n\n// Call from client: await delete_user({ id: '123' });\n```\n\n## Reference Files\n\n- [references/remote-functions.md](references/remote-functions.md) -\n  Complete guide with all patterns\n\n## Notes\n\n- Remote functions execute on server when called from browser\n- Args/returns must be JSON-serializable\n- Schema validation via StandardSchemaV1 (Valibot/Zod)\n- `getRequestEvent()` available for cookies/headers access\n- **In components:** Use `{#await}` blocks (safe) or `query.current`/`query.loading` properties\n- **Warning:** `<svelte:boundary>` + `{@const await}` causes infinite navigation loops with shared queries ([sveltejs/svelte#17717](https://github.com/sveltejs/svelte/issues/17717))\n- **Refresh queries:** Call `query().refresh()` - updates without flicker\n- **Last verified:** 2026-02-21\n\n<!--\nPROGRESSIVE DISCLOSURE GUIDELINES:\n- Keep this file ~50 lines total (max ~150 lines)\n- Use 1-2 code blocks only (recommend 1)\n- Keep description <200 chars for Level 1 efficiency\n- Move detailed docs to references/ for Level 3 loading\n- This is Level 2 - quick reference ONLY, not a manual\n\nLLM WORKFLOW (when editing this file):\n1. Write/edit SKILL.md\n2. Format (if formatter available)\n3. Run: claude-skills-cli validate <path>\n4. If multi-line description warning: run claude-skills-cli doctor <path>\n5. Validate again to confirm\n-->"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "sveltekit-structure",
+      "parsed": {
+        "name": "sveltekit-structure",
+        "description": "SvelteKit structure guidance. Use for routing, layouts, error handling, SSR, or svelte:boundary. Covers file naming, nested layouts, error boundaries, pending UI, and hydration.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# SvelteKit Structure\n\n## Quick Start\n\n**File types:** `+page.svelte` (page) | `+layout.svelte` (wrapper) |\n`+error.svelte` (error boundary) | `+server.ts` (API endpoint)\n\n**Routes:** `src/routes/about/+page.svelte` → `/about` |\n`src/routes/posts/[id]/+page.svelte` → `/posts/123`\n\n**Layouts:** Apply to all child routes. `+layout.svelte` at any level\nwraps descendants.\n\n## Example\n\n```\nsrc/routes/\n├── +layout.svelte              # Root layout (all pages)\n├── +page.svelte                # Homepage /\n├── about/+page.svelte          # /about\n└── dashboard/\n    ├── +layout.svelte          # Dashboard layout (dashboard pages only)\n    ├── +page.svelte            # /dashboard\n    └── settings/+page.svelte   # /dashboard/settings\n```\n\n```svelte\n<!-- +layout.svelte -->\n<script>\n\tlet { children } = $props();\n</script>\n\n<nav><!-- Navigation --></nav>\n<main>{@render children()}</main>\n<footer><!-- Footer --></footer>\n```\n\n## Reference Files\n\n- [file-naming.md](references/file-naming.md) - File naming\n  conventions\n- [layout-patterns.md](references/layout-patterns.md) - Nested layouts\n- [error-handling.md](references/error-handling.md) - +error.svelte\n  placement\n- [svelte-boundary.md](references/svelte-boundary.md) -\n  Component-level error/pending\n- [ssr-hydration.md](references/ssr-hydration.md) - SSR and\n  browser-only code\n\n## Notes\n\n- Layouts: `{@render children()}` | Errors: +error.svelte _above_\n  failing route\n- Groups: `(name)` folders don't affect URL | Client-only: check\n  `browser`\n- **Last verified:** 2025-01-11\n\n<!--\nPROGRESSIVE DISCLOSURE GUIDELINES:\n- Keep this file ~50 lines total (max ~150 lines)\n- Use 1-2 code blocks only (recommend 1)\n- Keep description <200 chars for Level 1 efficiency\n- Move detailed docs to references/ for Level 3 loading\n- This is Level 2 - quick reference ONLY, not a manual\n\nLLM WORKFLOW (when editing this file):\n1. Write/edit SKILL.md\n2. Format (if formatter available)\n3. Run: claude-skills-cli validate <path>\n4. If multi-line description warning: run claude-skills-cli doctor <path>\n5. Validate again to confirm\n-->"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    }
+  ]
+}

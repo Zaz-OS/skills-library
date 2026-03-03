@@ -1,0 +1,326 @@
+{
+  "source": "better-auth/skills",
+  "repoUrl": "https://github.com/better-auth/skills",
+  "skills": [
+    {
+      "skillId": "best-practices",
+      "parsed": {
+        "name": "better-auth-best-practices",
+        "description": "Configure Better Auth server and client, set up database adapters, manage sessions, add plugins, and handle environment variables. Use when users mention Better Auth, betterauth, auth.ts, or need to set up TypeScript authentication with email/password, OAuth, or plugin configuration.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Better Auth Integration Guide\n\n**Always consult [better-auth.com/docs](https://better-auth.com/docs) for code examples and latest API.**\n\n---\n\n## Setup Workflow\n\n1. Install: `npm install better-auth`\n2. Set env vars: `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL`\n3. Create `auth.ts` with database + config\n4. Create route handler for your framework\n5. Run `npx @better-auth/cli@latest migrate`\n6. Verify: call `GET /api/auth/ok` — should return `{ status: \"ok\" }`\n\n---\n\n## Quick Reference\n\n### Environment Variables\n- `BETTER_AUTH_SECRET` - Encryption secret (min 32 chars). Generate: `openssl rand -base64 32`\n- `BETTER_AUTH_URL` - Base URL (e.g., `https://example.com`)\n\nOnly define `baseURL`/`secret` in config if env vars are NOT set.\n\n### File Location\nCLI looks for `auth.ts` in: `./`, `./lib`, `./utils`, or under `./src`. Use `--config` for custom path.\n\n### CLI Commands\n- `npx @better-auth/cli@latest migrate` - Apply schema (built-in adapter)\n- `npx @better-auth/cli@latest generate` - Generate schema for Prisma/Drizzle\n- `npx @better-auth/cli mcp --cursor` - Add MCP to AI tools\n\n**Re-run after adding/changing plugins.**\n\n---\n\n## Core Config Options\n\n| Option | Notes |\n|--------|-------|\n| `appName` | Optional display name |\n| `baseURL` | Only if `BETTER_AUTH_URL` not set |\n| `basePath` | Default `/api/auth`. Set `/` for root. |\n| `secret` | Only if `BETTER_AUTH_SECRET` not set |\n| `database` | Required for most features. See adapters docs. |\n| `secondaryStorage` | Redis/KV for sessions & rate limits |\n| `emailAndPassword` | `{ enabled: true }` to activate |\n| `socialProviders` | `{ google: { clientId, clientSecret }, ... }` |\n| `plugins` | Array of plugins |\n| `trustedOrigins` | CSRF whitelist |\n\n---\n\n## Database\n\n**Direct connections:** Pass `pg.Pool`, `mysql2` pool, `better-sqlite3`, or `bun:sqlite` instance.\n\n**ORM adapters:** Import from `better-auth/adapters/drizzle`, `better-auth/adapters/prisma`, `better-auth/adapters/mongodb`.\n\n**Critical:** Better Auth uses adapter model names, NOT underlying table names. If Prisma model is `User` mapping to table `users`, use `modelName: \"user\"` (Prisma reference), not `\"users\"`.\n\n---\n\n## Session Management\n\n**Storage priority:**\n1. If `secondaryStorage` defined → sessions go there (not DB)\n2. Set `session.storeSessionInDatabase: true` to also persist to DB\n3. No database + `cookieCache` → fully stateless mode\n\n**Cookie cache strategies:**\n- `compact` (default) - Base64url + HMAC. Smallest.\n- `jwt` - Standard JWT. Readable but signed.\n- `jwe` - Encrypted. Maximum security.\n\n**Key options:** `session.expiresIn` (default 7 days), `session.updateAge` (refresh interval), `session.cookieCache.maxAge`, `session.cookieCache.version` (change to invalidate all sessions).\n\n---\n\n## User & Account Config\n\n**User:** `user.modelName`, `user.fields` (column mapping), `user.additionalFields`, `user.changeEmail.enabled` (disabled by default), `user.deleteUser.enabled` (disabled by default).\n\n**Account:** `account.modelName`, `account.accountLinking.enabled`, `account.storeAccountCookie` (for stateless OAuth).\n\n**Required for registration:** `email` and `name` fields.\n\n---\n\n## Email Flows\n\n- `emailVerification.sendVerificationEmail` - Must be defined for verification to work\n- `emailVerification.sendOnSignUp` / `sendOnSignIn` - Auto-send triggers\n- `emailAndPassword.sendResetPassword` - Password reset email handler\n\n---\n\n## Security\n\n**In `advanced`:**\n- `useSecureCookies` - Force HTTPS cookies\n- `disableCSRFCheck` - ⚠️ Security risk\n- `disableOriginCheck` - ⚠️ Security risk  \n- `crossSubDomainCookies.enabled` - Share cookies across subdomains\n- `ipAddress.ipAddressHeaders` - Custom IP headers for proxies\n- `database.generateId` - Custom ID generation or `\"serial\"`/`\"uuid\"`/`false`\n\n**Rate limiting:** `rateLimit.enabled`, `rateLimit.window`, `rateLimit.max`, `rateLimit.storage` (\"memory\" | \"database\" | \"secondary-storage\").\n\n---\n\n## Hooks\n\n**Endpoint hooks:** `hooks.before` / `hooks.after` - Array of `{ matcher, handler }`. Use `createAuthMiddleware`. Access `ctx.path`, `ctx.context.returned` (after), `ctx.context.session`.\n\n**Database hooks:** `databaseHooks.user.create.before/after`, same for `session`, `account`. Useful for adding default values or post-creation actions.\n\n**Hook context (`ctx.context`):** `session`, `secret`, `authCookies`, `password.hash()`/`verify()`, `adapter`, `internalAdapter`, `generateId()`, `tables`, `baseURL`.\n\n---\n\n## Plugins\n\n**Import from dedicated paths for tree-shaking:**\n```\nimport { twoFactor } from \"better-auth/plugins/two-factor\"\n```\nNOT `from \"better-auth/plugins\"`.\n\n**Popular plugins:** `twoFactor`, `organization`, `passkey`, `magicLink`, `emailOtp`, `username`, `phoneNumber`, `admin`, `apiKey`, `bearer`, `jwt`, `multiSession`, `sso`, `oauthProvider`, `oidcProvider`, `openAPI`, `genericOAuth`.\n\nClient plugins go in `createAuthClient({ plugins: [...] })`.\n\n---\n\n## Client\n\nImport from: `better-auth/client` (vanilla), `better-auth/react`, `better-auth/vue`, `better-auth/svelte`, `better-auth/solid`.\n\nKey methods: `signUp.email()`, `signIn.email()`, `signIn.social()`, `signOut()`, `useSession()`, `getSession()`, `revokeSession()`, `revokeSessions()`.\n\n---\n\n## Type Safety\n\nInfer types: `typeof auth.$Infer.Session`, `typeof auth.$Infer.Session.user`.\n\nFor separate client/server projects: `createAuthClient<typeof auth>()`.\n\n---\n\n## Common Gotchas\n\n1. **Model vs table name** - Config uses ORM model name, not DB table name\n2. **Plugin schema** - Re-run CLI after adding plugins\n3. **Secondary storage** - Sessions go there by default, not DB\n4. **Cookie cache** - Custom session fields NOT cached, always re-fetched\n5. **Stateless mode** - No DB = session in cookie only, logout on cache expiry\n6. **Change email flow** - Sends to current email first, then new email\n\n---\n\n## Resources\n\n- [Docs](https://better-auth.com/docs)\n- [Options Reference](https://better-auth.com/docs/reference/options)\n- [LLMs.txt](https://better-auth.com/llms.txt)\n- [GitHub](https://github.com/better-auth/better-auth)\n- [Init Options Source](https://github.com/better-auth/better-auth/blob/main/packages/core/src/types/init-options.ts)"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "redis",
+          "name": "redis",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "mongodb",
+          "name": "mongodb",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "better-auth",
+          "name": "better-auth",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "better-auth",
+          "name": "@better-auth/cli@latest",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "better-auth",
+          "name": "@better-auth/cli",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "create-auth",
+      "parsed": {
+        "name": "create-auth-skill",
+        "description": "Scaffold and implement authentication in TypeScript/JavaScript apps using Better Auth. Detect frameworks, configure database adapters, set up route handlers, add OAuth providers, and create auth UI pages. Use when users want to add login, sign-up, or authentication to a new or existing project with Better Auth.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Create Auth Skill\n\nGuide for adding authentication to TypeScript/JavaScript applications using Better Auth.\n\n**For code examples and syntax, see [better-auth.com/docs](https://better-auth.com/docs).**\n\n---\n\n## Phase 1: Planning (REQUIRED before implementation)\n\nBefore writing any code, gather requirements by scanning the project and asking the user structured questions. This ensures the implementation matches their needs.\n\n### Step 1: Scan the project\n\nAnalyze the codebase to auto-detect:\n- **Framework** — Look for `next.config`, `svelte.config`, `nuxt.config`, `astro.config`, `vite.config`, or Express/Hono entry files.\n- **Database/ORM** — Look for `prisma/schema.prisma`, `drizzle.config`, `package.json` deps (`pg`, `mysql2`, `better-sqlite3`, `mongoose`, `mongodb`).\n- **Existing auth** — Look for existing auth libraries (`next-auth`, `lucia`, `clerk`, `supabase/auth`, `firebase/auth`) in `package.json` or imports.\n- **Package manager** — Check for `pnpm-lock.yaml`, `yarn.lock`, `bun.lockb`, or `package-lock.json`.\n\nUse what you find to pre-fill defaults and skip questions you can already answer.\n\n### Step 2: Ask planning questions\n\nUse the `AskQuestion` tool to ask the user **all applicable questions in a single call**. Skip any question you already have a confident answer for from the scan. Group them under a title like \"Auth Setup Planning\".\n\n**Questions to ask:**\n\n1. **Project type** (skip if detected)\n   - Prompt: \"What type of project is this?\"\n   - Options: New project from scratch | Adding auth to existing project | Migrating from another auth library\n\n2. **Framework** (skip if detected)\n   - Prompt: \"Which framework are you using?\"\n   - Options: Next.js (App Router) | Next.js (Pages Router) | SvelteKit | Nuxt | Astro | Express | Hono | SolidStart | Other\n\n3. **Database & ORM** (skip if detected)\n   - Prompt: \"Which database setup will you use?\"\n   - Options: PostgreSQL (Prisma) | PostgreSQL (Drizzle) | PostgreSQL (pg driver) | MySQL (Prisma) | MySQL (Drizzle) | MySQL (mysql2 driver) | SQLite (Prisma) | SQLite (Drizzle) | SQLite (better-sqlite3 driver) | MongoDB (Mongoose) | MongoDB (native driver)\n\n4. **Authentication methods** (always ask, allow multiple)\n   - Prompt: \"Which sign-in methods do you need?\"\n   - Options: Email & password | Social OAuth (Google, GitHub, etc.) | Magic link (passwordless email) | Passkey (WebAuthn) | Phone number\n   - `allow_multiple: true`\n\n5. **Social providers** (only if they selected Social OAuth above — ask in a follow-up call)\n   - Prompt: \"Which social providers do you need?\"\n   - Options: Google | GitHub | Apple | Microsoft | Discord | Twitter/X\n   - `allow_multiple: true`\n\n6. **Email verification** (only if Email & password was selected above — ask in a follow-up call)\n   - Prompt: \"Do you want to require email verification?\"\n   - Options: Yes | No\n\n7. **Email provider** (only if email verification is Yes, or if Password reset is selected in features — ask in a follow-up call)\n   - Prompt: \"How do you want to send emails?\"\n   - Options: Resend | Mock it for now (console.log)\n\n8. **Features & plugins** (always ask, allow multiple)\n   - Prompt: \"Which additional features do you need?\"\n   - Options: Two-factor authentication (2FA) | Organizations / teams | Admin dashboard | API bearer tokens | Password reset | None of these\n   - `allow_multiple: true`\n\n9. **Auth pages** (always ask, allow multiple — pre-select based on earlier answers)\n   - Prompt: \"Which auth pages do you need?\"\n   - Options vary based on previous answers:\n     - Always available: Sign in | Sign up\n     - If Email & password selected: Forgot password | Reset password\n     - If email verification enabled: Email verification\n   - `allow_multiple: true`\n\n10. **Auth UI style** (always ask)\n   - Prompt: \"What style do you want for the auth pages? Pick one or describe your own.\"\n   - Options: Minimal & clean | Centered card with background | Split layout (form + hero image) | Floating / glassmorphism | Other (I'll describe)\n\n### Step 3: Summarize the plan\n\nAfter collecting answers, present a concise implementation plan as a markdown checklist. Example:\n\n```\n## Auth Implementation Plan\n\n- **Framework:** Next.js (App Router)\n- **Database:** PostgreSQL via Prisma\n- **Auth methods:** Email/password, Google OAuth, GitHub OAuth\n- **Plugins:** 2FA, Organizations, Email verification\n- **UI:** Custom forms\n\n### Steps\n1. Install `better-auth` and `@better-auth/cli`\n2. Create `lib/auth.ts` with server config\n3. Create `lib/auth-client.ts` with React client\n4. Set up route handler at `app/api/auth/[...all]/route.ts`\n5. Configure Prisma adapter and generate schema\n6. Add Google & GitHub OAuth providers\n7. Enable `twoFactor` and `organization` plugins\n8. Set up email verification handler\n9. Run migrations\n10. Create sign-in / sign-up pages\n```\n\nAsk the user to confirm the plan before proceeding to Phase 2.\n\n---\n\n## Phase 2: Implementation\n\nOnly proceed here after the user confirms the plan from Phase 1.\n\nFollow the decision tree below, guided by the answers collected above.\n\n```\nIs this a new/empty project?\n├─ YES → New project setup\n│   1. Install better-auth (+ scoped packages per plan)\n│   2. Create auth.ts with all planned config\n│   3. Create auth-client.ts with framework client\n│   4. Set up route handler\n│   5. Set up environment variables\n│   6. Run CLI migrate/generate\n│   7. Add plugins from plan\n│   8. Create auth UI pages\n│\n├─ MIGRATING → Migration from existing auth\n│   1. Audit current auth for gaps\n│   2. Plan incremental migration\n│   3. Install better-auth alongside existing auth\n│   4. Migrate routes, then session logic, then UI\n│   5. Remove old auth library\n│   6. See migration guides in docs\n│\n└─ ADDING → Add auth to existing project\n    1. Analyze project structure\n    2. Install better-auth\n    3. Create auth config matching plan\n    4. Add route handler\n    5. Run schema migrations\n    6. Integrate into existing pages\n    7. Add planned plugins and features\n```\n\nAt the end of implementation, guide users thoroughly on remaining next steps (e.g., setting up OAuth app credentials, deploying env vars, testing flows).\n\n---\n\n## Installation\n\n**Core:** `npm install better-auth`\n\n**Scoped packages (as needed):**\n| Package | Use case |\n|---------|----------|\n| `@better-auth/passkey` | WebAuthn/Passkey auth |\n| `@better-auth/sso` | SAML/OIDC enterprise SSO |\n| `@better-auth/stripe` | Stripe payments |\n| `@better-auth/scim` | SCIM user provisioning |\n| `@better-auth/expo` | React Native/Expo |\n\n---\n\n## Environment Variables\n\n```env\nBETTER_AUTH_SECRET=<32+ chars, generate with: openssl rand -base64 32>\nBETTER_AUTH_URL=http://localhost:3000\nDATABASE_URL=<your database connection string>\n```\n\nAdd OAuth secrets as needed: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`, etc.\n\n---\n\n## Server Config (auth.ts)\n\n**Location:** `lib/auth.ts` or `src/lib/auth.ts`\n\n**Minimal config needs:**\n- `database` - Connection or adapter\n- `emailAndPassword: { enabled: true }` - For email/password auth\n\n**Standard config adds:**\n- `socialProviders` - OAuth providers (google, github, etc.)\n- `emailVerification.sendVerificationEmail` - Email verification handler\n- `emailAndPassword.sendResetPassword` - Password reset handler\n\n**Full config adds:**\n- `plugins` - Array of feature plugins\n- `session` - Expiry, cookie cache settings\n- `account.accountLinking` - Multi-provider linking\n- `rateLimit` - Rate limiting config\n\n**Export types:** `export type Session = typeof auth.$Infer.Session`\n\n---\n\n## Client Config (auth-client.ts)\n\n**Import by framework:**\n| Framework | Import |\n|-----------|--------|\n| React/Next.js | `better-auth/react` |\n| Vue | `better-auth/vue` |\n| Svelte | `better-auth/svelte` |\n| Solid | `better-auth/solid` |\n| Vanilla JS | `better-auth/client` |\n\n**Client plugins** go in `createAuthClient({ plugins: [...] })`.\n\n**Common exports:** `signIn`, `signUp`, `signOut`, `useSession`, `getSession`\n\n---\n\n## Route Handler Setup\n\n| Framework | File | Handler |\n|-----------|------|---------|\n| Next.js App Router | `app/api/auth/[...all]/route.ts` | `toNextJsHandler(auth)` → export `{ GET, POST }` |\n| Next.js Pages | `pages/api/auth/[...all].ts` | `toNextJsHandler(auth)` → default export |\n| Express | Any file | `app.all(\"/api/auth/*\", toNodeHandler(auth))` |\n| SvelteKit | `src/hooks.server.ts` | `svelteKitHandler(auth)` |\n| SolidStart | Route file | `solidStartHandler(auth)` |\n| Hono | Route file | `auth.handler(c.req.raw)` |\n\n**Next.js Server Components:** Add `nextCookies()` plugin to auth config.\n\n---\n\n## Database Migrations\n\n| Adapter | Command |\n|---------|---------|\n| Built-in Kysely | `npx @better-auth/cli@latest migrate` (applies directly) |\n| Prisma | `npx @better-auth/cli@latest generate --output prisma/schema.prisma` then `npx prisma migrate dev` |\n| Drizzle | `npx @better-auth/cli@latest generate --output src/db/auth-schema.ts` then `npx drizzle-kit push` |\n\n**Re-run after adding plugins.**\n\n---\n\n## Database Adapters\n\n| Database | Setup |\n|----------|-------|\n| SQLite | Pass `better-sqlite3` or `bun:sqlite` instance directly |\n| PostgreSQL | Pass `pg.Pool` instance directly |\n| MySQL | Pass `mysql2` pool directly |\n| Prisma | `prismaAdapter(prisma, { provider: \"postgresql\" })` from `better-auth/adapters/prisma` |\n| Drizzle | `drizzleAdapter(db, { provider: \"pg\" })` from `better-auth/adapters/drizzle` |\n| MongoDB | `mongodbAdapter(db)` from `better-auth/adapters/mongodb` |\n\n---\n\n## Common Plugins\n\n| Plugin | Server Import | Client Import | Purpose |\n|--------|---------------|---------------|---------|\n| `twoFactor` | `better-auth/plugins` | `twoFactorClient` | 2FA with TOTP/OTP |\n| `organization` | `better-auth/plugins` | `organizationClient` | Teams/orgs |\n| `admin` | `better-auth/plugins` | `adminClient` | User management |\n| `bearer` | `better-auth/plugins` | - | API token auth |\n| `openAPI` | `better-auth/plugins` | - | API docs |\n| `passkey` | `@better-auth/passkey` | `passkeyClient` | WebAuthn |\n| `sso` | `@better-auth/sso` | - | Enterprise SSO |\n\n**Plugin pattern:** Server plugin + client plugin + run migrations.\n\n---\n\n## Auth UI Implementation\n\n**Sign in flow:**\n1. `signIn.email({ email, password })` or `signIn.social({ provider, callbackURL })`\n2. Handle `error` in response\n3. Redirect on success\n\n**Session check (client):** `useSession()` hook returns `{ data: session, isPending }`\n\n**Session check (server):** `auth.api.getSession({ headers: await headers() })`\n\n**Protected routes:** Check session, redirect to `/sign-in` if null.\n\n---\n\n## Security Checklist\n\n- [ ] `BETTER_AUTH_SECRET` set (32+ chars)\n- [ ] `advanced.useSecureCookies: true` in production\n- [ ] `trustedOrigins` configured\n- [ ] Rate limits enabled\n- [ ] Email verification enabled\n- [ ] Password reset implemented\n- [ ] 2FA for sensitive apps\n- [ ] CSRF protection NOT disabled\n- [ ] `account.accountLinking` reviewed\n\n---\n\n## Troubleshooting\n\n| Issue | Fix |\n|-------|-----|\n| \"Secret not set\" | Add `BETTER_AUTH_SECRET` env var |\n| \"Invalid Origin\" | Add domain to `trustedOrigins` |\n| Cookies not setting | Check `baseURL` matches domain; enable secure cookies in prod |\n| OAuth callback errors | Verify redirect URIs in provider dashboard |\n| Type errors after adding plugin | Re-run CLI generate/migrate |\n\n---\n\n## Resources\n\n- [Docs](https://better-auth.com/docs)\n- [Examples](https://github.com/better-auth/examples)\n- [Plugins](https://better-auth.com/docs/concepts/plugins)\n- [CLI](https://better-auth.com/docs/concepts/cli)\n- [Migration Guides](https://better-auth.com/docs/guides)"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "supabase",
+          "name": "supabase",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "google",
+          "name": "firebase",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "mysql",
+          "name": "mysql",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "mongodb",
+          "name": "mongodb",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "better-auth",
+          "name": "better-auth",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "better-auth",
+          "name": "@better-auth/cli@latest",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "prisma",
+          "name": "prisma",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "drizzle-kit",
+          "name": "drizzle-kit",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "emailAndPassword",
+      "parsed": {
+        "name": "email-and-password-best-practices",
+        "description": "Configure email verification, implement password reset flows, set password policies, and customise hashing algorithms for Better Auth email/password authentication. Use when users need to set up login, sign-in, sign-up, credential authentication, or password security with Better Auth.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "## Quick Start\n\n1. Enable email/password: `emailAndPassword: { enabled: true }`\n2. Configure `emailVerification.sendVerificationEmail`\n3. Add `sendResetPassword` for password reset flows\n4. Run `npx @better-auth/cli@latest migrate`\n5. Verify: attempt sign-up and confirm verification email triggers\n\n---\n\n## Email Verification Setup\n\nConfigure `emailVerification.sendVerificationEmail` to verify user email addresses.\n\n```ts\nimport { betterAuth } from \"better-auth\";\nimport { sendEmail } from \"./email\"; // your email sending function\n\nexport const auth = betterAuth({\n  emailVerification: {\n    sendVerificationEmail: async ({ user, url, token }, request) => {\n      await sendEmail({\n        to: user.email,\n        subject: \"Verify your email address\",\n        text: `Click the link to verify your email: ${url}`,\n      });\n    },\n  },\n});\n```\n\n**Note**: The `url` parameter contains the full verification link. The `token` is available if you need to build a custom verification URL.\n\n### Requiring Email Verification\n\nFor stricter security, enable `emailAndPassword.requireEmailVerification` to block sign-in until the user verifies their email. When enabled, unverified users will receive a new verification email on each sign-in attempt.\n\n```ts\nexport const auth = betterAuth({\n  emailAndPassword: {\n    requireEmailVerification: true,\n  },\n});\n```\n\n**Note**: This requires `sendVerificationEmail` to be configured and only applies to email/password sign-ins.\n\n## Client Side Validation\n\nImplement client-side validation for immediate user feedback and reduced server load.\n\n## Callback URLs\n\nAlways use absolute URLs (including the origin) for callback URLs in sign-up and sign-in requests. This prevents Better Auth from needing to infer the origin, which can cause issues when your backend and frontend are on different domains.\n\n```ts\nconst { data, error } = await authClient.signUp.email({\n  callbackURL: \"https://example.com/callback\", // absolute URL with origin\n});\n```\n\n## Password Reset Flows\n\nProvide `sendResetPassword` in the email and password config to enable password resets.\n\n```ts\nimport { betterAuth } from \"better-auth\";\nimport { sendEmail } from \"./email\"; // your email sending function\n\nexport const auth = betterAuth({\n  emailAndPassword: {\n    enabled: true,\n    // Custom email sending function to send reset-password email\n    sendResetPassword: async ({ user, url, token }, request) => {\n      void sendEmail({\n        to: user.email,\n        subject: \"Reset your password\",\n        text: `Click the link to reset your password: ${url}`,\n      });\n    },\n    // Optional event hook\n    onPasswordReset: async ({ user }, request) => {\n      // your logic here\n      console.log(`Password for user ${user.email} has been reset.`);\n    },\n  },\n});\n```\n\n### Security Considerations\n\nBuilt-in protections: background email sending (timing attack prevention), dummy operations on invalid requests, constant response messages regardless of user existence.\n\nOn serverless platforms, configure a background task handler:\n\n```ts\nexport const auth = betterAuth({\n  advanced: {\n    backgroundTasks: {\n      handler: (promise) => {\n        // Use platform-specific methods like waitUntil\n        waitUntil(promise);\n      },\n    },\n  },\n});\n```\n\n#### Token Security\n\nTokens expire after 1 hour by default. Configure with `resetPasswordTokenExpiresIn` (in seconds):\n\n```ts\nexport const auth = betterAuth({\n  emailAndPassword: {\n    enabled: true,\n    resetPasswordTokenExpiresIn: 60 * 30, // 30 minutes\n  },\n});\n```\n\nTokens are single-use — deleted immediately after successful reset.\n\n#### Session Revocation\n\nEnable `revokeSessionsOnPasswordReset` to invalidate all existing sessions on password reset:\n\n```ts\nexport const auth = betterAuth({\n  emailAndPassword: {\n    enabled: true,\n    revokeSessionsOnPasswordReset: true,\n  },\n});\n```\n\n#### Password Requirements\n\nPassword length limits (configurable):\n\n```ts\nexport const auth = betterAuth({\n  emailAndPassword: {\n    enabled: true,\n    minPasswordLength: 12,\n    maxPasswordLength: 256,\n  },\n});\n```\n\n### Sending the Password Reset\n\nCall `requestPasswordReset` to send the reset link. Triggers the `sendResetPassword` function from your config.\n\n```ts\nconst data = await auth.api.requestPasswordReset({\n  body: {\n    email: \"john.doe@example.com\", // required\n    redirectTo: \"https://example.com/reset-password\",\n  },\n});\n```\n\nOr authClient:\n\n```ts\nconst { data, error } = await authClient.requestPasswordReset({\n  email: \"john.doe@example.com\", // required\n  redirectTo: \"https://example.com/reset-password\",\n});\n```\n\n**Note**: While the `email` is required, we also recommend configuring the `redirectTo` for a smoother user experience.\n\n## Password Hashing\n\nDefault: `scrypt` (Node.js native, no external dependencies).\n\n### Custom Hashing Algorithm\n\nTo use Argon2id or another algorithm, provide custom `hash` and `verify` functions:\n\n```ts\nimport { betterAuth } from \"better-auth\";\nimport { hash, verify, type Options } from \"@node-rs/argon2\";\n\nconst argon2Options: Options = {\n  memoryCost: 65536, // 64 MiB\n  timeCost: 3, // 3 iterations\n  parallelism: 4, // 4 parallel lanes\n  outputLen: 32, // 32 byte output\n  algorithm: 2, // Argon2id variant\n};\n\nexport const auth = betterAuth({\n  emailAndPassword: {\n    enabled: true,\n    password: {\n      hash: (password) => hash(password, argon2Options),\n      verify: ({ password, hash: storedHash }) =>\n        verify(storedHash, password, argon2Options),\n    },\n  },\n});\n```\n\n**Note**: If you switch hashing algorithms on an existing system, users with passwords hashed using the old algorithm won't be able to sign in. Plan a migration strategy if needed."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "better-auth",
+          "name": "@better-auth/cli@latest",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "organization",
+      "parsed": {
+        "name": "organization-best-practices",
+        "description": "Configure multi-tenant organizations, manage members and invitations, define custom roles and permissions, set up teams, and implement RBAC using Better Auth's organization plugin. Use when users need org setup, team management, member roles, access control, or the Better Auth organization plugin.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "## Setup\n\n1. Add `organization()` plugin to server config\n2. Add `organizationClient()` plugin to client config\n3. Run `npx @better-auth/cli migrate`\n4. Verify: check that organization, member, invitation tables exist in your database\n\n```ts\nimport { betterAuth } from \"better-auth\";\nimport { organization } from \"better-auth/plugins\";\n\nexport const auth = betterAuth({\n  plugins: [\n    organization({\n      allowUserToCreateOrganization: true,\n      organizationLimit: 5, // Max orgs per user\n      membershipLimit: 100, // Max members per org\n    }),\n  ],\n});\n```\n\n### Client-Side Setup\n\n```ts\nimport { createAuthClient } from \"better-auth/client\";\nimport { organizationClient } from \"better-auth/client/plugins\";\n\nexport const authClient = createAuthClient({\n  plugins: [organizationClient()],\n});\n```\n\n## Creating Organizations\n\nThe creator is automatically assigned the `owner` role.\n\n```ts\nconst createOrg = async () => {\n  const { data, error } = await authClient.organization.create({\n    name: \"My Company\",\n    slug: \"my-company\",\n    logo: \"https://example.com/logo.png\",\n    metadata: { plan: \"pro\" },\n  });\n};\n```\n\n### Controlling Organization Creation\n\nRestrict who can create organizations based on user attributes:\n\n```ts\norganization({\n  allowUserToCreateOrganization: async (user) => {\n    return user.emailVerified === true;\n  },\n  organizationLimit: async (user) => {\n    // Premium users get more organizations\n    return user.plan === \"premium\" ? 20 : 3;\n  },\n});\n```\n\n### Creating Organizations on Behalf of Users\n\nAdministrators can create organizations for other users (server-side only):\n\n```ts\nawait auth.api.createOrganization({\n  body: {\n    name: \"Client Organization\",\n    slug: \"client-org\",\n    userId: \"user-id-who-will-be-owner\", // `userId` is required\n  },\n});\n```\n\n**Note**: The `userId` parameter cannot be used alongside session headers.\n\n\n## Active Organizations\n\nStored in the session and scopes subsequent API calls. Set after user selects one.\n\n```ts\nconst setActive = async (organizationId: string) => {\n  const { data, error } = await authClient.organization.setActive({\n    organizationId,\n  });\n};\n```\n\nMany endpoints use the active organization when `organizationId` is not provided (`listMembers`, `listInvitations`, `inviteMember`, etc.).\n\nUse `getFullOrganization()` to retrieve the active org with all members, invitations, and teams.\n\n## Members\n\n### Adding Members (Server-Side)\n\n```ts\nawait auth.api.addMember({\n  body: {\n    userId: \"user-id\",\n    role: \"member\",\n    organizationId: \"org-id\",\n  },\n});\n```\n\nFor client-side member additions, use the invitation system instead.\n\n### Assigning Multiple Roles\n\n```ts\nawait auth.api.addMember({\n  body: {\n    userId: \"user-id\",\n    role: [\"admin\", \"moderator\"],\n    organizationId: \"org-id\",\n  },\n});\n```\n\n### Removing Members\n\nUse `removeMember({ memberIdOrEmail })`. The last owner cannot be removed — assign ownership to another member first.\n\n### Updating Member Roles\n\nUse `updateMemberRole({ memberId, role })`.\n\n### Membership Limits\n\n```ts\norganization({\n  membershipLimit: async (user, organization) => {\n    if (organization.metadata?.plan === \"enterprise\") {\n      return 1000;\n    }\n    return 50;\n  },\n});\n```\n\n## Invitations\n\n### Setting Up Invitation Emails\n\n```ts\nimport { betterAuth } from \"better-auth\";\nimport { organization } from \"better-auth/plugins\";\nimport { sendEmail } from \"./email\";\n\nexport const auth = betterAuth({\n  plugins: [\n    organization({\n      sendInvitationEmail: async (data) => {\n        const { email, organization, inviter, invitation } = data;\n\n        await sendEmail({\n          to: email,\n          subject: `Join ${organization.name}`,\n          html: `\n            <p>${inviter.user.name} invited you to join ${organization.name}</p>\n            <a href=\"https://yourapp.com/accept-invite?id=${invitation.id}\">\n              Accept Invitation\n            </a>\n          `,\n        });\n      },\n    }),\n  ],\n});\n```\n\n### Sending Invitations\n\n```ts\nawait authClient.organization.inviteMember({\n  email: \"newuser@example.com\",\n  role: \"member\",\n});\n```\n\n### Shareable Invitation URLs\n\n```ts\nconst { data } = await authClient.organization.getInvitationURL({\n  email: \"newuser@example.com\",\n  role: \"member\",\n  callbackURL: \"https://yourapp.com/dashboard\",\n});\n\n// Share data.url via any channel\n```\n\nThis endpoint does not call `sendInvitationEmail` — handle delivery yourself.\n\n### Invitation Configuration\n\n```ts\norganization({\n  invitationExpiresIn: 60 * 60 * 24 * 7, // 7 days (default: 48 hours)\n  invitationLimit: 100, // Max pending invitations per org\n  cancelPendingInvitationsOnReInvite: true, // Cancel old invites when re-inviting\n});\n```\n\n## Roles & Permissions\n\nDefault roles: `owner` (full access), `admin` (manage members/invitations/settings), `member` (basic access).\n\n### Checking Permissions\n\n```ts\nconst { data } = await authClient.organization.hasPermission({\n  permission: \"member:write\",\n});\n\nif (data?.hasPermission) {\n  // User can manage members\n}\n```\n\nUse `checkRolePermission({ role, permissions })` for client-side UI rendering (static only). For dynamic access control, use the `hasPermission` endpoint.\n\n## Teams\n\n### Enabling Teams\n\n```ts\nimport { organization } from \"better-auth/plugins\";\n\nexport const auth = betterAuth({\n  plugins: [\n    organization({\n        teams: {\n            enabled: true\n        }\n    }),\n  ],\n});\n```\n\n### Creating Teams\n\n```ts\nconst { data } = await authClient.organization.createTeam({\n  name: \"Engineering\",\n});\n```\n\n### Managing Team Members\n\nUse `addTeamMember({ teamId, userId })` (member must be in org first) and `removeTeamMember({ teamId, userId })` (stays in org).\n\nSet active team with `setActiveTeam({ teamId })`.\n\n### Team Limits\n\n```ts\norganization({\n  teams: {\n      maximumTeams: 20, // Max teams per org\n      maximumMembersPerTeam: 50, // Max members per team\n      allowRemovingAllTeams: false, // Prevent removing last team\n  }\n});\n```\n\n## Dynamic Access Control\n\n### Enabling Dynamic Access Control\n\n```ts\nimport { organization } from \"better-auth/plugins\";\nimport { dynamicAccessControl } from \"@better-auth/organization/addons\";\n\nexport const auth = betterAuth({\n  plugins: [\n    organization({\n        dynamicAccessControl: {\n            enabled: true\n        }\n    }),\n  ],\n});\n```\n\n### Creating Custom Roles\n\n```ts\nawait authClient.organization.createRole({\n  role: \"moderator\",\n  permission: {\n    member: [\"read\"],\n    invitation: [\"read\"],\n  },\n});\n```\n\nUse `updateRole({ roleId, permission })` and `deleteRole({ roleId })`. Pre-defined roles (owner, admin, member) cannot be deleted. Roles assigned to members cannot be deleted until reassigned.\n\n## Lifecycle Hooks\n\nExecute custom logic at various points in the organization lifecycle:\n\n```ts\norganization({\n  hooks: {\n    organization: {\n      beforeCreate: async ({ data, user }) => {\n        // Validate or modify data before creation\n        return {\n          data: {\n            ...data,\n            metadata: { ...data.metadata, createdBy: user.id },\n          },\n        };\n      },\n      afterCreate: async ({ organization, member }) => {\n        // Post-creation logic (e.g., send welcome email, create default resources)\n        await createDefaultResources(organization.id);\n      },\n      beforeDelete: async ({ organization }) => {\n        // Cleanup before deletion\n        await archiveOrganizationData(organization.id);\n      },\n    },\n    member: {\n      afterCreate: async ({ member, organization }) => {\n        await notifyAdmins(organization.id, `New member joined`);\n      },\n    },\n    invitation: {\n      afterCreate: async ({ invitation, organization, inviter }) => {\n        await logInvitation(invitation);\n      },\n    },\n  },\n});\n```\n\n## Schema Customization\n\nCustomize table names, field names, and add additional fields:\n\n```ts\norganization({\n  schema: {\n    organization: {\n      modelName: \"workspace\", // Rename table\n      fields: {\n        name: \"workspaceName\", // Rename fields\n      },\n      additionalFields: {\n        billingId: {\n          type: \"string\",\n          required: false,\n        },\n      },\n    },\n    member: {\n      additionalFields: {\n        department: {\n          type: \"string\",\n          required: false,\n        },\n        title: {\n          type: \"string\",\n          required: false,\n        },\n      },\n    },\n  },\n});\n```\n\n## Security Considerations\n\n### Owner Protection\n\n- The last owner cannot be removed from an organization\n- The last owner cannot leave the organization\n- The owner role cannot be removed from the last owner\n\nAlways ensure ownership transfer before removing the current owner:\n\n```ts\n// Transfer ownership first\nawait authClient.organization.updateMemberRole({\n  memberId: \"new-owner-member-id\",\n  role: \"owner\",\n});\n\n// Then the previous owner can be demoted or removed\n```\n\n### Organization Deletion\n\nDeleting an organization removes all associated data (members, invitations, teams). Prevent accidental deletion:\n\n```ts\norganization({\n  disableOrganizationDeletion: true, // Disable via config\n});\n```\n\nOr implement soft delete via hooks:\n\n```ts\norganization({\n  hooks: {\n    organization: {\n      beforeDelete: async ({ organization }) => {\n        // Archive instead of delete\n        await archiveOrganization(organization.id);\n        throw new Error(\"Organization archived, not deleted\");\n      },\n    },\n  },\n});\n```\n\n### Invitation Security\n\n- Invitations expire after 48 hours by default\n- Only the invited email address can accept an invitation\n- Pending invitations can be cancelled by organization admins\n\n## Complete Configuration Example\n\n```ts\nimport { betterAuth } from \"better-auth\";\nimport { organization } from \"better-auth/plugins\";\nimport { sendEmail } from \"./email\";\n\nexport const auth = betterAuth({\n  plugins: [\n    organization({\n      // Organization limits\n      allowUserToCreateOrganization: true,\n      organizationLimit: 10,\n      membershipLimit: 100,\n      creatorRole: \"owner\",\n\n      // Slugs\n      defaultOrganizationIdField: \"slug\",\n\n      // Invitations\n      invitationExpiresIn: 60 * 60 * 24 * 7, // 7 days\n      invitationLimit: 50,\n      sendInvitationEmail: async (data) => {\n        await sendEmail({\n          to: data.email,\n          subject: `Join ${data.organization.name}`,\n          html: `<a href=\"https://app.com/invite/${data.invitation.id}\">Accept</a>`,\n        });\n      },\n\n      // Hooks\n      hooks: {\n        organization: {\n          afterCreate: async ({ organization }) => {\n            console.log(`Organization ${organization.name} created`);\n          },\n        },\n      },\n    }),\n  ],\n});\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "better-auth",
+          "name": "@better-auth/cli",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "twoFactor",
+      "parsed": {
+        "name": "two-factor-authentication-best-practices",
+        "description": "Configure TOTP authenticator apps, send OTP codes via email/SMS, manage backup codes, handle trusted devices, and implement 2FA sign-in flows using Better Auth's twoFactor plugin. Use when users need MFA, multi-factor authentication, authenticator setup, or login security with Better Auth.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "## Setup\n\n1. Add `twoFactor()` plugin to server config with `issuer`\n2. Add `twoFactorClient()` plugin to client config\n3. Run `npx @better-auth/cli migrate`\n4. Verify: check that `twoFactorSecret` column exists on user table\n\n```ts\nimport { betterAuth } from \"better-auth\";\nimport { twoFactor } from \"better-auth/plugins\";\n\nexport const auth = betterAuth({\n  appName: \"My App\",\n  plugins: [\n    twoFactor({\n      issuer: \"My App\",\n    }),\n  ],\n});\n```\n\n### Client-Side Setup\n\n```ts\nimport { createAuthClient } from \"better-auth/client\";\nimport { twoFactorClient } from \"better-auth/client/plugins\";\n\nexport const authClient = createAuthClient({\n  plugins: [\n    twoFactorClient({\n      onTwoFactorRedirect() {\n        window.location.href = \"/2fa\";\n      },\n    }),\n  ],\n});\n```\n\n## Enabling 2FA for Users\n\nRequires password verification. Returns TOTP URI (for QR code) and backup codes.\n\n```ts\nconst enable2FA = async (password: string) => {\n  const { data, error } = await authClient.twoFactor.enable({\n    password,\n  });\n\n  if (data) {\n    // data.totpURI — generate a QR code from this\n    // data.backupCodes — display to user\n  }\n};\n```\n\n`twoFactorEnabled` is not set to `true` until first TOTP verification succeeds. Override with `skipVerificationOnEnable: true` (not recommended).\n\n## TOTP (Authenticator App)\n\n### Displaying the QR Code\n\n```tsx\nimport QRCode from \"react-qr-code\";\n\nconst TotpSetup = ({ totpURI }: { totpURI: string }) => {\n  return <QRCode value={totpURI} />;\n};\n```\n\n### Verifying TOTP Codes\n\nAccepts codes from one period before/after current time:\n\n```ts\nconst verifyTotp = async (code: string) => {\n  const { data, error } = await authClient.twoFactor.verifyTotp({\n    code,\n    trustDevice: true,\n  });\n};\n```\n\n### TOTP Configuration Options\n\n```ts\ntwoFactor({\n  totpOptions: {\n    digits: 6, // 6 or 8 digits (default: 6)\n    period: 30, // Code validity period in seconds (default: 30)\n  },\n});\n```\n\n## OTP (Email/SMS)\n\n### Configuring OTP Delivery\n\n```ts\nimport { betterAuth } from \"better-auth\";\nimport { twoFactor } from \"better-auth/plugins\";\nimport { sendEmail } from \"./email\";\n\nexport const auth = betterAuth({\n  plugins: [\n    twoFactor({\n      otpOptions: {\n        sendOTP: async ({ user, otp }, ctx) => {\n          await sendEmail({\n            to: user.email,\n            subject: \"Your verification code\",\n            text: `Your code is: ${otp}`,\n          });\n        },\n        period: 5, // Code validity in minutes (default: 3)\n        digits: 6, // Number of digits (default: 6)\n        allowedAttempts: 5, // Max verification attempts (default: 5)\n      },\n    }),\n  ],\n});\n```\n\n### Sending and Verifying OTP\n\nSend: `authClient.twoFactor.sendOtp()`. Verify: `authClient.twoFactor.verifyOtp({ code, trustDevice: true })`.\n\n### OTP Storage Security\n\nConfigure how OTP codes are stored in the database:\n\n```ts\ntwoFactor({\n  otpOptions: {\n    storeOTP: \"encrypted\", // Options: \"plain\", \"encrypted\", \"hashed\"\n  },\n});\n```\n\nFor custom encryption:\n\n```ts\ntwoFactor({\n  otpOptions: {\n    storeOTP: {\n      encrypt: async (token) => myEncrypt(token),\n      decrypt: async (token) => myDecrypt(token),\n    },\n  },\n});\n```\n\n## Backup Codes\n\nGenerated automatically when 2FA is enabled. Each code is single-use.\n\n### Displaying Backup Codes\n\n```tsx\nconst BackupCodes = ({ codes }: { codes: string[] }) => {\n  return (\n    <div>\n      <p>Save these codes in a secure location:</p>\n      <ul>\n        {codes.map((code, i) => (\n          <li key={i}>{code}</li>\n        ))}\n      </ul>\n    </div>\n  );\n};\n```\n\n### Regenerating Backup Codes\n\nInvalidates all previous codes:\n\n```ts\nconst regenerateBackupCodes = async (password: string) => {\n  const { data, error } = await authClient.twoFactor.generateBackupCodes({\n    password,\n  });\n  // data.backupCodes contains the new codes\n};\n```\n\n### Using Backup Codes for Recovery\n\n```ts\nconst verifyBackupCode = async (code: string) => {\n  const { data, error } = await authClient.twoFactor.verifyBackupCode({\n    code,\n    trustDevice: true,\n  });\n};\n```\n\n### Backup Code Configuration\n\n```ts\ntwoFactor({\n  backupCodeOptions: {\n    amount: 10, // Number of codes to generate (default: 10)\n    length: 10, // Length of each code (default: 10)\n    storeBackupCodes: \"encrypted\", // Options: \"plain\", \"encrypted\"\n  },\n});\n```\n\n## Handling 2FA During Sign-In\n\nResponse includes `twoFactorRedirect: true` when 2FA is required:\n\n### Sign-In Flow\n\n1. Call `signIn.email({ email, password })`\n2. Check `context.data.twoFactorRedirect` in `onSuccess`\n3. If `true`, redirect to `/2fa` verification page\n4. Verify via TOTP, OTP, or backup code\n5. Session cookie is created on successful verification\n\n```ts\nconst signIn = async (email: string, password: string) => {\n  const { data, error } = await authClient.signIn.email(\n    { email, password },\n    {\n      onSuccess(context) {\n        if (context.data.twoFactorRedirect) {\n          window.location.href = \"/2fa\";\n        }\n      },\n    }\n  );\n};\n```\n\nServer-side: check `\"twoFactorRedirect\" in response` when using `auth.api.signInEmail`.\n\n## Trusted Devices\n\nPass `trustDevice: true` when verifying. Default trust duration: 30 days (`trustDeviceMaxAge`). Refreshes on each sign-in.\n\n## Security Considerations\n\n### Session Management\n\nFlow: credentials → session removed → temporary 2FA cookie (10 min default) → verify → session created.\n\n```ts\ntwoFactor({\n  twoFactorCookieMaxAge: 600, // 10 minutes in seconds (default)\n});\n```\n\n### Rate Limiting\n\nBuilt-in: 3 requests per 10 seconds for all 2FA endpoints. OTP has additional attempt limiting:\n\n```ts\ntwoFactor({\n  otpOptions: {\n    allowedAttempts: 5, // Max attempts per OTP code (default: 5)\n  },\n});\n```\n\n### Encryption at Rest\n\nTOTP secrets: encrypted with auth secret. Backup codes: encrypted by default. OTP: configurable (`\"plain\"`, `\"encrypted\"`, `\"hashed\"`). Uses constant-time comparison for verification.\n\n2FA can only be enabled for credential (email/password) accounts.\n\n## Disabling 2FA\n\nRequires password confirmation. Revokes trusted device records:\n\n```ts\nconst disable2FA = async (password: string) => {\n  const { data, error } = await authClient.twoFactor.disable({\n    password,\n  });\n};\n```\n\n## Complete Configuration Example\n\n```ts\nimport { betterAuth } from \"better-auth\";\nimport { twoFactor } from \"better-auth/plugins\";\nimport { sendEmail } from \"./email\";\n\nexport const auth = betterAuth({\n  appName: \"My App\",\n  plugins: [\n    twoFactor({\n      // TOTP settings\n      issuer: \"My App\",\n      totpOptions: {\n        digits: 6,\n        period: 30,\n      },\n      // OTP settings\n      otpOptions: {\n        sendOTP: async ({ user, otp }) => {\n          await sendEmail({\n            to: user.email,\n            subject: \"Your verification code\",\n            text: `Your code is: ${otp}`,\n          });\n        },\n        period: 5,\n        allowedAttempts: 5,\n        storeOTP: \"encrypted\",\n      },\n      // Backup code settings\n      backupCodeOptions: {\n        amount: 10,\n        length: 10,\n        storeBackupCodes: \"encrypted\",\n      },\n      // Session settings\n      twoFactorCookieMaxAge: 600, // 10 minutes\n      trustDeviceMaxAge: 30 * 24 * 60 * 60, // 30 days\n    }),\n  ],\n});\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "better-auth",
+          "name": "@better-auth/cli",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "better-auth-best-practices",
+      "parsed": {
+        "name": "better-auth-best-practices",
+        "description": "",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": ""
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "create-auth-skill",
+      "parsed": {
+        "name": "create-auth-skill",
+        "description": "",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": ""
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "email-and-password-best-practices",
+      "parsed": {
+        "name": "email-and-password-best-practices",
+        "description": "",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": ""
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "better-auth-security-best-practices",
+      "parsed": {
+        "name": "better-auth-security-best-practices",
+        "description": "",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": ""
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    }
+  ]
+}

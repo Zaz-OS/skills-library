@@ -1,0 +1,180 @@
+{
+  "source": "ejirocodes/agent-skills",
+  "repoUrl": "https://github.com/ejirocodes/agent-skills",
+  "skills": [
+    {
+      "skillId": "exa-entities",
+      "parsed": {
+        "name": "exa-entities",
+        "description": "Exa.ai company and people search for lead generation, competitive intelligence, and data enrichment. Use when searching for companies, finding people profiles, building lead gen tools, or implementing Websets for data collection at scale. Triggers on: Exa company search, Exa people search, category company, lead generation, company research, profile search, LinkedIn profiles, Websets API, data enrichment, company lookup, find companies, competitive intelligence, recruiting, talent search, 1B profiles.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Exa Entity Search\n\n## Quick Reference\n\n| Topic | When to Use | Reference |\n|-------|-------------|-----------|\n| **Company Search** | Finding companies, competitive research | [company-search.md](references/company-search.md) |\n| **People Search** | Finding profiles, recruiting | [people-search.md](references/people-search.md) |\n| **Websets** | Data collection at scale, monitoring | [websets.md](references/websets.md) |\n\n## Essential Patterns\n\n### Company Search\n\n```python\nfrom exa_py import Exa\n\nexa = Exa()\n\nresults = exa.search_and_contents(\n    \"AI startups in healthcare series A funding\",\n    category=\"company\",\n    num_results=20,\n    text=True\n)\n\nfor company in results.results:\n    print(f\"{company.title}: {company.url}\")\n```\n\n### People Search\n\n```python\nresults = exa.search_and_contents(\n    \"machine learning engineers San Francisco\",\n    category=\"linkedin_profile\",\n    num_results=20,\n    text=True\n)\n\nfor profile in results.results:\n    print(f\"{profile.title}: {profile.url}\")\n```\n\n### Websets for Lead Generation\n\n```python\n# Create a webset for company collection\nwebset = exa.websets.create(\n    name=\"AI Healthcare Companies\",\n    search_query=\"AI healthcare startups\",\n    category=\"company\",\n    max_results=100\n)\n\n# Monitor for new matches\nexa.websets.add_monitor(\n    webset_id=webset.id,\n    schedule=\"daily\"\n)\n```\n\n## Category Reference\n\n| Category | Use Case | Index Size |\n|----------|----------|------------|\n| `company` | Company websites, about pages | Millions |\n| `linkedin_profile` | Professional profiles | 1B+ profiles |\n| `personal_site` | Individual blogs, portfolios | Millions |\n| `github` | Repositories, developer profiles | Millions |\n\n## Common Mistakes\n\n1. **Not using category filter** - Always set `category=\"company\"` or `category=\"linkedin_profile\"` for entity search\n2. **Expecting structured data** - Exa returns web pages; parse text for structured fields\n3. **Over-broad queries** - Add location, industry, or role specifics for better results\n4. **Ignoring rate limits** - Batch requests and implement backoff for large-scale collection\n5. **Missing domain filters** - Use `include_domains=[\"linkedin.com\"]` for profile-only results"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "exa-rag",
+      "parsed": {
+        "name": "exa-rag",
+        "description": "Build RAG pipelines with Exa.ai for real-time web retrieval. Use when building retrieval-augmented generation, integrating Exa with LangChain, LlamaIndex, Vercel AI SDK, or implementing AI agents with web search capabilities. Triggers on: RAG pipeline, retrieval augmented generation, Exa LangChain, Exa LlamaIndex, ExaSearchRetriever, ExaSearchResults, Exa MCP, Exa tool calling, Claude tool use, AI agent web search, grounded generation, citation generation, fact checking, hallucination detection, OpenAI compatibility, chat completions.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Exa RAG Integration\n\n## Quick Reference\n\n| Topic | When to Use | Reference |\n|-------|-------------|-----------|\n| **LangChain** | Building RAG chains with LangChain | [langchain.md](references/langchain.md) |\n| **LlamaIndex** | Using Exa as a LlamaIndex data source | [llamaindex.md](references/llamaindex.md) |\n| **Vercel AI SDK** | Adding web search to Next.js AI apps | [vercel-ai.md](references/vercel-ai.md) |\n| **MCP & Tools** | Claude MCP server, OpenAI tools, function calling | [mcp-tools.md](references/mcp-tools.md) |\n\n## Essential Patterns\n\n### LangChain Retriever\n\n```python\nfrom langchain_exa import ExaSearchRetriever\n\nretriever = ExaSearchRetriever(\n    exa_api_key=\"your-key\",\n    k=5,\n    highlights=True\n)\n\ndocs = retriever.invoke(\"latest AI research papers\")\n```\n\n### LlamaIndex Reader\n\n```python\nfrom llama_index.readers.web import ExaReader\n\nreader = ExaReader(api_key=\"your-key\")\ndocuments = reader.load_data(\n    query=\"machine learning best practices\",\n    num_results=10\n)\n```\n\n### Vercel AI SDK Tool\n\n```typescript\nimport { exa } from \"@agentic/exa\";\nimport { createOpenAI } from \"@ai-sdk/openai\";\nimport { generateText } from \"ai\";\n\nconst result = await generateText({\n  model: openai(\"gpt-4\"),\n  tools: { search: exa.searchAndContents },\n  prompt: \"Search for the latest TypeScript features\",\n});\n```\n\n### OpenAI-Compatible Endpoint\n\n```python\nfrom openai import OpenAI\n\nclient = OpenAI(\n    base_url=\"https://api.exa.ai/v1\",\n    api_key=\"your-exa-key\"\n)\n\nresponse = client.chat.completions.create(\n    model=\"exa\",\n    messages=[{\"role\": \"user\", \"content\": \"What are the latest AI trends?\"}]\n)\n```\n\n## Integration Selection\n\n| Framework | Best For | Key Feature |\n|-----------|----------|-------------|\n| **LangChain** | Complex chains, agents | ExaSearchRetriever, tool integration |\n| **LlamaIndex** | Document indexing, Q&A | ExaReader, query engines |\n| **Vercel AI SDK** | Next.js apps, streaming | Tool definitions, edge-ready |\n| **OpenAI Compat** | Drop-in replacement | Minimal code changes |\n| **Claude MCP** | Claude Desktop, Claude Code | Native tool calling |\n\n## Common Mistakes\n\n1. **Not using highlights for RAG** - Full text wastes context; use `highlights=True` for relevant snippets\n2. **Missing source attribution** - Always include `result.url` in citations for grounded responses\n3. **Ignoring summaries** - `summary=True` provides concise context without full page overhead\n4. **Over-fetching results** - Start with 3-5 results; more isn't always better for RAG quality\n5. **Not filtering domains** - Use `include_domains` to limit to authoritative sources\n6. **Skipping date filters** - For current events, always add `start_published_date` to avoid stale info\n7. **Forgetting async patterns** - Use async retrievers in production for better throughput"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "exa-research",
+      "parsed": {
+        "name": "exa-research",
+        "description": "Exa.ai deep research and answer generation with citations. Use when building research automation, implementing Answer API for Q&A with sources, creating research reports, or using deep search with summaries. Triggers on: Exa Answer, answer endpoint, exa.answer, deep search, research API, Exa Research, async research, research report, citation extraction, summarization with sources, fact verification, streaming answers, research tasks.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Exa Research & Answer API\n\n## Quick Reference\n\n| Topic | When to Use | Reference |\n|-------|-------------|-----------|\n| **Answer API** | Q&A with citations, grounded responses | [answer-api.md](references/answer-api.md) |\n| **Deep Search** | Smart query expansion, high-quality summaries | [deep-search.md](references/deep-search.md) |\n| **Citations** | Source attribution, verification | [citations.md](references/citations.md) |\n\n## Essential Patterns\n\n### Answer API (Python)\n\n```python\nfrom exa_py import Exa\n\nexa = Exa()\n\nresponse = exa.answer(\n    \"What are the key features of Python 3.12?\",\n    text=True\n)\n\nprint(response.answer)\nfor citation in response.citations:\n    print(f\"Source: {citation.url}\")\n```\n\n### Streaming Answers\n\n```python\nstream = exa.answer(\n    \"Explain the benefits of microservices architecture\",\n    stream=True\n)\n\nfor chunk in stream:\n    print(chunk.text, end=\"\", flush=True)\n\n# Access citations after streaming\nprint(\"\\nSources:\", stream.citations)\n```\n\n### Deep Search with Summaries\n\n```python\nresults = exa.search_and_contents(\n    \"latest developments in quantum computing\",\n    type=\"neural\",\n    num_results=10,\n    summary=True,\n    use_autoprompt=True  # Smart query expansion\n)\n\nfor result in results.results:\n    print(f\"{result.title}\")\n    print(f\"Summary: {result.summary}\")\n```\n\n## When to Use\n\n| Feature | Use Case | Output |\n|---------|----------|--------|\n| **Answer API** | Direct Q&A needing citations | Answer + source URLs |\n| **Deep Search** | Query expansion + summaries | Enhanced search results |\n| **Exa Research** | Long-form async reports | Structured JSON/Markdown |\n\n## Common Mistakes\n\n1. **Not using streaming for long answers** - Use `stream=True` for better UX on complex questions\n2. **Ignoring citations** - Always include `response.citations` for verifiable responses\n3. **Missing `text=True`** - Answer API needs content access; include `text=True`\n4. **Over-complex queries** - Answer API works best with clear, focused questions\n5. **Not validating citations** - Check `citation.url` exists before displaying to users"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "exa-search",
+      "parsed": {
+        "name": "exa-search",
+        "description": "Exa.ai search API integration for neural and keyword web search with content retrieval. Use when implementing web search features, integrating Exa SDK (exa_py, exa-js), or retrieving web content. Triggers on: Exa, exa_py, exa-js, neural search, web search API, search_and_contents, searchAndContents, find_similar, findSimilar, domain filtering, date filtering, text extraction, page summaries, highlights, search auto mode, fast search, search categories, livecrawl, excluding domains, include text, exclude text, EXA_API_KEY.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Exa Search Integration\n\n## Quick Reference\n\n| Topic | When to Use | Reference |\n|-------|-------------|-----------|\n| **Search Modes** | Choosing between auto, neural, and keyword search | [search-modes.md](references/search-modes.md) |\n| **Filters** | Domain, date, text, and category filtering | [filters.md](references/filters.md) |\n| **Contents** | Text extraction, highlights, summaries, livecrawl | [contents.md](references/contents.md) |\n| **SDK Patterns** | Python (exa_py) and TypeScript (exa-js) usage | [sdk-patterns.md](references/sdk-patterns.md) |\n\n## Essential Patterns\n\n### Basic Search (Python)\n\n```python\nfrom exa_py import Exa\n\nexa = Exa(api_key=\"your-api-key\")  # or set EXA_API_KEY env var\n\nresults = exa.search_and_contents(\n    \"latest developments in quantum computing\",\n    type=\"auto\",\n    num_results=10,\n    text=True,\n    highlights=True\n)\n\nfor result in results.results:\n    print(f\"{result.title}: {result.url}\")\n    print(result.text[:500])\n```\n\n### Basic Search (TypeScript)\n\n```typescript\nimport Exa from \"exa-js\";\n\nconst exa = new Exa(process.env.EXA_API_KEY);\n\nconst results = await exa.searchAndContents(\n  \"latest developments in quantum computing\",\n  {\n    type: \"auto\",\n    numResults: 10,\n    text: true,\n    highlights: true,\n  }\n);\n\nresults.results.forEach((result) => {\n  console.log(`${result.title}: ${result.url}`);\n});\n```\n\n### Search with Filters\n\n```python\nresults = exa.search_and_contents(\n    \"AI startup funding rounds\",\n    type=\"neural\",\n    num_results=10,\n    include_domains=[\"techcrunch.com\", \"venturebeat.com\"],\n    start_published_date=\"2024-01-01\",\n    text={\"max_characters\": 2000},\n    summary=True\n)\n```\n\n### Find Similar Links\n\n```python\nsimilar = exa.find_similar_and_contents(\n    \"https://example.com/interesting-article\",\n    num_results=10,\n    exclude_source_domain=True,\n    text=True\n)\n```\n\n## Search Mode Selection\n\n| Mode | When to Use | Notes |\n|------|-------------|-------|\n| `auto` | Default for most queries | Exa optimizes between neural/keyword automatically |\n| `neural` | Natural language, conceptual queries | Best for \"what is...\", \"how to...\", topic exploration |\n| `keyword` | Exact matches, technical terms, names | Best for specific product names, error codes, proper nouns |\n\n## Common Mistakes\n\n1. **Using `keyword` for conceptual queries** - Neural search understands intent better; use `auto` or `neural` for natural language questions\n2. **Not setting `text=True`** - Search returns URLs only by default; explicitly request content with `text=True`\n3. **Ignoring `highlights`** - Use `highlights=True` for relevant snippets without downloading full page text\n4. **Missing API key** - Set `EXA_API_KEY` environment variable or pass explicitly to constructor\n5. **Over-filtering initially** - Start with broad searches, then add domain/date filters to refine\n6. **Not using `summary`** - For RAG applications, `summary=True` provides concise context without full page text\n7. **Expecting scores in auto mode** - Relevance scores are only returned with `type=\"neural\"`; auto mode doesn't include them"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "nestjs-best-practices",
+      "parsed": {
+        "name": "nestjs-best-practices",
+        "description": "NestJS 11+ best practices for enterprise Node.js applications with TypeScript. Use when writing, reviewing, or refactoring NestJS controllers, services, modules, or APIs. Triggers on: NestJS modules, controllers, providers, dependency injection, @Injectable, @Controller, @Module, middleware, guards, interceptors, pipes, exception filters, ValidationPipe, class-validator, class-transformer, DTOs, JWT authentication, Passport strategies, @nestjs/passport, TypeORM entities, Prisma client, Drizzle ORM, repository pattern, circular dependencies, forwardRef, @nestjs/swagger, OpenAPI decorators, GraphQL resolvers, @nestjs/graphql, microservices, TCP transport, Redis transport, NATS, Kafka, NestJS 11 breaking changes, Express v5 migration, custom decorators, ConfigService, @nestjs/config, health checks, or NestJS testing patterns.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# NestJS 11 Best Practices\n\n## Quick Reference\n\n| Topic | When to Use | Reference |\n|-------|-------------|-----------|\n| **Core Architecture** | Modules, Providers, DI, forwardRef, custom decorators | [core-architecture.md](references/core-architecture.md) |\n| **Request Lifecycle** | Middleware, Guards, Interceptors, Pipes, Filters | [request-lifecycle.md](references/request-lifecycle.md) |\n| **Validation & Pipes** | DTOs, class-validator, ValidationPipe, transforms | [validation-pipes.md](references/validation-pipes.md) |\n| **Authentication** | JWT, Passport, Guards, Local/OAuth strategies, RBAC | [authentication.md](references/authentication.md) |\n| **Database** | TypeORM, Prisma, Drizzle ORM, repository patterns | [database-integration.md](references/database-integration.md) |\n| **Testing** | Unit tests, E2E tests, mocking providers | [testing.md](references/testing.md) |\n| **OpenAPI & GraphQL** | Swagger decorators, resolvers, subscriptions | [openapi-graphql.md](references/openapi-graphql.md) |\n| **Microservices** | TCP, Redis, NATS, Kafka patterns | [microservices.md](references/microservices.md) |\n\n## Essential Patterns\n\n### Module with Providers\n\n```typescript\n@Module({\n  imports: [DatabaseModule],\n  controllers: [UsersController],\n  providers: [UsersService],\n  exports: [UsersService], // Export for other modules\n})\nexport class UsersModule {}\n```\n\n### Controller with Validation\n\n```typescript\n@Controller('users')\nexport class UsersController {\n  constructor(private readonly usersService: UsersService) {}\n\n  @Post()\n  create(@Body() createUserDto: CreateUserDto) {\n    return this.usersService.create(createUserDto);\n  }\n\n  @Get(':id')\n  findOne(@Param('id', ParseIntPipe) id: number) {\n    return this.usersService.findOne(id);\n  }\n}\n```\n\n### DTO with Validation\n\n```typescript\nimport { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';\n\nexport class CreateUserDto {\n  @IsEmail()\n  email: string;\n\n  @IsString()\n  @MinLength(8)\n  password: string;\n\n  @IsOptional()\n  @IsString()\n  name?: string;\n}\n```\n\n### Exception Filter\n\n```typescript\n@Catch(HttpException)\nexport class HttpExceptionFilter implements ExceptionFilter {\n  catch(exception: HttpException, host: ArgumentsHost) {\n    const ctx = host.switchToHttp();\n    const response = ctx.getResponse<Response>();\n    const status = exception.getStatus();\n\n    response.status(status).json({\n      statusCode: status,\n      message: exception.message,\n      timestamp: new Date().toISOString(),\n    });\n  }\n}\n```\n\n### Guard with JWT\n\n```typescript\n@Injectable()\nexport class JwtAuthGuard extends AuthGuard('jwt') {\n  canActivate(context: ExecutionContext) {\n    return super.canActivate(context);\n  }\n}\n```\n\n## NestJS 11 Breaking Changes\n\n- **Express v5**: Wildcards must be named (e.g., `*splat`), optional params use braces `/:file{.:ext}`\n- **Node.js 20+**: Minimum required version\n- **Fastify v5**: Updated adapter for Fastify users\n- **Dynamic Modules**: Same module with identical config imported multiple times = separate instances\n\n## Common Mistakes\n\n1. **Not using `forwardRef()` for circular deps** - Causes \"cannot resolve dependency\" errors; wrap in `forwardRef(() => ModuleName)`\n2. **Throwing plain errors instead of HttpException** - Loses status codes, breaks exception filters; use `throw new BadRequestException('message')`\n3. **Missing `@Injectable()` decorator** - Provider won't be injectable; always decorate services\n4. **Global ValidationPipe without `whitelist: true`** - Allows unexpected properties; set `whitelist: true, forbidNonWhitelisted: true`\n5. **Importing modules instead of exporting providers** - Use `exports` array to share providers across modules\n6. **Async config without `ConfigModule.forRoot()`** - ConfigService undefined; import ConfigModule in AppModule\n7. **Testing without `overrideProvider()`** - Uses real services in unit tests; mock dependencies with `overrideProvider(Service).useValue(mock)`\n8. **E2E tests sharing database state** - No isolation between tests; use transactions or truncate tables in beforeEach"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "redis",
+          "name": "redis",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "svelte5-best-practices",
+      "parsed": {
+        "name": "svelte5-best-practices",
+        "description": "Svelte 5 runes, snippets, SvelteKit patterns, and modern best practices for TypeScript and component development. Use when writing, reviewing, or refactoring Svelte 5 components and SvelteKit applications. Triggers on: Svelte components, runes ($state, $derived, $effect, $props, $bindable, $inspect), snippets ({#snippet}, {@render}), event handling, SvelteKit data loading, form actions, Svelte 4 to Svelte 5 migration, store to rune migration, slots to snippets migration, TypeScript props typing, generic components, SSR state isolation, performance optimization, or component testing.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Svelte 5 Best Practices\n\n## Quick Reference\n\n| Topic | When to Use | Reference |\n|-------|-------------|-----------|\n| **Runes** | $state, $derived, $effect, $props, $bindable, $inspect | [runes.md](references/runes.md) |\n| **Snippets** | Replacing slots, {#snippet}, {@render} | [snippets.md](references/snippets.md) |\n| **Events** | onclick handlers, callback props, context API | [events.md](references/events.md) |\n| **TypeScript** | Props typing, generic components | [typescript.md](references/typescript.md) |\n| **Migration** | Svelte 4 to 5, stores to runes | [migration.md](references/migration.md) |\n| **SvelteKit** | Load functions, form actions, SSR, page typing | [sveltekit.md](references/sveltekit.md) |\n| **Performance** | Universal reactivity, avoiding over-reactivity, streaming | [performance.md](references/performance.md) |\n\n## Essential Patterns\n\n### Reactive State\n\n```svelte\n<script>\n  let count = $state(0);           // Reactive state\n  let doubled = $derived(count * 2); // Computed value\n</script>\n```\n\n### Component Props\n\n```svelte\n<script>\n  let { name, count = 0 } = $props();\n  let { value = $bindable() } = $props(); // Two-way binding\n</script>\n```\n\n### Snippets (replacing slots)\n\n```svelte\n<script>\n  let { children, header } = $props();\n</script>\n\n{@render header?.()}\n{@render children()}\n```\n\n### Event Handlers\n\n```svelte\n<!-- Svelte 5: use onclick, not on:click -->\n<button onclick={() => count++}>Click</button>\n```\n\n### Callback Props (replacing createEventDispatcher)\n\n```svelte\n<script>\n  let { onclick } = $props();\n</script>\n\n<button onclick={() => onclick?.({ data })}>Click</button>\n```\n\n## Common Mistakes\n\n1. **Using `let` without `$state`** - Variables are not reactive without `$state()`\n2. **Using `$effect` for derived values** - Use `$derived` instead\n3. **Using `on:click` syntax** - Use `onclick` in Svelte 5\n4. **Using `createEventDispatcher`** - Use callback props instead\n5. **Using `<slot>`** - Use snippets with `{@render}`\n6. **Forgetting `$bindable()`** - Required for `bind:` to work\n7. **Setting module-level state in SSR** - Causes cross-request leaks\n8. **Sequential awaits in load functions** - Use `Promise.all` for parallel requests"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "vue-best-practices",
+      "parsed": {
+        "name": "vue-best-practices",
+        "description": "Vue 3 and Vue.js best practices for TypeScript, vue-tsc, Volar, and component patterns. Use when writing, reviewing, or refactoring Vue 3 components with TypeScript, configuring Volar/vueCompilerOptions, extracting component types, working with defineModel/withDefaults, setting up Pinia store tests, or debugging Vue tooling issues. Triggers on Vue components, props extraction, wrapper components, template type checking, strictTemplates, vueCompilerOptions, Volar 3, CSS modules, fallthrough attributes, defineModel, withDefaults, deep watch, vue-router typed params, Pinia mocking, HMR SSR, moduleResolution bundler, useTemplateRef, onWatcherCleanup, useId, generic components, reactive props destructure.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Vue 3 Best Practices\n\n## Quick Reference\n\n| Topic | When to Use | Reference |\n|-------|-------------|-----------|\n| **TypeScript** | Props extraction, generic components, useTemplateRef, JSDoc, reactive props destructure | [typescript.md](references/typescript.md) |\n| **Volar** | IDE config, strictTemplates, CSS modules, directive comments, Volar 3.0 migration | [volar.md](references/volar.md) |\n| **Components** | defineModel, deep watch, onWatcherCleanup, useId, deferred teleport | [components.md](references/components.md) |\n| **Tooling** | moduleResolution, HMR SSR, duplicate plugin detection | [tooling.md](references/tooling.md) |\n| **Testing** | Pinia store mocking, setup stores, Vue Router typed params | [testing.md](references/testing.md) |\n\n## Essential Patterns\n\n### Extract Component Props\n\n```typescript\nimport type { ComponentProps } from 'vue-component-type-helpers'\nimport MyButton from './MyButton.vue'\n\ntype Props = ComponentProps<typeof MyButton>\n```\n\n### Reactive Props Destructure (Vue 3.5+)\n\n```vue\n<script setup lang=\"ts\">\n// Destructured props are reactive - preferred in Vue 3.5+\nconst { name, count = 0 } = defineProps<{ name: string; count?: number }>()\n</script>\n```\n\n### useTemplateRef (Vue 3.5+)\n\n```vue\n<script setup lang=\"ts\">\nimport { useTemplateRef, onMounted } from 'vue'\n\nconst inputRef = useTemplateRef('input')  // Auto-typed\nonMounted(() => inputRef.value?.focus())\n</script>\n<template><input ref=\"input\" /></template>\n```\n\n### onWatcherCleanup (Vue 3.5+)\n\n```typescript\nimport { watch, onWatcherCleanup } from 'vue'\n\nwatch(query, async (q) => {\n  const controller = new AbortController()\n  onWatcherCleanup(() => controller.abort())\n  await fetch(`/api?q=${q}`, { signal: controller.signal })\n})\n```\n\n### defineModel with Required\n\n```typescript\n// Returns Ref<Item> instead of Ref<Item | undefined>\nconst model = defineModel<Item>({ required: true })\n```\n\n### Deep Watch with Numeric Depth\n\n```typescript\n// Vue 3.5+ - watch array mutations without full traversal\nwatch(items, handler, { deep: 1 })\n```\n\n### Pinia Store Test Setup\n\n```typescript\nimport { createTestingPinia } from '@pinia/testing'\nimport { vi } from 'vitest'\n\nmount(Component, {\n  global: {\n    plugins: [createTestingPinia({ createSpy: vi.fn })]\n  }\n})\n```\n\n## Common Mistakes\n\n1. **Using `InstanceType<typeof Component>['$props']`** - Use `ComponentProps` instead\n2. **Missing `createSpy` in createTestingPinia** - Required in @pinia/testing 1.0+\n3. **Using `withDefaults` with union types** - Use Reactive Props Destructure\n4. **`strictTemplates` in wrong tsconfig** - Add to `tsconfig.app.json`, not root\n5. **ts_ls with Volar 3.0** - Use vtsls instead (Neovim)\n6. **`deep: true` on large structures** - Use numeric depth for performance\n7. **Watching destructured props directly** - Wrap in getter: `watch(() => count, ...)`\n8. **Random IDs in SSR** - Use `useId()` for hydration-safe IDs"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    }
+  ]
+}

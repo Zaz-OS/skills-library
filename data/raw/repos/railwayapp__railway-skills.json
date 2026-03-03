@@ -1,0 +1,89 @@
+{
+  "source": "railwayapp/railway-skills",
+  "repoUrl": "https://github.com/railwayapp/railway-skills",
+  "skills": [
+    {
+      "skillId": "use-railway",
+      "parsed": {
+        "name": "use-railway",
+        "description": "Operate Railway infrastructure: create projects, provision services and databases, deploy code, configure environments and variables, manage domains, troubleshoot failures, check status and metrics, and query Railway docs. Use this skill whenever the user mentions Railway, deployments, services, environments, build failures, or infrastructure operations, even if they don't say \"Railway\" explicitly.\n",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "allowed-tools": "Bash(railway:*), Bash(which:*), Bash(command:*), Bash(npm:*), Bash(npx:*), Bash(curl:*)"
+        },
+        "body": "# Use Railway\n\n## Railway resource model\n\nRailway organizes infrastructure in a hierarchy:\n\n- **Workspace** is the billing and team scope. A user belongs to one or more workspaces.\n- **Project** is a collection of services under one workspace. It maps to one deployable unit of work.\n- **Environment** is an isolated configuration plane inside a project (for example, `production`, `staging`). Each environment has its own variables, config, and deployment history.\n- **Service** is a single deployable unit inside a project. It can be an app from a repo, a Docker image, or a managed database.\n- **Deployment** is a point-in-time release of a service in an environment. It has build logs, runtime logs, and a status lifecycle.\n\nMost CLI commands operate on the linked project/environment/service context. Use `railway status --json` to see the context, and `--project`, `--environment`, `--service` flags to override.\n\n## Preflight\n\nBefore any mutation, verify context:\n\n```bash\ncommand -v railway                # CLI installed\nrailway whoami --json             # authenticated\nrailway --version                 # check CLI version\nrailway status --json             # linked project/environment/service\n```\n\nIf the CLI is missing, guide the user to install it. \n\n```bash\nbash <(curl -fsSL cli.new) # Shell script (macOS, Linux, Windows via WSL)\nbrew install railway # Homebrew (macOS)\nnpm i -g @railway/cli # npm (macOS, Linux, Windows). Requires Node.js version 16 or higher.\n```\n\nIf not authenticated, run `railway login`. If not linked, run `railway link --project <id-or-name>`.\n\nIf a command is not recognized (for example, `railway environment edit`), the CLI may be outdated. Upgrade with:\n\n```bash\nrailway upgrade\n```\n\n## Common quick operations\n\nThese are frequent enough to handle without loading a reference:\n\n```bash\nrailway status --json                                    # current context\nrailway whoami --json                                    # auth and workspace info\nrailway project list --json                              # list projects\nrailway service status --all --json                      # all services in current context\nrailway variable list --service <svc> --json             # list variables\nrailway variable set KEY=value --service <svc>           # set a variable\nrailway logs --service <svc> --lines 200 --json          # recent logs\nrailway up --detach -m \"<summary>\"                       # deploy current directory\n```\n\n## Routing\n\nFor anything beyond quick operations, load the reference that matches the user's intent. Load only what you need, one reference is usually enough, two at most.\n\n| Intent | Reference | Use for |\n|---|---|---|\n| Create or connect resources | [setup.md](references/setup.md) | Projects, services, databases, templates, workspaces |\n| Ship code or manage releases | [deploy.md](references/deploy.md) | Deploy, redeploy, restart, build config, monorepo, Dockerfile |\n| Change configuration | [configure.md](references/configure.md) | Environments, variables, config patches, domains, networking |\n| Check health or debug failures | [operate.md](references/operate.md) | Status, logs, metrics, build/runtime triage, recovery |\n| Request from API, docs, or community | [request.md](references/request.md) | Railway GraphQL API queries/mutations, metrics queries, Central Station, official docs |\n\nIf the request spans two areas (for example, \"deploy and then check if it's healthy\"), load both references and compose one response.\n\n## Execution rules\n\n1. Prefer Railway CLI. Fall back to `scripts/railway-api.sh` for operations the CLI doesn't expose.\n2. Use `--json` output where available for reliable parsing.\n3. Resolve context before mutation. Know which project, environment, and service you're acting on.\n4. For destructive actions (delete service, remove deployment, drop database), confirm intent and state impact before executing.\n5. After mutations, verify the result with a read-back command.\n\n## Composition patterns\n\nMulti-step workflows follow natural chains:\n\n- **First deploy**: setup (create project + service), configure (set variables and source), deploy, operate (verify healthy)\n- **Fix a failure**: operate (triage logs), configure (fix config/variables), deploy (redeploy), operate (verify recovery)\n- **Add a domain**: configure (add domain + set port), operate (verify DNS and service health)\n- **Docs to action**: request (fetch docs answer), route to the relevant operational reference\n\nWhen composing, return one unified response covering all steps. Don't ask the user to invoke each step separately.\n\n## Setup decision flow\n\nWhen the user wants to create or deploy something, determine the right action from current context:\n\n1. Run `railway status --json` in the current directory.\n2. **If linked**: add a service to the existing project (`railway add --service <name>`). Do not create a new project unless the user explicitly says \"new project\" or \"separate project\".\n3. **If not linked**: check the parent directory (`cd .. && railway status --json`).\n   - **Parent linked**: this is likely a monorepo sub-app. Add a service and set `rootDirectory` to the sub-app path.\n   - **Parent not linked**: run `railway list --json` and look for a project matching the directory name.\n     - **Match found**: link to it (`railway link --project <name>`).\n     - **No match**: create a new project (`railway init --name <name>`).\n4. When multiple workspaces exist, match by name from `railway whoami --json`.\n\n**Naming heuristic**: app names like \"flappy-bird\" or \"my-api\" are service names, not project names. Use the directory or repo name for the project.\n\n## Response format\n\nFor all operational responses, return:\n1. What was done (action and scope).\n2. The result (IDs, status, key output).\n3. What to do next (or confirmation that the task is complete).\n\nKeep output concise. Include command evidence only when it helps the user understand what happened."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "brew",
+          "org": "homebrew",
+          "name": "brew",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "docker",
+          "name": "docker",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "railway",
+          "name": "railway",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "brew",
+          "org": "railway",
+          "name": "railway",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "brew",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "deployment",
+      "parsed": {
+        "name": "deployment",
+        "description": "",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": ""
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    }
+  ]
+}

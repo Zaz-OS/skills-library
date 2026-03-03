@@ -1,0 +1,69 @@
+{
+  "source": "askyourpdf/ai-pdf-filler",
+  "repoUrl": "https://github.com/askyourpdf/ai-pdf-filler",
+  "skills": [
+    {
+      "skillId": "askyourpdf__ai-pdf-filler",
+      "parsed": {
+        "name": "ai-pdf-filler-cli",
+        "description": "Use simplicity-cli to autofill PDF forms from local files or URLs, monitor async task execution, and download filled PDFs. Use when a user asks to fill forms with AI, run form autofill from context/source documents, check task status, wait for completion, or debug CLI workflow/auth behavior.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# AI PDF Filler CLI\n\nExecute PDF autofill workflows using the installed `simplicity-cli` command.\nPrefer direct command execution over manual API calls when this skill applies.\n\n## Core Workflow\n\n1. Confirm `simplicity-cli` is installed by running `simplicity-cli --help`.\n2. If missing, install the CLI:\n- Preferred: `uv tool install ai-pdf-filler`\n- Fallback: `python3 -m pip install ai-pdf-filler`\n- Re-check with `simplicity-cli --help`.\n3. Ensure authentication is available (create an account and get API key at `https://simplicity.ai`):\n- Preferred: run `simplicity-cli login` and paste key in hidden prompt.\n- Non-interactive: `printf '%s' \"$SIMPLICITY_AI_API_KEY\" | simplicity-cli login --api-key-stdin`.\n- Or set env var: `SIMPLICITY_AI_API_KEY`.\n4. Choose the autofill path:\n- New PDF form: use `simplicity-cli new`.\n- Existing form id: use `simplicity-cli existing FORM_ID`.\n5. Wait for completion unless the user explicitly requests async behavior.\n6. Return the resulting task id, form/document id, and downloaded output path.\n\n## Command Patterns\n\n### Save API key\n\n```bash\nsimplicity-cli login\n```\n\n```bash\nprintf '%s' \"$SIMPLICITY_AI_API_KEY\" | simplicity-cli login --api-key-stdin\n```\n\n### New form from file with context\n\n```bash\nsimplicity-cli new \\\n  --form-file ./form.pdf \\\n  --context \"name: John Doe; dob: 1990-07-07\"\n```\n\n### New form from file with source documents\n\n```bash\nsimplicity-cli new \\\n  --form-file ./form.pdf \\\n  --source-file ./w2.pdf \\\n  --source-file ./id.pdf\n```\n\n### New form from URL\n\n```bash\nsimplicity-cli new \\\n  --form-url \"https://example.com/form.pdf\" \\\n  --source-url \"https://example.com/source.pdf\"\n```\n\n### Existing form id\n\n```bash\nsimplicity-cli existing FORM_ID --context \"first_name: John; last_name: Smoke; dob: 1990-07-07\"\n```\n\n`--context` is the source data used to fill form fields.\nUse `--instructions` only for optional autofill behavior guidance.\n\n### Task monitoring\n\n```bash\nsimplicity-cli status TASK_ID\nsimplicity-cli wait TASK_ID --poll-interval-seconds 2 --max-wait-seconds 1800\n```\n\n## Rules and Validation\n\n- Enforce exactly one of `--form-file` or `--form-url` for `new`.\n- Require at least one source (`--source-file`/`--source-url`) or context (`--context`/`--context-file`) for `new`.\n- Treat `--context` and `--context-file` as mutually exclusive.\n- Treat `--instructions` and `--instructions-file` as mutually exclusive.\n- Reject `--output` when `--no-download` is set.\n\n## Execution Preferences\n\n- Use human output mode for interactive runs.\n- Use `--json` for automation or when machine-parseable output is requested.\n- Use `--no-wait` only when user wants async handoff; otherwise wait to completion.\n- Use `--output` when user requests an explicit file path.\n\n## Failure Handling\n\n- If `simplicity-cli` is not found, install `ai-pdf-filler` first, then retry.\n- If auth is missing, instruct running `simplicity-cli login` (or `--api-key-stdin`) or setting `SIMPLICITY_AI_API_KEY`.\n- If a task fails, report task id and failure message; do not hide API error details.\n- If download fails after successful task completion, still return task/form identifiers.\n- For scripting contexts, rerun with `--json` and surface `error.code` and `error.message`.\n\n## References\n\nUse [references/commands.md](references/commands.md) for concise templates and option reminders."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "pip",
+          "name": "pip",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "pip",
+          "name": "pipx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "ai-pdf-filler",
+          "name": "ai-pdf-filler",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "ai-pdf-filler-cli",
+      "parsed": {
+        "name": "ai-pdf-filler-cli",
+        "description": "",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": ""
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    }
+  ]
+}

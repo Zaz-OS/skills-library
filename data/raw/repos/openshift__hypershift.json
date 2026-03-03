@@ -1,0 +1,296 @@
+{
+  "source": "openshift/hypershift",
+  "repoUrl": "https://github.com/openshift/hypershift",
+  "skills": [
+    {
+      "skillId": "code-formatting",
+      "parsed": {
+        "name": "Code Formatting",
+        "description": "MANDATORY: When writing Go tests, you MUST use 'When...it should...' format for ALL test names. When writing any Go code, you MUST remind user to run 'make lint-fix' and 'make verify'. These are non-negotiable HyperShift requirements.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Code Quality, Formatting and Conventions\n\n## Code Formatting and Linting\n\n- **Use `make lint-fix`** after writing Go code to automatically fix most linting issues\n- **Run `make verify`** to verify both linting and tests pass before committing\n- **For markdown files**, use `make verify-codespell` to catch spelling errors\n\n## Test Conventions - MANDATORY\n\n**NON-NEGOTIABLE RULE**: Every Go test name MUST follow this exact format:\n```go\nname: \"When <condition>, it should <expected behavior>\"\n```\n\nExamples:\n```go\nname: \"When NodePool has valid image ID, it should create Azure machine template\"\nname: \"When subnet ID is invalid, it should return error\"\nname: \"When encryption is enabled, it should configure disk encryption set\"\n```\n\n**NEVER use generic names like:**\n- ❌ \"nominal case without managed identity\"\n- ❌ \"basic Azure machine template with ImageID\"\n- ❌ \"error case - invalid subnet ID\"\n\n**ALWAYS use \"When...it should...\" format:**\n- ✅ \"When NodePool has no managed identity, it should create template without identity\"\n- ✅ \"When NodePool has ImageID, it should create basic Azure machine template\"\n- ✅ \"When subnet ID is invalid, it should return error with subnet parse message\"\n\n- **Always include unit tests** when creating new functions or modifying existing ones\n\n## Quick Checklist\n\nBefore committing:\n- [ ] Ran `make lint-fix` on Go code\n- [ ] Ran `make verify` (passes)\n- [ ] Tests use \"When...it should...\" naming format\n- [ ] New functions have unit tests\n- [ ] Markdown checked with `make verify-codespell`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "debug-cluster",
+      "parsed": {
+        "name": "Debug Cluster",
+        "description": "Provides systematic debugging approaches for HyperShift hosted-cluster issues. Auto-applies when debugging cluster problems, investigating stuck deletions, or troubleshooting control plane issues.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# HyperShift Cluster Debugging Guide\n\nThis skill provides structured debugging workflows for common HyperShift hosted-cluster issues.\n\n## When to Use This Skill\n\nThis skill automatically applies when:\n- Investigating hosted-cluster deletion issues\n- Debugging stuck resources or finalizers\n- Troubleshooting control plane problems\n- Analyzing NodePool lifecycle issues\n- Reviewing operator logs for cluster problems\n\n## Provider-Specific Troubleshooting\n\nFor provider-specific issues and detailed troubleshooting steps, refer to these subskills:\n\n- **AWS**: [aws-troubleshooting.md](./aws-troubleshooting.md) - AWS-specific CAPI issues, infrastructure cleanup, and reinstallation\n\nThe main skill below provides provider-agnostic debugging workflows. When you encounter provider-specific issues, consult the relevant subskill for detailed resolution steps.\n\n## Key Components to Understand\n\n### Resource Hierarchy\n- **HostedCluster (HC)**: Main cluster resource in the management cluster\n- **HostedControlPlane (HCP)**: Control plane representation of the HC in HCP namespace\n- **NodePool (NP)**: Worker node pool resources\n- **CAPI Resources**: Cluster API resources (Cluster, Machine, etc.) in HCP namespace\n\n### Operators\n- **hypershift-operator (HO)**: Manages HC and NP resources\n- **control-plane-operator (CPO)**: Manages HCP and control plane components\n- **hosted-cluster-config-operator (HCCO)**: Manages configuration and in-cluster resources for hosted clusters\n\n### Namespaces\n- **HC namespace**: Where HostedCluster and NodePool resources live (e.g., `default`, `clusters`)\n- **HCP namespace**: Where control plane pods and CAPI resources run (e.g., `clusters-<cluster-name>`)\n\n## Common Debugging Scenarios\n\n### Scenario: Hosted Cluster Stuck Deleting\n\nWhen a hosted-cluster is stuck in deleting state, follow this systematic debugging process:\n\n#### 1. Node Pools Deletion\nCheck and verify NodePool deletion is progressing:\n\n```bash\n# Check NodePool resources in HC namespace\nkubectl get nodepool -n <hc-namespace>\n\n# Check CAPI cluster resource status in HCP namespace\nkubectl get cluster -n <hcp-namespace> -o yaml\n\n# Check CAPI provider pod logs\nkubectl logs -n <hcp-namespace> deployment/capi-provider\n\n# Check CAPI machines status in HCP namespace\nkubectl get machines -n <hcp-namespace>\nkubectl describe machines -n <hcp-namespace>\n\n# Review HyperShift operator logs for NodePool issues\nkubectl logs -n hypershift deployment/operator --tail=100 | grep -i nodepool\nkubectl logs -n hypershift deployment/operator --tail=100 | grep -i <cluster-name>\n```\n\n**What to look for:**\n- Finalizers blocking NodePool deletion\n- CAPI machines that aren't terminating\n- Provider errors preventing machine deletion\n- HO logs showing reconciliation errors\n\n#### 2. HostedControlPlane Resource Deletion\nVerify HCP resource and pods are being cleaned up:\n\n```bash\n# Check HCP resource status\nkubectl get hostedcontrolplane -n <hcp-namespace> -o yaml\n\n# Check pods in HCP namespace\nkubectl get pods -n <hcp-namespace>\n\n# Check for stuck pods\nkubectl get pods -n <hcp-namespace> --field-selector=status.phase!=Running\n\n# Review control-plane-operator logs\nkubectl logs -n <hcp-namespace> deployment/control-plane-operator --tail=100\n```\n\n**What to look for:**\n- HCP finalizers blocking deletion\n- Pods with finalizers or in Terminating state\n- CPO logs showing errors in resource cleanup\n- PVC or other resources preventing namespace deletion\n\n#### 3. HCP Namespace Deletion\nInvestigate why the HCP namespace isn't being removed:\n\n```bash\n# Check namespace status\nkubectl get namespace <hcp-namespace> -o yaml\n\n# List all remaining resources in namespace\nkubectl api-resources --verbs=list --namespaced -o name | \\\n  xargs -n 1 kubectl get --show-kind --ignore-not-found -n <hcp-namespace>\n\n# Check for resources with finalizers\nkubectl get all -n <hcp-namespace> -o json | \\\n  jq '.items[] | select(.metadata.finalizers != null) | {kind: .kind, name: .metadata.name, finalizers: .metadata.finalizers}'\n\n# Review HO logs for namespace cleanup\nkubectl logs -n hypershift deployment/operator --tail=100 | grep -i namespace\n```\n\n**What to look for:**\n- Resources with finalizers preventing deletion\n- API resources that HO should have cleaned up\n- Webhook or admission controller errors\n- Namespace stuck in Terminating state\n\n#### 4. HostedCluster Resource Deletion\nFinal check on the HostedCluster resource itself:\n\n```bash\n# Check HostedCluster status\nkubectl get hostedcluster -n <hc-namespace> <cluster-name> -o yaml\n\n# Check HostedCluster finalizers\nkubectl get hostedcluster -n <hc-namespace> <cluster-name> -o jsonpath='{.metadata.finalizers}'\n\n# Review HO logs for HostedCluster deletion\nkubectl logs -n hypershift deployment/operator --tail=200 | grep -i \"hostedcluster.*<cluster-name>\"\n```\n\n**What to look for:**\n- Finalizers blocking HostedCluster deletion\n- HO errors in reconciliation loop\n- Dependencies that haven't been cleaned up\n- Cloud resources that failed to delete\n\n#### Quick Debugging Checklist\n\nWhen investigating cluster deletion issues:\n- [ ] Check resource status and conditions\n- [ ] Review relevant operator logs (HO, CPO)\n- [ ] Inspect finalizers on stuck resources\n- [ ] Verify CAPI resources are reconciling\n- [ ] Check for events indicating failures\n- [ ] Look for provider errors\n- [ ] Verify namespace cleanup progress\n- [ ] Check for webhook or admission errors\n\n#### Common Issues and Resolutions\n\n##### Issue: NodePool won't delete\n- **Cause**: CAPI machines stuck due to provider errors\n- **Resolution**: Check provider credentials, investigate machine deletion errors in HO logs\n\n##### Issue: Machines stuck in \"Deleting\" phase with \"WaitingForInfrastructureDeletion\"\n- **Cause**: Cluster resource deleted before machine resources, blocking CAPI controller reconciliation\n- **Root Cause**: CAPI machine controllers require the cluster resource to be \"ready\" to proceed with deletion\n- **Symptoms**:\n  - Machines show `InfrastructureReady: 1 of 2 completed`\n  - CAPI logs show cluster resource is not ready\n  - Instances still running but controller can't terminate them\n- **Resolution**: Provider-specific cleanup is required. See provider-specific troubleshooting:\n  - **AWS**: See [aws-troubleshooting.md](./aws-troubleshooting.md) for detailed resolution steps\n\n##### Issue: HCP namespace stuck in Terminating\n- **Cause**: Resources with finalizers or failing webhooks\n- **Resolution**: List all resources in namespace, remove finalizers from orphaned resources, check webhook availability\n\n##### Issue: HostedCluster stuck with finalizers\n- **Cause**: Dependencies not fully cleaned up (NodePools, HCP, cloud resources)\n- **Resolution**: Verify all dependent resources are deleted, check HO logs for reconciliation errors\n\n##### Issue: Control plane pods not terminating\n- **Cause**: PVCs or other resources with protection finalizers\n- **Resolution**: Check PVC status, review storage class finalizers, inspect CPO logs\n\n### Scenario: HyperShift CRDs Missing or Corrupted\n\nWhen HyperShift CRDs are accidentally deleted or corrupted (e.g., after using `hypershift destroy infra`), you'll need to reinstall HyperShift.\n\n**⚠️ WARNING: HyperShift reinstallation should be a last resort.** Only proceed if CRDs are genuinely missing or corrupted and cannot be recovered through other means. Reinstallation will cause downtime and may impact existing hosted-clusters.\n\n#### Symptoms:\n- Commands like `kubectl get hostedclusters` fail with: `error: the server doesn't have a resource type \"hostedclusters\"`\n- HyperShift operator logs show errors about missing CRDs\n- CRDs for HostedCluster, NodePool, or CAPI resources are missing\n\n#### Check for Missing CRDs:\n```bash\n# Check if critical HyperShift CRDs exist\nkubectl get crd hostedclusters.hypershift.openshift.io\nkubectl get crd nodepools.hypershift.openshift.io\n\n# Count HyperShift CRDs (should be ~9)\nkubectl get crd | grep hypershift | wc -l\n\n# Count CAPI CRDs (should be ~50)\nkubectl get crd | grep cluster.x-k8s.io | wc -l\n```\n\n#### Resolution: Reinstall HyperShift\n\n**🤖 AI Assistant Note:** When this scenario is encountered, Claude should guide and suggest the reinstallation steps to the user but NEVER execute the reinstallation commands itself. The user must explicitly run these commands. Provide clear instructions and explanations, but do not use the Bash tool to perform the actual reinstallation.\n\n##### Step 1: Gather Required Parameters\n```bash\n# You'll need these for reinstallation:\n# - OIDC storage provider configuration (provider-specific, see below)\n# - Provider credentials (if applicable)\n# - Any custom configuration flags used in original installation\n```\n\n**Provider-specific parameters:**\n- **AWS**: See [aws-troubleshooting.md](./aws-troubleshooting.md) for AWS-specific OIDC S3 parameters\n\n##### Step 2: Completely Uninstall HyperShift\n```bash\nhypershift install render | kubectl delete -f -\n```\n\nThis will:\n- Remove the HyperShift operator deployment\n- Delete all HyperShift CRDs (HostedCluster, NodePool, etc.)\n- Clean up RBAC resources, webhooks, and other components\n\n##### Step 3: Reinstall HyperShift\n```bash\nhypershift install \\\n  [provider-specific-flags] \\\n  --enable-defaulting-webhook true\n```\n\nAdd any other flags that were part of your original installation.\n\n**Provider-specific installation:**\n- **AWS**: See [aws-troubleshooting.md](./aws-troubleshooting.md) for AWS-specific installation example\n\n##### Step 4: Verify Installation\n```bash\n# Check operator is running\nkubectl get deploy -n hypershift\nkubectl get pods -n hypershift\n\n# Verify CRDs are installed\nkubectl get crd | grep hostedcluster\nkubectl get crd | grep nodepool\nkubectl get crd | grep cluster.x-k8s.io | wc -l\n\n# Test API accessibility\nkubectl get hostedclusters -A\n\n# Check operator logs for errors\nkubectl logs -n hypershift deployment/operator --tail=50\n\n# Verify controllers are running\nkubectl logs -n hypershift deployment/operator --tail=100 | grep \"Starting workers\"\n```\n\n**Expected Results After Reinstallation:**\n- Operator deployment: 2/2 READY\n- HostedCluster CRD: Present\n- NodePool CRD: Present\n- CAPI CRDs: ~50 installed\n- HyperShift CRDs: ~9 total\n- Controllers: HostedCluster, NodePool, and other controllers with workers started\n- Webhooks: Mutating webhook configured\n- API: `kubectl get hostedclusters -A` returns successfully (even if no clusters exist)\n\n**Important Notes:**\n- Reinstallation does NOT affect existing hosted-clusters if their resources still exist\n- If CRDs were deleted, any existing HostedCluster/NodePool resources are gone\n- You may need to recreate hosted-clusters if their definitions were lost\n- Ensure you use the same configuration flags as the original installation\n\n## General Debugging Tips\n\n### Checking Finalizers\n```bash\n# List all finalizers on a resource\nkubectl get <resource-type> <name> -n <namespace> -o jsonpath='{.metadata.finalizers}'\n\n# Remove a specific finalizer (use with caution!)\nkubectl patch <resource-type> <name> -n <namespace> -p '{\"metadata\":{\"finalizers\":null}}' --type=merge\n```\n\n### Operator Logs\n```bash\n# HyperShift operator logs with context\nkubectl logs -n hypershift deployment/operator --tail=500 --timestamps\n\n# Control plane operator logs\nkubectl logs -n <hcp-namespace> deployment/control-plane-operator --tail=500 --timestamps\n\n# Follow logs in real-time\nkubectl logs -n hypershift deployment/operator -f\n```\n\n### Resource Events\n```bash\n# Get events for a specific resource\nkubectl describe <resource-type> <name> -n <namespace>\n\n# Get all events in a namespace, sorted by time\nkubectl get events -n <namespace> --sort-by='.lastTimestamp'\n```\n\n### Conditions and Status\n```bash\n# Check resource conditions\nkubectl get <resource-type> <name> -n <namespace> -o jsonpath='{.status.conditions}' | jq .\n\n# Check specific condition\nkubectl get hostedcluster <name> -n <namespace> -o jsonpath='{.status.conditions[?(@.type==\"Available\")]}'\n```\n\n## Additional Resources\n\n- HyperShift operator code: `hypershift-operator/controllers/hostedcluster/`\n- Control plane operator code: `control-plane-operator/controllers/`\n- API definitions: `api/hypershift/v1beta1/`\n- E2E test examples: `test/e2e/`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "system",
+          "org": "jq",
+          "name": "jq",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "build-cpo-image",
+      "parsed": {
+        "name": "Build CPO Image",
+        "description": "Build and push control-plane-operator container image. Auto-applies when testing CPO changes that require deploying to a live cluster.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Build Control-Plane-Operator Image\n\nThis skill enables building and pushing custom control-plane-operator (CPO) images for testing changes in a live HyperShift environment.\n\n## When to Use This Skill\n\nThis skill automatically applies when:\n- You've made changes to code in `control-plane-operator/`\n- You need to test CPO changes against a live cluster\n- The user asks to build/push a CPO image\n- You need to iterate on CPO fixes with e2e tests\n\n## Prerequisites\n\nSource the environment file before using this skill:\n\n```bash\nsource dev/claude-env.sh\n```\n\n## Image Registry Configuration\n\nEnvironment variables from `dev/claude-env.sh`:\n\n| Variable | Description |\n|----------|-------------|\n| `CPO_IMAGE_REPO` | Container registry for CPO images |\n| `RUNTIME` | Container runtime (podman/docker) |\n\n## Building the CPO Image\n\n### Step 1: Generate a Unique Tag\n\nUse a tag that identifies the change (branch name, feature, or timestamp):\n\n```bash\n# Option 1: Use branch name\nTAG=$(git rev-parse --abbrev-ref HEAD | tr '/' '-')\n\n# Option 2: Use short commit hash\nTAG=$(git rev-parse --short HEAD)\n\n# Option 3: Use descriptive name + number for iterations\nTAG=\"feature-name-1\"\n```\n\n### Step 2: Build the Image\n\nThe CPO image uses `Dockerfile.control-plane`:\n\n```bash\n$RUNTIME build -f Dockerfile.control-plane --platform linux/amd64 -t $CPO_IMAGE_REPO:$TAG .\n```\n\n**Note**: The build runs `make control-plane-operator` and `make control-plane-pki-operator` inside the container, so you don't need to pre-build locally.\n\n### Step 3: Push the Image\n\n```bash\n$RUNTIME push $CPO_IMAGE_REPO:$TAG\n```\n\n## Quick One-Liner\n\nBuild and push in one command:\n\n```bash\nTAG=\"my-fix-1\" && $RUNTIME build -f Dockerfile.control-plane --platform linux/amd64 -t $CPO_IMAGE_REPO:$TAG . && $RUNTIME push $CPO_IMAGE_REPO:$TAG\n```\n\n## Iteration Workflow\n\nWhen iterating on CPO fixes:\n\n1. Make code changes in `control-plane-operator/`\n2. Build and push image with incremented tag (e.g., `fix-1`, `fix-2`, `fix-3`)\n3. Run e2e test with new image\n4. Analyze results\n5. Repeat until test passes\n\n## What Gets Built\n\nThe `Dockerfile.control-plane` builds:\n- `control-plane-operator` binary\n- `control-plane-pki-operator` binary\n\nBoth are included in the final image.\n\n## Image Labels\n\nThe CPO image includes important capability labels that HyperShift uses:\n- `io.openshift.hypershift.control-plane-operator-subcommands=true`\n- `io.openshift.hypershift.control-plane-operator.v2-isdefault=true`\n- Various other feature capability labels\n\n## Troubleshooting\n\n### Build Fails\n- Check that vendored dependencies are up to date: `go mod vendor`\n- Ensure code compiles locally: `make control-plane-operator`\n\n### Push Fails\n- Verify registry login: `$RUNTIME login quay.io`\n- Check repository permissions\n\n### Image Not Used by Cluster\n- Verify the image tag is correct in e2e flags\n- Check that the image was pushed successfully\n- Ensure the cluster can pull from the registry (public or authenticated)"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "docker",
+          "name": "docker",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "build-ho-image",
+      "parsed": {
+        "name": "Build HO Image",
+        "description": "Build and push hypershift-operator container image. Auto-applies when testing HO changes that require deploying to a live cluster.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Build HyperShift-Operator Image\n\nThis skill enables building and pushing custom hypershift-operator (HO) images for testing changes in a live HyperShift environment.\n\n## When to Use This Skill\n\nThis skill automatically applies when:\n- You've made changes to code in `hypershift-operator/`\n- You need to test HO changes against a live cluster\n- The user asks to build/push a HO image\n- You need to iterate on HO fixes with e2e tests\n\n## Prerequisites\n\nSource the environment file before using this skill:\n\n```bash\nsource dev/claude-env.sh\n```\n\n## Image Registry Configuration\n\nEnvironment variables from `dev/claude-env.sh`:\n\n| Variable | Description |\n|----------|-------------|\n| `HO_IMAGE_REPO` | Container registry for HO images |\n| `RUNTIME` | Container runtime (podman/docker) |\n\n## Building the HO Image\n\n### Step 1: Generate a Unique Tag\n\nUse a tag that identifies the change (branch name, feature, or timestamp):\n\n```bash\n# Option 1: Use branch name\nTAG=$(git rev-parse --abbrev-ref HEAD | tr '/' '-')\n\n# Option 2: Use short commit hash\nTAG=$(git rev-parse --short HEAD)\n\n# Option 3: Use descriptive name + number for iterations\nTAG=\"feature-name-1\"\n```\n\n### Step 2: Build the Image\n\nThe HO image uses the main `Dockerfile`:\n\n```bash\n$RUNTIME build -f Dockerfile --platform linux/amd64 -t $HO_IMAGE_REPO:$TAG .\n```\n\n**Note**: The build runs `make hypershift`, `make hypershift-operator`, `make karpenter-operator`, and `make product-cli` inside the container.\n\n### Step 3: Push the Image\n\n```bash\n$RUNTIME push $HO_IMAGE_REPO:$TAG\n```\n\n## Quick One-Liner\n\nBuild and push in one command:\n\n```bash\nTAG=\"my-fix-1\" && $RUNTIME build -f Dockerfile --platform linux/amd64 -t $HO_IMAGE_REPO:$TAG . && $RUNTIME push $HO_IMAGE_REPO:$TAG\n```\n\n## Iteration Workflow\n\nWhen iterating on HO fixes:\n\n1. Make code changes in `hypershift-operator/`\n2. Build and push image with incremented tag (e.g., `fix-1`, `fix-2`, `fix-3`)\n3. Reinstall HyperShift with new image\n4. Run e2e test or manual validation\n5. Analyze results\n6. Repeat until test passes\n\n## What Gets Built\n\nThe main `Dockerfile` builds:\n- `hypershift` CLI binary\n- `hypershift-no-cgo` binary\n- `hypershift-operator` binary\n- `karpenter-operator` binary\n- `hcp` (product CLI) binary\n\nAll are included in the final image.\n\n## Troubleshooting\n\n### Build Fails\n- Check that vendored dependencies are up to date: `go mod vendor`\n- Ensure code compiles locally: `make hypershift-operator`\n- Check for API generation issues: `make api`\n\n### Push Fails\n- Verify registry login: `$RUNTIME login quay.io`\n- Check repository permissions\n\n### Operator Not Running After Install\n- Check operator logs: `kubectl logs -n hypershift deployment/operator`\n- Verify image pull succeeded: `kubectl describe pod -n hypershift -l app=operator`\n- Ensure cluster can pull from registry\n\n### Changes Not Reflected\n- Make sure you're using the correct image tag\n- Check if old pods are still running: `kubectl get pods -n hypershift`\n- Force rollout: `kubectl rollout restart deployment/operator -n hypershift`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "docker",
+          "name": "docker",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "create-hc-aws",
+      "parsed": {
+        "name": "Create HC AWS",
+        "description": "Create a HyperShift HostedCluster on AWS for development and testing, with optional custom CPO/HO images.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Create HostedCluster\n\nThis skill creates a HyperShift HostedCluster on AWS for development and testing purposes. The clusters created are intended for local development workflows, not for production use.\n\n## When to Use This Skill\n\nUse this skill when:\n- You need to create a dev/test HostedCluster for manual verification\n- You want to test HyperShift features against a live cluster\n- You need a HostedCluster with custom CPO or HO images\n- You are iterating on code changes and need a cluster to validate them\n\n## Prerequisites\n\nSource the environment file before using this skill:\n\n```bash\nsource dev/claude-env.sh\n```\n\nAdditional requirements:\n- AWS credentials loaded (source `$AWS_CREDS_SOURCE`)\n- KUBECONFIG pointing to management cluster (`$MGMT_KUBECONFIG`)\n- hypershift binary built (`./bin/hypershift` or run `make hypershift`)\n- Pull secret available (`$PULL_SECRET`)\n\n## Environment Configuration\n\nEnvironment variables from `dev/claude-env.sh`:\n\n| Variable | Description |\n|----------|-------------|\n| `AWS_CREDENTIALS` | Path to AWS credentials file |\n| `AWS_CREDS_SOURCE` | Script to source AWS env vars |\n| `BASE_DOMAIN` | Base DNS domain for clusters |\n| `PULL_SECRET` | Path to pull secret file |\n| `AWS_REGION` | AWS region |\n| `MGMT_KUBECONFIG` | Path to management cluster kubeconfig |\n| `CPO_IMAGE_REPO` | Custom CPO image repository |\n\n## Basic Command\n\n```bash\nsource $AWS_CREDS_SOURCE && \\\nKUBECONFIG=$MGMT_KUBECONFIG \\\n./bin/hypershift create cluster aws \\\n  --name <CLUSTER_NAME> \\\n  --namespace clusters \\\n  --base-domain $BASE_DOMAIN \\\n  --aws-creds $AWS_CREDENTIALS \\\n  --pull-secret $PULL_SECRET \\\n  --region $AWS_REGION \\\n  --release-image quay.io/openshift-release-dev/ocp-release:4.21.0-multi \\\n  --node-pool-replicas 2\n```\n\n## Common Parameters\n\n| Parameter | Description | Default |\n|-----------|-------------|---------|\n| `--name` | Name of the HostedCluster | Required |\n| `--namespace` | Namespace for the HostedCluster | `clusters` |\n| `--base-domain` | Base DNS domain | `$BASE_DOMAIN` |\n| `--aws-creds` | Path to AWS credentials file | `$AWS_CREDENTIALS` |\n| `--pull-secret` | Path to pull secret file | `$PULL_SECRET` |\n| `--region` | AWS region | `$AWS_REGION` |\n| `--release-image` | OCP release image | Latest 4.21.0 multi-arch |\n| `--node-pool-replicas` | Initial node count | `0` (add nodes later) |\n| `--control-plane-operator-image` | Custom CPO image | Optional |\n\n## With Custom CPO Image\n\nWhen testing CPO changes, add the custom image:\n\n```bash\nsource $AWS_CREDS_SOURCE && \\\nKUBECONFIG=$MGMT_KUBECONFIG \\\n./bin/hypershift create cluster aws \\\n  --name my-test-cluster \\\n  --namespace clusters \\\n  --base-domain $BASE_DOMAIN \\\n  --aws-creds $AWS_CREDENTIALS \\\n  --pull-secret $PULL_SECRET \\\n  --region $AWS_REGION \\\n  --release-image quay.io/openshift-release-dev/ocp-release:4.21.0-multi \\\n  --node-pool-replicas 2 \\\n  --control-plane-operator-image $CPO_IMAGE_REPO:YOUR_TAG\n```\n\n## What Gets Created\n\nThe command creates:\n- AWS VPC with public and private subnets\n- NAT gateway and internet gateway\n- Route tables\n- Private hosted zones (Route53)\n- OIDC provider for STS\n- IAM roles for control plane components\n- Worker instance profile\n- HostedCluster and NodePool resources\n\n## Post-Creation Steps\n\n1. **Check HostedCluster status:**\n   ```bash\n   KUBECONFIG=$MGMT_KUBECONFIG kubectl get hostedcluster -n clusters\n   ```\n\n2. **Wait for control plane to be available:**\n   ```bash\n   KUBECONFIG=$MGMT_KUBECONFIG kubectl wait --for=condition=Available \\\n     hostedcluster/<CLUSTER_NAME> -n clusters --timeout=10m\n   ```\n\n3. **Scale NodePool to add nodes:**\n   ```bash\n   KUBECONFIG=$MGMT_KUBECONFIG kubectl scale nodepool <NODEPOOL_NAME> \\\n     -n clusters --replicas=1\n   ```\n\n4. **Get guest cluster kubeconfig:**\n   ```bash\n   KUBECONFIG=$MGMT_KUBECONFIG kubectl get secret <CLUSTER_NAME>-admin-kubeconfig \\\n     -n clusters -o jsonpath='{.data.kubeconfig}' | base64 -d > /tmp/guest-kubeconfig.yaml\n   ```\n\n## Cleanup\n\nUse the `dev:destroy-hc-aws` skill or run:\n\n```bash\nsource $AWS_CREDS_SOURCE && \\\nKUBECONFIG=$MGMT_KUBECONFIG \\\n./bin/hypershift destroy cluster aws \\\n  --name <CLUSTER_NAME> \\\n  --namespace clusters \\\n  --aws-creds $AWS_CREDENTIALS \\\n  --region $AWS_REGION\n```\n\n## Troubleshooting\n\n### Cluster Creation Fails\n- Check AWS credentials are valid\n- Verify base domain exists in Route53\n- Ensure OIDC S3 bucket is accessible\n\n### Control Plane Not Available\n- Check HCP pods: `kubectl get pods -n clusters-<CLUSTER_NAME>`\n- Check HCP conditions: `kubectl get hcp -n clusters-<CLUSTER_NAME> -o yaml`\n\n### Nodes Not Joining\n- Check machines: `kubectl get machines -n clusters-<CLUSTER_NAME>`\n- Check NodePool conditions: `kubectl get nodepool -n clusters -o yaml`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "aws",
+          "name": "aws-cli",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "destroy-hc-aws",
+      "parsed": {
+        "name": "Destroy HC AWS",
+        "description": "Destroy a HyperShift HostedCluster and all associated AWS infrastructure (VPC, IAM, Route53, etc.).",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Destroy HostedCluster\n\nThis skill destroys a HyperShift HostedCluster and all associated AWS infrastructure.\n\n## When to Use This Skill\n\nUse this skill when:\n- You need to clean up a test HostedCluster\n- You want to destroy a HostedCluster and its AWS resources (VPC, subnets, NAT gateways, IAM roles, etc.)\n- You need to remove orphaned HostedClusters from previous test runs\n\n## Prerequisites\n\nSource the environment file before using this skill:\n\n```bash\nsource dev/claude-env.sh\n```\n\nAdditional requirements:\n- AWS credentials loaded (source `$AWS_CREDS_SOURCE`)\n- KUBECONFIG pointing to management cluster (`$MGMT_KUBECONFIG`)\n- hypershift binary built (`./bin/hypershift`)\n\n## Environment Configuration\n\nEnvironment variables from `dev/claude-env.sh`:\n\n| Variable | Description |\n|----------|-------------|\n| `AWS_CREDENTIALS` | Path to AWS credentials file |\n| `AWS_CREDS_SOURCE` | Script to source AWS env vars |\n| `AWS_REGION` | AWS region |\n| `MGMT_KUBECONFIG` | Path to management cluster kubeconfig |\n\n## Command\n\n```bash\nsource $AWS_CREDS_SOURCE && \\\nKUBECONFIG=$MGMT_KUBECONFIG \\\n./bin/hypershift destroy cluster aws \\\n  --name <CLUSTER_NAME> \\\n  --namespace <NAMESPACE> \\\n  --aws-creds $AWS_CREDENTIALS \\\n  --region $AWS_REGION\n```\n\n## Parameters\n\n| Parameter | Description | Default |\n|-----------|-------------|---------|\n| `--name` | Name of the HostedCluster to destroy | Required |\n| `--namespace` | Namespace where the HostedCluster exists | `clusters` |\n| `--aws-creds` | Path to AWS credentials file | `$AWS_CREDENTIALS` |\n| `--region` | AWS region | `$AWS_REGION` |\n\n## What Gets Destroyed\n\nThe command destroys:\n- HostedCluster and NodePool resources\n- HostedControlPlane namespace and all resources\n- AWS VPC and subnets\n- NAT gateways and internet gateways\n- Route tables\n- Security groups\n- DHCP options\n- Private hosted zones (Route53)\n- OIDC provider\n- IAM roles and instance profiles\n- VPC endpoints\n- Elastic IPs\n\n## Quick Cleanup for Orphaned HCs\n\nIf a HostedCluster is stuck deleting, you can force remove it:\n\n```bash\n# Remove cleanup annotation to skip cloud resource cleanup\nKUBECONFIG=$MGMT_KUBECONFIG kubectl annotate hostedcluster <NAME> -n <NAMESPACE> \\\n  hypershift.openshift.io/cleanup-cloud-resources-\n```\n\n## Example Usage\n\n```bash\n# List existing HostedClusters\nKUBECONFIG=$MGMT_KUBECONFIG kubectl get hostedclusters -A\n\n# Destroy a specific HostedCluster\nsource $AWS_CREDS_SOURCE && \\\nKUBECONFIG=$MGMT_KUBECONFIG \\\n./bin/hypershift destroy cluster aws \\\n  --name my-test-cluster \\\n  --namespace clusters \\\n  --aws-creds $AWS_CREDENTIALS \\\n  --region $AWS_REGION\n```\n\n## Troubleshooting\n\n### NAT Gateway Still Deleting\nNAT gateways take time to delete. The command will retry automatically.\n\n### VPC Has Dependencies\nThe command will retry until all dependencies (subnets, gateways, etc.) are deleted.\n\n### HostedCluster Stuck in Deleting\n1. Check if there are stuck finalizers\n2. Remove the cleanup-cloud-resources annotation if you want to skip AWS cleanup\n3. Manually delete AWS resources if needed"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "aws",
+          "name": "aws-cli",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "e2e-run-aws",
+      "parsed": {
+        "name": "E2E Test Runner",
+        "description": "Provides the ability to run and iterate on HyperShift e2e tests. Auto-applies when implementing features that require e2e validation, fixing e2e test failures, or working on tasks that need live cluster testing.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# HyperShift E2E Test Runner\n\nThis skill enables autonomous iteration on e2e tests - running tests, analyzing failures, making fixes, and re-running until tests pass.\n\n## When to Use This Skill\n\nThis skill automatically applies when:\n- Implementing a feature that needs e2e test validation\n- Fixing a failing e2e test\n- Working on a task where the user wants you to iterate until tests pass\n- Debugging test failures in the `test/e2e/` directory\n- The user mentions running e2e tests or validating changes against a live cluster\n\n## Prerequisites\n\nSource the environment file before using this skill:\n\n```bash\nsource dev/claude-env.sh\n```\n\n## Environment Configuration\n\nEnvironment variables from `dev/claude-env.sh`:\n\n| Variable | Description |\n|----------|-------------|\n| `E2E_PLATFORM` | Test platform (AWS, Azure, etc.) |\n| `AWS_CREDENTIALS` | Path to AWS credentials file |\n| `OIDC_BUCKET` | S3 bucket for OIDC |\n| `BASE_DOMAIN` | Base DNS domain |\n| `PULL_SECRET` | Path to pull secret file |\n| `AWS_REGION` | AWS region |\n| `E2E_ARTIFACT_DIR` | Directory for test artifacts |\n| `MGMT_KUBECONFIG` | Path to management cluster kubeconfig |\n| `CPO_IMAGE_REPO` | Custom CPO image repository |\n| `RUNTIME` | Container runtime (podman/docker) |\n\n## Running E2E Tests\n\n### Step 1: Check if Test Binary Needs Rebuilding\n\n**CRITICAL**: Before running any e2e test, you MUST check if the test binary needs rebuilding:\n\n```bash\n# Check if binary exists\nif [ ! -f ./bin/test-e2e ]; then\n  echo \"Test binary missing, building...\"\n  make e2e\nfi\n\n# Check if any test files are newer than the binary\nNEWEST_TEST=$(find test/e2e -name \"*.go\" -newer ./bin/test-e2e 2>/dev/null | head -1)\nif [ -n \"$NEWEST_TEST\" ]; then\n  echo \"Test files changed (e.g., $NEWEST_TEST), rebuilding...\"\n  make e2e\nfi\n```\n\n### Step 2: Run the Test\n\nBuild and execute the test command:\n\n```bash\nKUBECONFIG=$MGMT_KUBECONFIG \\\n./bin/test-e2e -test.v -test.timeout 2h \\\n  -test.run \"TEST_PATTERN\" \\\n  -test.v \\\n  --e2e.platform $E2E_PLATFORM \\\n  --e2e.aws-credentials-file $AWS_CREDENTIALS \\\n  --e2e.aws-oidc-s3-bucket-name $OIDC_BUCKET \\\n  --e2e.base-domain $BASE_DOMAIN \\\n  --e2e.pull-secret-file $PULL_SECRET \\\n  --e2e.aws-region $AWS_REGION \\\n  --e2e.artifact-dir $E2E_ARTIFACT_DIR\n```\n\n### Step 3: Add Custom CPO Image (When Testing Control Plane Changes)\n\nIf you've made changes to control-plane-operator code and built a custom image, add:\n\n```bash\n-e2e.control-plane-operator-image $CPO_IMAGE_REPO:TAG\n```\n\n## Iteration Loop\n\nWhen working autonomously on a task that requires e2e validation:\n\n### 1. Initial Test Run\nRun the test to establish baseline:\n```bash\nKUBECONFIG=$MGMT_KUBECONFIG ./bin/test-e2e -test.v -test.run \"TestName\" [flags...]\n```\n\n### 2. On Failure - Analyze\n- Read the test output carefully\n- Check artifacts in `$E2E_ARTIFACT_DIR/` directory for:\n  - Pod logs\n  - Events\n  - Resource states\n- Identify the root cause\n\n### 3. Make Fixes\n- Edit the relevant code (test code, operator code, etc.)\n- If you modified `test/e2e/*.go` files, the binary will be rebuilt automatically on next run\n\n### 4. Rebuild Images (If Needed)\nIf you modified control-plane-operator code:\nUse the build-cpo-image skill to build and push a new image.\n\n```bash\n$RUNTIME build -f Dockerfile.control-plane --platform linux/amd64 -t $CPO_IMAGE_REPO:NEW_TAG .\n$RUNTIME push $CPO_IMAGE_REPO:NEW_TAG\n```\n\n### 5. Re-run Test\nRun the test again with updated code/images. Repeat until passing.\n\n## Common Test Patterns\n\n| Test Pattern | Description |\n|--------------|-------------|\n| `TestNodePool` | All NodePool tests |\n| `TestNodePool/HostedCluster0/Main/TestSpotTerminationHandler` | Specific spot test |\n| `TestNodePool.*Karpenter` | All Karpenter-related tests |\n| `TestCreateCluster` | Cluster creation tests |\n| `TestUpgrade` | Upgrade tests |\n\n## Analyzing Test Failures\n\n### Check Test Output\nThe test output includes:\n- Test name and status\n- Assertion failures with expected vs actual\n- Timeout information\n- Resource creation/deletion logs\n\n### Check Artifact Directory\nAfter a test failure, examine:\n```bash\nls -la $E2E_ARTIFACT_DIR/\n# Contains: cluster manifests, pod logs, events, resource dumps\n```\n\n### Common Failure Patterns\n\n| Pattern | Likely Cause |\n|---------|--------------|\n| `context deadline exceeded` | Resource didn't reach expected state in time |\n| `not found` | Resource wasn't created or was deleted prematurely |\n| `connection refused` | Service not ready or network issue |\n| `forbidden` | RBAC or permission issue |\n\n## Building Test Binary\n\nWhen test code changes, rebuild:\n```bash\nmake e2e\n```\n\nThis compiles `./bin/test-e2e` with all tests from `test/e2e/`.\n\n## Notes\n\n- Tests typically take 10-30+ minutes depending on complexity\n- Some tests create real AWS resources (costs money, needs cleanup on failure)\n- Use `-test.timeout` to set appropriate timeouts (default: 2h)\n- The artifact directory is overwritten on each run\n- For long tests, consider running in background and checking periodically"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "docker",
+          "name": "docker",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "aws",
+          "name": "aws-cli",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "git-env",
+      "parsed": {
+        "name": "Git Environment",
+        "description": "Create development environments with git worktrees, branches, commits, and push to remote. Auto-applies for git workflow tasks.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Git Development Environment Workflow\n\nAutomates common git development workflows for HyperShift including worktree creation, branching, committing (with proper format), and pushing to remotes.\n\n## Configuration\n\nLoad environment variables from `dev/claude-env.sh`:\n\n```bash\nsource dev/claude-env.sh\n```\n\n### Environment Variables\n\n| Variable | Default | Description |\n|----------|---------|-------------|\n| `GIT_FORK_REMOTE` | `enxebre` | Your fork remote name |\n| `GIT_UPSTREAM_REMOTE` | `origin` | Upstream remote (openshift/hypershift) |\n| `GIT_BASE_BRANCH` | `main` | Base branch for new features |\n\n## Workflows\n\n### Create New Development Environment\n\n**With worktree (parallel development):**\n```bash\n# Fetch latest\ngit fetch $GIT_UPSTREAM_REMOTE $GIT_BASE_BRANCH\n\n# Create worktree with new branch\ngit worktree add -b <branch-name> <worktree-path> $GIT_UPSTREAM_REMOTE/$GIT_BASE_BRANCH\n\n# Example:\ngit worktree add -b feat/privatelink-karpenter ../hs-privatelink $GIT_UPSTREAM_REMOTE/$GIT_BASE_BRANCH\n```\n\n**Without worktree (same repo):**\n```bash\n# Fetch latest\ngit fetch $GIT_UPSTREAM_REMOTE $GIT_BASE_BRANCH\n\n# Create and checkout new branch\ngit checkout -b <branch-name> $GIT_UPSTREAM_REMOTE/$GIT_BASE_BRANCH\n\n# Example:\ngit checkout -b fix/bug-123 $GIT_UPSTREAM_REMOTE/$GIT_BASE_BRANCH\n```\n\n### Branch Naming Conventions\n\nUse conventional prefixes:\n- `feat/<description>` - New features\n- `fix/<description>` - Bug fixes\n- `docs/<description>` - Documentation\n- `refactor/<description>` - Code refactoring\n- `test/<description>` - Test additions\n- `chore/<description>` - Maintenance tasks\n\n### Commit Changes\n\n**Always follow the git-commit-format skill for commits.**\n\n1. **Stage changes:**\n   ```bash\n   git add <specific-files>\n   ```\n\n2. **Check what's staged:**\n   ```bash\n   git status\n   git diff --cached\n   ```\n\n3. **Commit with proper format:**\n   ```bash\n   git commit -m \"$(cat <<'EOF'\n   <type>(<scope>): <description>\n\n   [optional body]\n\n   Signed-off-by: <name> <email>\n   Commit-Message-Assisted-by: Claude (via Claude Code)\n   EOF\n   )\"\n   ```\n\n4. **Validate commit message:**\n   ```bash\n   make run-gitlint\n   ```\n\n### Push to Remote\n\n**First push (set upstream):**\n```bash\ngit push -u $GIT_FORK_REMOTE <branch-name>\n```\n\n**Subsequent pushes:**\n```bash\ngit push\n```\n\n**Force push (after rebase):**\n```bash\n# Always use --force-with-lease for safety\ngit push --force-with-lease\n```\n\n### Sync with Upstream\n\n```bash\n# Fetch latest from upstream\ngit fetch $GIT_UPSTREAM_REMOTE $GIT_BASE_BRANCH\n\n# Rebase current branch on base branch\ngit rebase $GIT_UPSTREAM_REMOTE/$GIT_BASE_BRANCH\n\n# If conflicts, resolve them, then:\ngit rebase --continue\n\n# Push updated branch (force required after rebase)\ngit push --force-with-lease\n```\n\n### Cleanup Worktree\n\n```bash\n# Remove the worktree\ngit worktree remove <worktree-path>\n\n# Optionally delete the branch\ngit branch -D <branch-name>\n\n# Prune stale worktree references\ngit worktree prune\n```\n\n### List Worktrees\n\n```bash\ngit worktree list\n```\n\n## Quick Reference Commands\n\n| Task | Command |\n|------|---------|\n| New worktree + branch | `git worktree add -b <branch> <path> $GIT_UPSTREAM_REMOTE/$GIT_BASE_BRANCH` |\n| New branch (no worktree) | `git checkout -b <branch> $GIT_UPSTREAM_REMOTE/$GIT_BASE_BRANCH` |\n| Stage all changes | `git add -A` |\n| Stage specific files | `git add <file1> <file2>` |\n| Check status | `git status` |\n| View staged diff | `git diff --cached` |\n| Commit | `git commit -m \"<message>\"` |\n| Validate commit | `make run-gitlint` |\n| Push (first time) | `git push -u $GIT_FORK_REMOTE <branch>` |\n| Push | `git push` |\n| Force push (safe) | `git push --force-with-lease` |\n| Sync with upstream | `git fetch $GIT_UPSTREAM_REMOTE $GIT_BASE_BRANCH && git rebase $GIT_UPSTREAM_REMOTE/$GIT_BASE_BRANCH` |\n| Remove worktree | `git worktree remove <path>` |\n| Delete branch | `git branch -D <branch>` |\n| List worktrees | `git worktree list` |\n\n## Example Full Workflow\n\n```bash\n# 0. Load environment\nsource dev/claude-env.sh\n\n# 1. Create new feature environment\ngit fetch $GIT_UPSTREAM_REMOTE $GIT_BASE_BRANCH\ngit worktree add -b feat/aws-privatelink-subnets ../hs-privatelink $GIT_UPSTREAM_REMOTE/$GIT_BASE_BRANCH\ncd ../hs-privatelink\n\n# 2. Make changes...\n# ... edit files ...\n\n# 3. Stage and commit\ngit add -A\ngit commit -m \"$(cat <<'EOF'\nfeat(aws): add dynamic subnet discovery for privatelink\n\nImplement subnet discovery from Karpenter EC2NodeClass resources\nto ensure PrivateLink VPC Endpoints have ENIs in all required\navailability zones.\n\nSigned-off-by: Alberto Garcia <agarcia@redhat.com>\nCommit-Message-Assisted-by: Claude (via Claude Code)\nEOF\n)\"\n\n# 4. Validate\nmake run-gitlint\n\n# 5. Push to fork\ngit push -u $GIT_FORK_REMOTE feat/aws-privatelink-subnets\n\n# 6. Create PR via gh cli\ngh pr create --title \"feat(aws): add dynamic subnet discovery for privatelink\" --body \"...\"\n\n# 7. After PR merged, cleanup\ncd ../hypershift\ngit worktree remove ../hs-privatelink\ngit branch -D feat/aws-privatelink-subnets\n```\n\n## Notes\n\n- Always use `--force-with-lease` instead of `--force` for safety\n- Worktrees allow parallel development on multiple features\n- Each worktree shares the same git repository but has its own working directory\n- Run `git remote -v` to verify remote configuration\n- Configure your fork remote in `dev/claude-env.sh` by setting `GIT_FORK_REMOTE`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "system",
+          "org": "git",
+          "name": "git",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "install-ho-aws",
+      "parsed": {
+        "name": "Install HO AWS",
+        "description": "Install HyperShift Operator with private AWS and external-dns settings.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Install HyperShift Operator (HO)\n\nUse this skill to install HyperShift Operator with a custom image, external-dns, and private AWS settings.\n\n## When to Use This Skill\n\nUse when:\n- You need to install HO with a custom image\n- You want external-dns configured for AWS\n- You are using private AWS settings for the management cluster\n- Changes to the CRDs generated APIs don't need an image rebuild, just a make api && make build\n\n## Prerequisites\n\nSource the environment file before using this skill:\n\n```bash\nsource dev/claude-env.sh\n```\n\n## Environment Configuration\n\nEnvironment variables from `dev/claude-env.sh`:\n\n| Variable | Description |\n|----------|-------------|\n| `HO_IMAGE_REPO` | Container registry for HO images |\n| `AWS_CREDENTIALS` | Path to AWS credentials file |\n| `EXTERNAL_DNS_DOMAIN` | Domain filter for external-dns |\n| `OIDC_BUCKET` | S3 bucket for OIDC |\n| `AWS_REGION` | AWS region |\n| `MGMT_KUBECONFIG` | Path to management cluster kubeconfig |\n\n## Parameters\n\n- `HO_IMAGE` should point to the image you want to install, for example `$HO_IMAGE_REPO:autonode`.\n\n## Command\n\nRun make build first if needed\n\n```bash\nKUBECONFIG=$MGMT_KUBECONFIG \\\n./bin/hypershift install \\\n  --hypershift-image $HO_IMAGE_REPO:YOUR_TAG \\\n  --external-dns-provider=aws \\\n  --external-dns-credentials $AWS_CREDENTIALS \\\n  --external-dns-domain-filter=$EXTERNAL_DNS_DOMAIN \\\n  --oidc-storage-provider-s3-bucket-name $OIDC_BUCKET \\\n  --oidc-storage-provider-s3-credentials $AWS_CREDENTIALS \\\n  --oidc-storage-provider-s3-region $AWS_REGION \\\n  --private-platform=AWS \\\n  --aws-private-creds $AWS_CREDENTIALS \\\n  --enable-conversion-webhook=false \\\n  --aws-private-region=$AWS_REGION\n```\n\n## Notes\n\n- Build the CLI first: `make hypershift` (this produces `./bin/hypershift`).\n- Ensure the AWS credentials file exists and is readable.\n- The `MGMT_KUBECONFIG` must point to your management cluster."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "aws",
+          "name": "aws-cli",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "effective-go",
+      "parsed": {
+        "name": "Effective Go",
+        "description": "Apply Go best practices, idioms, and conventions from golang.org/doc/effective_go. Use when writing, reviewing, or refactoring Go code to ensure idiomatic, clean, and efficient implementations.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Effective Go\n\nApply best practices and conventions from the official [Effective Go guide](https://go.dev/doc/effective_go) to write clean, idiomatic Go code.\n\n## When to Apply\n\nUse this skill automatically when:\n- Writing new Go code\n- Reviewing Go code\n- Refactoring existing Go implementations\n\n## Key Reminders\n\nFollow the conventions and patterns documented at https://go.dev/doc/effective_go, with particular attention to:\n\n- **Formatting**: Always use `gofmt` - this is non-negotiable\n- **Naming**: No underscores, use MixedCaps for exported names, mixedCaps for unexported\n- **Error handling**: Always check errors; return them, don't panic\n- **Concurrency**: Share memory by communicating (use channels)\n- **Interfaces**: Keep small (1-3 methods ideal); accept interfaces, return concrete types\n- **Documentation**: Document all exported symbols, starting with the symbol name\n\n## References\n\n- Official Guide: https://go.dev/doc/effective_go\n- Code Review Comments: https://github.com/golang/go/wiki/CodeReviewComments\n- Standard Library: Use as reference for idiomatic patterns"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "git-commit-format",
+      "parsed": {
+        "name": "Git Commit Format",
+        "description": "Apply HyperShift conventional commit formatting rules. Use when generating commit messages or creating commits.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Git Commit Message Formatting Rules\n\nApply conventional commit format for all git commits in the HyperShift project.\n\n## Commit Message Format\n\n```\n<type>(<scope>): <description>\n\n[optional body]\n\n[footers]\n```\n\n## Commit Types\n\n- **feat**: New features\n- **fix**: Bug fixes\n- **docs**: Documentation changes\n- **style**: Code style changes (formatting, etc.)\n- **refactor**: Code refactoring (no functional changes)\n- **test**: Adding/updating tests\n- **chore**: Maintenance tasks\n- **build**: Build system or dependency changes\n- **ci**: CI/CD changes\n- **perf**: Performance improvements\n- **revert**: Revert previous commit\n\n## Breaking Changes\n\n### With ! to draw attention\n```\nfeat!: send email when product shipped\n```\n\n### With BREAKING CHANGE footer\n```\nfeat: allow config to extend other configs\n\nBREAKING CHANGE: `extends` key now used for extending config files\n```\n\n### Both ! and BREAKING CHANGE\n```\nchore!: drop support for Node 6\n\nBREAKING CHANGE: use JavaScript features not available in Node 6.\n```\n\n## Required Footers\n\n### Signed-off-by Footer\n\n**ALWAYS include `Signed-off-by`** footer with name and email.\n\nGet credentials in this priority order:\n1. Environment variables: `$GIT_AUTHOR_NAME` and `$GIT_AUTHOR_EMAIL`\n2. Git config: `git config user.name` and `git config user.email`\n3. If neither configured, ask user to provide details\n\n### Commit-Message-Assisted-by Footer\n\n**ALWAYS include `Commit-Message-Assisted-by: Claude (via Claude Code)`** when Claude assists with creating or generating the commit message.\n\n```\nCommit-Message-Assisted-by: Claude (via Claude Code)\n```\n\n## Gitlint Validation Rules\n\n- Run `make run-gitlint` to validate commit messages\n- **Title line**: 120 characters maximum\n- **Body line**: 140 characters maximum per line\n- Use conventional commit format\n- Include required footers (Signed-off-by)\n- No trailing whitespace\n\n## Examples\n\n### Simple commit\n```\ndocs: correct spelling of CHANGELOG\n\nSigned-off-by: Bryan Cox <brcox@redhat.com>\nCommit-Message-Assisted-by: Claude (via Claude Code)\n```\n\n### With scope\n```\nfeat(azure): add workload identity support\n\nSigned-off-by: Bryan Cox <brcox@redhat.com>\nCommit-Message-Assisted-by: Claude (via Claude Code)\n```\n\n### Multi-paragraph with footers\n```\nfix: prevent racing of requests\n\nIntroduce request ID and reference to latest request. Dismiss\nincoming responses other than from latest request.\n\nRemove timeouts which were used to mitigate racing but are\nobsolete now.\n\nReviewed-by: Jane Doe\nRefs: #123\nSigned-off-by: Bryan Cox <brcox@redhat.com>\nCommit-Message-Assisted-by: Claude (via Claude Code)\n```\n\n## Quick Checklist\n\nWhen creating commits:\n- [ ] Use conventional commit format: `<type>(<scope>): <description>`\n- [ ] Title under 120 characters\n- [ ] Body lines under 140 characters\n- [ ] Include `Signed-off-by` footer\n- [ ] Include `Commit-Message-Assisted-by: Claude (via Claude Code)` footer\n- [ ] Validate with `make run-gitlint`\n- [ ] Use \"!\" or `BREAKING CHANGE` for breaking changes\n\n## Reference\n\nConventional Commits Specification: https://www.conventionalcommits.org/en/v1.0.0/#specification"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "code",
+      "parsed": {
+        "name": "code",
+        "description": "",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": ""
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    }
+  ]
+}

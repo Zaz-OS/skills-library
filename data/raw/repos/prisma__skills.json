@@ -1,0 +1,323 @@
+{
+  "source": "prisma/skills",
+  "repoUrl": "https://github.com/prisma/skills",
+  "skills": [
+    {
+      "skillId": "prisma-cli",
+      "parsed": {
+        "name": "prisma-cli",
+        "description": "Prisma CLI commands reference covering all available commands, options, and usage patterns. Use when running Prisma CLI commands, setting up projects, generating client, running migrations, or managing databases. Triggers on \"prisma init\", \"prisma generate\", \"prisma migrate\", \"prisma db\", \"prisma studio\".",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Prisma CLI Reference\n\nComplete reference for all Prisma CLI commands. This skill provides guidance on command usage, options, and best practices for Prisma ORM 7.x.\n\n## When to Apply\n\nReference this skill when:\n- Setting up a new Prisma project (`prisma init`)\n- Generating Prisma Client (`prisma generate`)\n- Running database migrations (`prisma migrate`)\n- Managing database state (`prisma db push/pull`)\n- Using local development database (`prisma dev`)\n- Debugging Prisma issues (`prisma debug`)\n\n## Rule Categories by Priority\n\n| Priority | Category | Impact | Prefix |\n|----------|----------|--------|--------|\n| 1 | Setup | HIGH | `init` |\n| 2 | Generation | HIGH | `generate` |\n| 3 | Development | HIGH | `dev` |\n| 4 | Database | HIGH | `db-` |\n| 5 | Migrations | CRITICAL | `migrate-` |\n| 6 | Utility | MEDIUM | `studio`, `validate`, `format`, `debug` |\n\n## Command Categories\n\n| Category | Commands | Purpose |\n|----------|----------|---------|\n| Setup | `init` | Bootstrap new Prisma project |\n| Generation | `generate` | Generate Prisma Client |\n| Validation | `validate`, `format` | Schema validation and formatting |\n| Development | `dev` | Local Prisma Postgres for development |\n| Database | `db pull`, `db push`, `db seed`, `db execute` | Direct database operations |\n| Migrations | `migrate dev`, `migrate deploy`, `migrate reset`, `migrate status`, `migrate diff`, `migrate resolve` | Schema migrations |\n| Utility | `studio`, `version`, `debug` | Development tools |\n\n## Quick Reference\n\n### Project Setup\n\n```bash\n# Initialize new project (creates prisma/ folder and prisma.config.ts)\nprisma init\n\n# Initialize with specific database\nprisma init --datasource-provider postgresql\nprisma init --datasource-provider mysql\nprisma init --datasource-provider sqlite\n\n# Initialize with Prisma Postgres (cloud)\nprisma init --db\n\n# Initialize with AI-generated schema\nprisma init --prompt \"E-commerce app with users, products, orders\"\n```\n\n### Client Generation\n\n```bash\n# Generate Prisma Client\nprisma generate\n\n# Watch mode for development\nprisma generate --watch\n\n# Generate without engine (for Accelerate/edge)\nprisma generate --no-engine\n\n# Generate specific generator only\nprisma generate --generator client\n```\n\n### Bun Runtime\n\nWhen using Bun, always add the `--bun` flag so Prisma runs with the Bun runtime (otherwise it falls back to Node.js because of the CLI shebang):\n\n```bash\nbunx --bun prisma init\nbunx --bun prisma generate\n```\n\n### Local Development Database\n\n```bash\n# Start local Prisma Postgres\nprisma dev\n\n# Start with specific name\nprisma dev --name myproject\n\n# Start in background (detached)\nprisma dev --detach\n\n# List all local instances\nprisma dev ls\n\n# Stop instance\nprisma dev stop myproject\n\n# Remove instance data\nprisma dev rm myproject\n```\n\n### Database Operations\n\n```bash\n# Pull schema from existing database\nprisma db pull\n\n# Push schema to database (no migrations)\nprisma db push\n\n# Seed database\nprisma db seed\n\n# Execute raw SQL\nprisma db execute --file ./script.sql\n```\n\n### Migrations (Development)\n\n```bash\n# Create and apply migration\nprisma migrate dev\n\n# Create migration with name\nprisma migrate dev --name add_users_table\n\n# Create migration without applying\nprisma migrate dev --create-only\n\n# Reset database and apply all migrations\nprisma migrate reset\n```\n\n### Migrations (Production)\n\n```bash\n# Apply pending migrations (CI/CD)\nprisma migrate deploy\n\n# Check migration status\nprisma migrate status\n\n# Compare schemas and generate diff\nprisma migrate diff --from-config-datasource --to-schema schema.prisma --script\n```\n\n### Utility Commands\n\n```bash\n# Open Prisma Studio (database GUI)\nprisma studio\n\n# Show version info\nprisma version\nprisma -v\n\n# Debug information\nprisma debug\n\n# Validate schema\nprisma validate\n\n# Format schema\nprisma format\n```\n\n## Prisma 7 Changes\n\n### New Configuration File\n\nPrisma 7 uses `prisma.config.ts` for CLI configuration:\n\n```typescript\nimport 'dotenv/config'\nimport { defineConfig, env } from 'prisma/config'\n\nexport default defineConfig({\n  schema: 'prisma/schema.prisma',\n  migrations: {\n    path: 'prisma/migrations',\n    seed: 'tsx prisma/seed.ts',\n  },\n  datasource: {\n    url: env('DATABASE_URL'),\n  },\n})\n```\n\n### Removed Flags\n\n- `--skip-generate` removed from `migrate dev` and `db push`\n- `--skip-seed` removed from `migrate dev`\n- `--schema` and `--url` removed from `db execute`\n- Run `prisma generate` explicitly after migrations\n\n### Environment Variables\n\nEnvironment variables are no longer auto-loaded. Use `dotenv`:\n\n```typescript\n// prisma.config.ts\nimport 'dotenv/config'\n```\n\n## Rule Files\n\nSee individual rule files for detailed command documentation:\n\n```\nreferences/init.md           - Project initialization\nreferences/generate.md       - Client generation\nreferences/dev.md            - Local development database\nreferences/db-pull.md        - Database introspection\nreferences/db-push.md        - Schema push\nreferences/db-seed.md        - Database seeding\nreferences/db-execute.md     - Raw SQL execution\nreferences/migrate-dev.md    - Development migrations\nreferences/migrate-deploy.md - Production migrations\nreferences/migrate-reset.md  - Database reset\nreferences/migrate-status.md - Migration status\nreferences/migrate-resolve.md - Migration resolution\nreferences/migrate-diff.md   - Schema diffing\nreferences/studio.md         - Database GUI\nreferences/validate.md       - Schema validation\nreferences/format.md         - Schema formatting\nreferences/debug.md          - Debug info\n```\n\n## How to Use\n\nUse the command categories above for navigation, then open the specific command reference file you need."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "mysql",
+          "name": "mysql",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "prisma-client-api",
+      "parsed": {
+        "name": "prisma-client-api",
+        "description": "Prisma Client API reference covering model queries, filters, operators, and client methods. Use when writing database queries, using CRUD operations, filtering data, or configuring Prisma Client. Triggers on \"prisma query\", \"findMany\", \"create\", \"update\", \"delete\", \"$transaction\".",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Prisma Client API Reference\n\nComplete API reference for Prisma Client. This skill provides guidance on model queries, filtering, relations, and client methods for Prisma ORM 7.x.\n\n## When to Apply\n\nReference this skill when:\n- Writing database queries with Prisma Client\n- Performing CRUD operations (create, read, update, delete)\n- Filtering and sorting data\n- Working with relations\n- Using transactions\n- Configuring client options\n\n## Rule Categories by Priority\n\n| Priority | Category | Impact | Prefix |\n|----------|----------|--------|--------|\n| 1 | Client Construction | HIGH | `constructor` |\n| 2 | Model Queries | CRITICAL | `model-queries` |\n| 3 | Query Shape | HIGH | `query-options` |\n| 4 | Filtering | HIGH | `filters` |\n| 5 | Relations | HIGH | `relations` |\n| 6 | Transactions | CRITICAL | `transactions` |\n| 7 | Raw SQL | CRITICAL | `raw-queries` |\n| 8 | Client Methods | MEDIUM | `client-methods` |\n\n## Quick Reference\n\n- `constructor` - `PrismaClient` setup and adapter wiring\n- `model-queries` - CRUD operations and bulk operations\n- `query-options` - `select`, `include`, `omit`, sort, pagination\n- `filters` - scalar and logical filter operators\n- `relations` - relation reads and nested writes\n- `transactions` - array and interactive transaction patterns\n- `raw-queries` - `$queryRaw` and `$executeRaw` safety\n- `client-methods` - lifecycle and extension methods\n\n## Client Instantiation (v7)\n\n```typescript\nimport { PrismaClient } from '../generated/client'\nimport { PrismaPg } from '@prisma/adapter-pg'\n\nconst adapter = new PrismaPg({\n  connectionString: process.env.DATABASE_URL\n})\n\nconst prisma = new PrismaClient({ adapter })\n```\n\n## Model Query Methods\n\n| Method | Description |\n|--------|-------------|\n| `findUnique()` | Find one record by unique field |\n| `findUniqueOrThrow()` | Find one or throw error |\n| `findFirst()` | Find first matching record |\n| `findFirstOrThrow()` | Find first or throw error |\n| `findMany()` | Find multiple records |\n| `create()` | Create a new record |\n| `createMany()` | Create multiple records |\n| `createManyAndReturn()` | Create multiple and return them |\n| `update()` | Update one record |\n| `updateMany()` | Update multiple records |\n| `updateManyAndReturn()` | Update multiple and return them |\n| `upsert()` | Update or create record |\n| `delete()` | Delete one record |\n| `deleteMany()` | Delete multiple records |\n| `count()` | Count matching records |\n| `aggregate()` | Aggregate values (sum, avg, etc.) |\n| `groupBy()` | Group and aggregate |\n\n## Query Options\n\n| Option | Description |\n|--------|-------------|\n| `where` | Filter conditions |\n| `select` | Fields to include |\n| `include` | Relations to load |\n| `omit` | Fields to exclude |\n| `orderBy` | Sort order |\n| `take` | Limit results |\n| `skip` | Skip results (pagination) |\n| `cursor` | Cursor-based pagination |\n| `distinct` | Unique values only |\n\n## Client Methods\n\n| Method | Description |\n|--------|-------------|\n| `$connect()` | Explicitly connect to database |\n| `$disconnect()` | Disconnect from database |\n| `$transaction()` | Execute transaction |\n| `$queryRaw()` | Execute raw SQL query |\n| `$executeRaw()` | Execute raw SQL command |\n| `$on()` | Subscribe to events |\n| `$extends()` | Add extensions |\n\n## Quick Examples\n\n### Find records\n\n```typescript\n// Find by unique field\nconst user = await prisma.user.findUnique({\n  where: { email: 'alice@prisma.io' }\n})\n\n// Find with filter\nconst users = await prisma.user.findMany({\n  where: { role: 'ADMIN' },\n  orderBy: { createdAt: 'desc' },\n  take: 10\n})\n```\n\n### Create records\n\n```typescript\nconst user = await prisma.user.create({\n  data: {\n    email: 'alice@prisma.io',\n    name: 'Alice',\n    posts: {\n      create: { title: 'Hello World' }\n    }\n  },\n  include: { posts: true }\n})\n```\n\n### Update records\n\n```typescript\nconst user = await prisma.user.update({\n  where: { id: 1 },\n  data: { name: 'Alice Smith' }\n})\n```\n\n### Delete records\n\n```typescript\nawait prisma.user.delete({\n  where: { id: 1 }\n})\n```\n\n### Transactions\n\n```typescript\nconst [user, post] = await prisma.$transaction([\n  prisma.user.create({ data: { email: 'alice@prisma.io' } }),\n  prisma.post.create({ data: { title: 'Hello', authorId: 1 } })\n])\n```\n\n## Rule Files\n\nDetailed API documentation:\n\n```\nreferences/constructor.md        - PrismaClient constructor options\nreferences/model-queries.md      - CRUD operations\nreferences/query-options.md      - select, include, omit, where, orderBy\nreferences/filters.md            - Filter conditions and operators\nreferences/relations.md          - Relation queries and nested operations\nreferences/transactions.md       - Transaction API\nreferences/raw-queries.md        - $queryRaw, $executeRaw\nreferences/client-methods.md     - $connect, $disconnect, $on, $extends\n```\n\n## Filter Operators\n\n| Operator | Description |\n|----------|-------------|\n| `equals` | Exact match |\n| `not` | Not equal |\n| `in` | In array |\n| `notIn` | Not in array |\n| `lt`, `lte` | Less than |\n| `gt`, `gte` | Greater than |\n| `contains` | String contains |\n| `startsWith` | String starts with |\n| `endsWith` | String ends with |\n| `mode` | Case sensitivity |\n\n## Relation Filters\n\n| Operator | Description |\n|----------|-------------|\n| `some` | At least one related record matches |\n| `every` | All related records match |\n| `none` | No related records match |\n| `is` | Related record matches (1-to-1) |\n| `isNot` | Related record doesn't match |\n\n## Resources\n\n- [Prisma Client API Reference](https://www.prisma.io/docs/orm/reference/prisma-client-reference)\n- [CRUD Operations](https://www.prisma.io/docs/orm/prisma-client/queries/crud)\n- [Filtering and Sorting](https://www.prisma.io/docs/orm/prisma-client/queries/filtering-and-sorting)\n\n## How to Use\n\nPick the category from the table above, then open the matching reference file for implementation details and examples."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "prisma-database-setup",
+      "parsed": {
+        "name": "prisma-database-setup",
+        "description": "Guides for configuring Prisma with different database providers (PostgreSQL, MySQL, SQLite, MongoDB, etc.). Use when setting up a new project, changing databases, or troubleshooting connection issues. Triggers on \"configure postgres\", \"connect to mysql\", \"setup mongodb\", \"sqlite setup\".",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Prisma Database Setup\n\nComprehensive guides for configuring Prisma ORM with various database providers.\n\n## When to Apply\n\nReference this skill when:\n- Initializing a new Prisma project\n- Switching database providers\n- Configuring connection strings and environment variables\n- Troubleshooting database connection issues\n- Setting up database-specific features\n- Generating and instantiating Prisma Client\n\n## Rule Categories by Priority\n\n| Priority | Category | Impact | Prefix |\n|----------|----------|--------|--------|\n| 1 | Provider Guides | CRITICAL | provider names |\n| 2 | Prisma Postgres | HIGH | `prisma-postgres` |\n| 3 | Client Setup | CRITICAL | `prisma-client-setup` |\n\n## System Prerequisites (Prisma ORM 7)\n\n- **Node.js 20.19.0+**\n- **TypeScript 5.4.0+**\n\n## Bun Runtime\n\nIf you're using Bun, run Prisma CLI commands with `bunx --bun prisma ...` so Prisma uses the Bun runtime instead of falling back to Node.js.\n\n## Supported Databases\n\n| Database | Provider String | Notes |\n|----------|-----------------|-------|\n| PostgreSQL | `postgresql` | Default, full feature support |\n| MySQL | `mysql` | Widespread support, some JSON diffs |\n| SQLite | `sqlite` | Local file-based, no enum/scalar lists |\n| MongoDB | `mongodb` | **NOT SUPPORTED IN v7** (Use v6) |\n| SQL Server | `sqlserver` | Microsoft ecosystem |\n| CockroachDB | `cockroachdb` | Distributed SQL, Postgres-compatible |\n| Prisma Postgres | `postgresql` | Managed serverless database |\n\n## Configuration Files\n\nPrisma v7 uses two main files for configuration:\n\n1. **`prisma/schema.prisma`**: Defines the `datasource` block.\n2. **`prisma.config.ts`**: Configures the connection URL (replaces env loading in schema).\n\n## Driver Adapters (Prisma ORM 7)\n\nPrisma ORM 7 uses the query compiler by default, which **requires a driver adapter**. Choose the adapter and driver for your database and pass the adapter to `PrismaClient`.\n\n| Database | Adapter | JS Driver |\n|----------|---------|-----------|\n| PostgreSQL | `@prisma/adapter-pg` | `pg` |\n| CockroachDB | `@prisma/adapter-pg` | `pg` |\n| Prisma Postgres | `@prisma/adapter-ppg` | `@prisma/ppg` |\n| MySQL / MariaDB | `@prisma/adapter-mariadb` | `mariadb` |\n| SQLite | `@prisma/adapter-better-sqlite3` | `better-sqlite3` |\n| SQLite (Turso/LibSQL) | `@prisma/adapter-libsql` | `@libsql/client` |\n| SQL Server | `@prisma/adapter-mssql` | `node-mssql` |\n\nExample (PostgreSQL):\n\n```ts\nimport 'dotenv/config'\nimport { PrismaClient } from '../generated/client'\nimport { PrismaPg } from '@prisma/adapter-pg'\n\nconst adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })\nconst prisma = new PrismaClient({ adapter })\n```\n\n## Prisma Client Setup (Required)\n\nPrisma Client must be installed and generated for any database.\n\n1. Install Prisma CLI and Prisma Client:\n   ```bash\n   npm install prisma --save-dev\n   npm install @prisma/client\n   ```\n\n1. Add a generator block (output is required in Prisma v7):\n   ```prisma\n   generator client {\n     provider = \"prisma-client\"\n     output   = \"../generated\"\n   }\n   ```\n\n1. Generate Prisma Client:\n   ```bash\n   npx prisma generate\n   ```\n\n1. Instantiate Prisma Client with the database-specific driver adapter:\n   ```typescript\n   import { PrismaClient } from '../generated/client'\n   import { PrismaPg } from '@prisma/adapter-pg'\n\n   const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })\n   const prisma = new PrismaClient({ adapter })\n   ```\n\n1. Re-run `prisma generate` after every schema change.\n\n## Quick Reference\n\n### PostgreSQL\n```prisma\ndatasource db {\n  provider = \"postgresql\"\n}\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../generated\"\n}\n```\n\n### MySQL\n```prisma\ndatasource db {\n  provider = \"mysql\"\n}\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../generated\"\n}\n```\n\n### SQLite\n```prisma\ndatasource db {\n  provider = \"sqlite\"\n}\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../generated\"\n}\n```\n\n### MongoDB (Prisma v6 only)\n```prisma\ndatasource db {\n  provider = \"mongodb\"\n  url      = env(\"DATABASE_URL\")\n}\n\ngenerator client {\n  provider = \"prisma-client-js\"\n}\n```\n\n## Rule Files\n\nSee individual rule files for detailed setup instructions:\n\n```\nreferences/postgresql.md\nreferences/mysql.md\nreferences/sqlite.md\nreferences/mongodb.md\nreferences/sqlserver.md\nreferences/cockroachdb.md\nreferences/prisma-postgres.md\nreferences/prisma-client-setup.md\n```\n\n## How to Use\n\nChoose the provider reference file for your database, then apply `references/prisma-client-setup.md` to complete client generation and adapter setup."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "mysql",
+          "name": "mysql",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "mongodb",
+          "name": "mongodb",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "prisma",
+          "name": "prisma",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "prisma",
+          "name": "@prisma/client",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "prisma-driver-adapter-implementation",
+      "parsed": {
+        "name": "prisma-driver-adapter-implementation",
+        "description": "Required reference for Prisma v7 driver adapter work. Use when implementing or modifying adapters, adding database drivers, or touching SqlDriverAdapter/Transaction interfaces. Contains critical contract details not inferable from code examples — including the transaction lifecycle protocol, error mapping requirements, and verification checklist. Existing implementations do not replace this skill.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Prisma 7 Driver Adapter Implementation Guide\n\nThis skill provides everything needed to implement a Prisma ORM v7 driver adapter for any database.\n\n## Architecture Overview\n\n```\n┌─────────────────────────────────────────────────────────────────┐\n│                         PrismaClient                            │\n│                    (requires adapter factory)                   │\n└─────────────────────────────────────────────────────────────────┘\n                                │\n                                ▼\n┌─────────────────────────────────────────────────────────────────┐\n│            SqlMigrationAwareDriverAdapterFactory                │\n│   ┌─────────────────────┐    ┌─────────────────────────────┐    │\n│   │ connect()           │    │ connectToShadowDb()         │    │\n│   │ → SqlDriverAdapter  │    │ → SqlDriverAdapter          │    │\n│   └─────────────────────┘    └─────────────────────────────┘    │\n└─────────────────────────────────────────────────────────────────┘\n                                │\n                                ▼\n┌─────────────────────────────────────────────────────────────────┐\n│                      SqlDriverAdapter                           │\n│  ┌──────────────┐ ┌──────────────┐ ┌──────────────────────────┐ │\n│  │ queryRaw()   │ │ executeRaw() │ │ startTransaction()       │ │\n│  │ → ResultSet  │ │ → number     │ │ → Transaction            │ │\n│  └──────────────┘ └──────────────┘ └──────────────────────────┘ │\n│  ┌──────────────┐ ┌──────────────┐ ┌──────────────────────────┐ │\n│  │executeScript │ │ dispose()    │ │ getConnectionInfo()      │ │\n│  └──────────────┘ └──────────────┘ └──────────────────────────┘ │\n└─────────────────────────────────────────────────────────────────┘\n                                │\n                                ▼\n┌─────────────────────────────────────────────────────────────────┐\n│                        Transaction                              │\n│  Extends SqlQueryable + commit() + rollback() + options         │\n│  (lifecycle hooks only — Prisma sends SQL via executeRaw)       │\n└─────────────────────────────────────────────────────────────────┘\n```\n\n## Required Interfaces\n\nImport from `@prisma/driver-adapter-utils`:\n\n```typescript\nimport type {\n  ColumnType,\n  IsolationLevel,\n  SqlDriverAdapter,\n  SqlMigrationAwareDriverAdapterFactory,\n  SqlQuery,\n  SqlQueryable,\n  SqlResultSet,\n  Transaction,\n  TransactionOptions,\n  ArgType,\n  ConnectionInfo,\n  MappedError,\n} from \"@prisma/driver-adapter-utils\";\nimport {\n  ColumnTypeEnum,\n  DriverAdapterError,\n} from \"@prisma/driver-adapter-utils\";\n```\n\n## Interface Definitions\n\n### SqlQuery (input to queryRaw/executeRaw)\n\n```typescript\ntype SqlQuery = {\n  sql: string; // Parameterized SQL with placeholders\n  args: Array<unknown>; // Bound parameter values\n  argTypes: Array<ArgType>; // Type hints for each argument\n};\n\ntype ArgType = {\n  scalarType: ArgScalarType; // 'string' | 'int' | 'bigint' | 'float' | 'decimal' | 'boolean' | 'enum' | 'uuid' | 'json' | 'datetime' | 'bytes' | 'unknown'\n  dbType?: string;\n  arity: \"scalar\" | \"list\";\n};\n```\n\n### SqlResultSet (output from queryRaw)\n\n```typescript\ninterface SqlResultSet {\n  columnNames: Array<string>; // Column names in order\n  columnTypes: Array<ColumnType>; // Column types matching columnNames\n  rows: Array<Array<unknown>>; // Row data as arrays\n  lastInsertId?: string; // For INSERT without RETURNING\n}\n```\n\n### ColumnTypeEnum values\n\n```typescript\nconst ColumnTypeEnum = {\n  Int32: 0,\n  Int64: 1,\n  Float: 2,\n  Double: 3,\n  Numeric: 4,\n  Boolean: 5,\n  Character: 6,\n  Text: 7,\n  Date: 8,\n  Time: 9,\n  DateTime: 10,\n  Json: 11,\n  Enum: 12,\n  Bytes: 13,\n  Set: 14,\n  Uuid: 15,\n  Int32Array: 64,\n  Int64Array: 65,\n  FloatArray: 66,\n  DoubleArray: 67,\n  NumericArray: 68,\n  BooleanArray: 69,\n  CharacterArray: 70,\n  TextArray: 71,\n  DateArray: 72,\n  TimeArray: 73,\n  DateTimeArray: 74,\n  JsonArray: 75,\n  EnumArray: 76,\n  BytesArray: 77,\n  UuidArray: 78,\n  UnknownNumber: 128,\n} as const;\n```\n\n### SqlDriverAdapter\n\n```typescript\ninterface SqlDriverAdapter extends SqlQueryable {\n  executeScript(script: string): Promise<void>;\n  startTransaction(isolationLevel?: IsolationLevel): Promise<Transaction>;\n  getConnectionInfo?(): ConnectionInfo;\n  dispose(): Promise<void>;\n}\n```\n\n### Transaction\n\n```typescript\ninterface Transaction extends SqlQueryable {\n  readonly options: TransactionOptions;\n  commit(): Promise<void>;\n  rollback(): Promise<void>;\n}\n\ntype TransactionOptions = { usePhantomQuery: boolean };\n```\n\n### SqlMigrationAwareDriverAdapterFactory\n\n```typescript\ninterface SqlMigrationAwareDriverAdapterFactory {\n  readonly provider: \"mysql\" | \"postgres\" | \"sqlite\" | \"sqlserver\";\n  readonly adapterName: string;\n  connect(): Promise<SqlDriverAdapter>;\n  connectToShadowDb(): Promise<SqlDriverAdapter>;\n}\n```\n\n## Implementation Steps\n\n### Step 1: Create the Queryable base class\n\n```typescript\nclass MyQueryable<TClient> implements SqlQueryable {\n  readonly provider = \"postgres\" as const; // or 'sqlite' | 'mysql' | 'sqlserver'\n  readonly adapterName = \"@my-org/adapter-mydb\" as const;\n\n  constructor(protected readonly client: TClient) {}\n\n  async queryRaw(query: SqlQuery): Promise<SqlResultSet> {\n    try {\n      const args = query.args.map((arg, i) =>\n        mapArg(arg, query.argTypes[i] ?? { scalarType: \"unknown\", arity: \"scalar\" })\n      );\n\n      // Execute query with your driver\n      const result = await this.client.query(query.sql, args);\n\n      // Extract column metadata\n      const columnNames = /* get from result */;\n      const columnTypes = /* map to ColumnTypeEnum */;\n\n      // Map rows to ResultValue arrays\n      const rows = result.map(row => mapRow(row, columnTypes));\n\n      return { columnNames, columnTypes, rows };\n    } catch (e) {\n      this.onError(e);\n    }\n  }\n\n  async executeRaw(query: SqlQuery): Promise<number> {\n    try {\n      const args = query.args.map((arg, i) =>\n        mapArg(arg, query.argTypes[i] ?? { scalarType: \"unknown\", arity: \"scalar\" })\n      );\n      const result = await this.client.query(query.sql, args);\n      return result.affectedRows ?? 0;\n    } catch (e) {\n      this.onError(e);\n    }\n  }\n\n  protected onError(error: unknown): never {\n    throw new DriverAdapterError(convertDriverError(error));\n  }\n}\n```\n\n### Step 2: Create the Transaction class\n\n**Critical**: `commit()` and `rollback()` are **lifecycle hooks only**. They must NOT issue SQL. Prisma sends `COMMIT`/`ROLLBACK` via `executeRaw` on the transaction object.\n\n```typescript\nclass MyTransaction extends MyQueryable<TClient> implements Transaction {\n  readonly options: TransactionOptions;\n  readonly #release: () => void;\n\n  constructor(\n    client: TClient,\n    options: TransactionOptions,\n    release: () => void,\n  ) {\n    super(client);\n    this.options = options;\n    this.#release = release;\n  }\n\n  commit(): Promise<void> {\n    // DO NOT issue COMMIT SQL here — Prisma does it via executeRaw\n    this.#release(); // Release connection/resources\n    return Promise.resolve();\n  }\n\n  rollback(): Promise<void> {\n    // DO NOT issue ROLLBACK SQL here — Prisma does it via executeRaw\n    this.#release();\n    return Promise.resolve();\n  }\n}\n```\n\n### Step 3: Create the Adapter class\n\n```typescript\nclass MyAdapter extends MyQueryable<TClient> implements SqlDriverAdapter {\n  #transactionDepth = 0;\n\n  constructor(client: TClient) {\n    super(client);\n  }\n\n  async executeScript(script: string): Promise<void> {\n    // For SQLite: split on ';' and run each statement\n    // For Postgres: use multi-statement execution\n    try {\n      // Implementation depends on driver capabilities\n    } catch (e) {\n      this.onError(e);\n    }\n  }\n\n  async startTransaction(\n    isolationLevel?: IsolationLevel,\n  ): Promise<Transaction> {\n    // Validate isolation level for your database\n    const validLevels = new Set<IsolationLevel>([\n      \"READ UNCOMMITTED\",\n      \"READ COMMITTED\",\n      \"REPEATABLE READ\",\n      \"SERIALIZABLE\",\n    ]);\n\n    if (isolationLevel !== undefined && !validLevels.has(isolationLevel)) {\n      throw new DriverAdapterError({\n        kind: \"InvalidIsolationLevel\",\n        level: isolationLevel,\n      });\n    }\n\n    const options: TransactionOptions = { usePhantomQuery: false };\n\n    this.#transactionDepth += 1;\n    const depth = this.#transactionDepth;\n\n    try {\n      if (depth === 1) {\n        // Issue BEGIN (with isolation level if specified)\n        const beginSql = isolationLevel\n          ? `BEGIN ISOLATION LEVEL ${isolationLevel}`\n          : \"BEGIN\";\n        await this.client.query(beginSql);\n      } else {\n        // Nested: use savepoints\n        await this.client.query(`SAVEPOINT sp_${depth}`);\n      }\n    } catch (e) {\n      this.#transactionDepth -= 1;\n      this.onError(e);\n    }\n\n    const release = () => {\n      this.#transactionDepth -= 1;\n    };\n    return new MyTransaction(this.client, options, release);\n  }\n\n  getConnectionInfo(): ConnectionInfo {\n    return { supportsRelationJoins: true };\n  }\n\n  async dispose(): Promise<void> {\n    await this.client.close();\n  }\n}\n```\n\n### Step 4: Create the Factory class\n\n```typescript\nexport type MyAdapterConfig = {\n  url: string;\n};\n\nexport type MyAdapterOptions = {\n  shadowDatabaseUrl?: string;\n};\n\nexport class MyAdapterFactory implements SqlMigrationAwareDriverAdapterFactory {\n  readonly provider = \"postgres\" as const;\n  readonly adapterName = \"@my-org/adapter-mydb\" as const;\n\n  constructor(\n    private readonly config: MyAdapterConfig,\n    private readonly options?: MyAdapterOptions,\n  ) {}\n\n  connect(): Promise<SqlDriverAdapter> {\n    return Promise.resolve(new MyAdapter(openConnection(this.config.url)));\n  }\n\n  connectToShadowDb(): Promise<SqlDriverAdapter> {\n    const url = this.options?.shadowDatabaseUrl ?? this.config.url;\n    return Promise.resolve(new MyAdapter(openConnection(url)));\n  }\n}\n```\n\n## Conversion Helpers\n\n### Argument Mapping (input)\n\nConvert Prisma argument values to driver-native types:\n\n```typescript\nfunction mapArg(arg: unknown, argType: ArgType): unknown {\n  if (arg === null || arg === undefined) return null;\n\n  // String → number for int columns\n  if (typeof arg === \"string\" && argType.scalarType === \"int\")\n    return Number.parseInt(arg, 10);\n\n  // String → number for float columns\n  if (typeof arg === \"string\" && argType.scalarType === \"float\")\n    return Number.parseFloat(arg);\n\n  // String → BigInt for bigint columns\n  if (typeof arg === \"string\" && argType.scalarType === \"bigint\")\n    return BigInt(arg);\n\n  // Base64 string → Buffer for bytes columns\n  if (typeof arg === \"string\" && argType.scalarType === \"bytes\")\n    return Buffer.from(arg, \"base64\");\n\n  // Boolean → 0/1 for SQLite\n  if (typeof arg === \"boolean\" && /* SQLite */)\n    return arg ? 1 : 0;\n\n  return arg;\n}\n```\n\n### Row Mapping (output)\n\nConvert driver result values to Prisma-expected types:\n\n```typescript\nfunction mapRow(row: unknown[], columnTypes: ColumnType[]): ResultValue[] {\n  const result: ResultValue[] = [];\n\n  for (let i = 0; i < row.length; i++) {\n    const value = row[i] ?? null;\n    const colType = columnTypes[i];\n\n    if (value === null) {\n      result.push(null);\n      continue;\n    }\n\n    // bigint → string for Int64 (JSON-safe)\n    if (typeof value === \"bigint\") {\n      result.push(value.toString());\n      continue;\n    }\n\n    // Date → ISO 8601 string for DateTime\n    if (value instanceof Date) {\n      result.push(value.toISOString());\n      continue;\n    }\n\n    // JSON objects → stringified\n    if (colType === ColumnTypeEnum.Json && typeof value === \"object\") {\n      result.push(JSON.stringify(value));\n      continue;\n    }\n\n    result.push(value as ResultValue);\n  }\n\n  return result;\n}\n```\n\n### Column Type Inference\n\nWhen the driver doesn't provide type metadata, infer from JS values:\n\n```typescript\nfunction inferColumnType(value: NonNullable<unknown>): ColumnType {\n  if (typeof value === \"boolean\") return ColumnTypeEnum.Boolean;\n  if (typeof value === \"bigint\") return ColumnTypeEnum.Int64;\n  if (value instanceof Uint8Array) return ColumnTypeEnum.Bytes;\n  if (value instanceof Date) return ColumnTypeEnum.DateTime;\n  if (Array.isArray(value)) return ColumnTypeEnum.Text; // fallback\n  if (typeof value === \"object\") return ColumnTypeEnum.Json;\n  if (typeof value === \"number\") return ColumnTypeEnum.UnknownNumber;\n  return ColumnTypeEnum.Text;\n}\n```\n\n## Error Handling\n\nMap driver errors to `MappedError` for Prisma to handle correctly:\n\n```typescript\nfunction convertDriverError(error: unknown): MappedError {\n  if (error instanceof Error) {\n    // Database-specific error mapping\n    const dbError = error as Error & { code?: string; errno?: number };\n\n    // PostgreSQL example\n    if (dbError.code === \"23505\") {\n      return { kind: \"UniqueConstraintViolation\" };\n    }\n    if (dbError.code === \"23502\") {\n      return { kind: \"NullConstraintViolation\" };\n    }\n    if (dbError.code === \"23503\") {\n      return { kind: \"ForeignKeyConstraintViolation\" };\n    }\n    if (dbError.code === \"42P01\") {\n      return { kind: \"TableDoesNotExist\" };\n    }\n\n    // SQLite example\n    if (error.name === \"SQLiteError\") {\n      return {\n        kind: \"sqlite\",\n        extendedCode: dbError.errno ?? 1,\n        message: error.message,\n      };\n    }\n\n    // PostgreSQL raw error\n    if (dbError.code) {\n      return {\n        kind: \"postgres\",\n        code: dbError.code,\n        severity: \"ERROR\",\n        message: error.message,\n        detail: undefined,\n        column: undefined,\n        hint: undefined,\n      };\n    }\n  }\n\n  return { kind: \"GenericJs\", id: 0 };\n}\n```\n\n## Database-Specific Notes\n\n### SQLite\n\n- Set `safeIntegers: true` when opening the database to get `bigint` for large integers\n- Only `SERIALIZABLE` isolation level is valid\n- `executeScript`: split on `;` and run each statement individually\n- Boolean values: store as 0/1, return as boolean\n\n### PostgreSQL\n\n- All standard isolation levels are valid\n- For connection pooling (PgBouncer), use `prepare: false`\n- Transactions require a dedicated connection (`reserve()` pattern)\n- `executeScript`: use multi-statement execution (`.simple()` in some drivers)\n- `int8` columns may return as string (already stringified by driver)\n- `numeric` columns return as string to preserve precision\n\n### MySQL/MariaDB\n\n- Supports `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`\n- Use `?` placeholders for parameters\n- Handle `BIGINT` as string for large values\n\n## Testing Strategy\n\n### Unit Tests (no PrismaClient)\n\nTest the adapter directly with the raw database driver:\n\n```typescript\ndescribe(\"queryRaw\", () => {\n  test(\"returns column names and types\", async () => {\n    const adapter = new MyAdapter(createTestConnection());\n    const result = await adapter.queryRaw({\n      sql: \"SELECT id, name FROM users\",\n      args: [],\n      argTypes: [],\n    });\n    expect(result.columnNames).toEqual([\"id\", \"name\"]);\n    expect(result.columnTypes[0]).toBe(ColumnTypeEnum.Int32);\n  });\n});\n\ndescribe(\"startTransaction\", () => {\n  test(\"commit persists changes\", async () => {\n    const adapter = new MyAdapter(createTestConnection());\n    const tx = await adapter.startTransaction();\n    await tx.executeRaw({\n      sql: \"INSERT INTO users (name) VALUES (?)\",\n      args: [\"Alice\"],\n      argTypes: [],\n    });\n    // Prisma sends COMMIT via executeRaw\n    await tx.executeRaw({ sql: \"COMMIT\", args: [], argTypes: [] });\n    await tx.commit(); // lifecycle hook only\n    // Verify data persisted\n  });\n});\n```\n\n### E2E Tests (with PrismaClient)\n\nTest the full integration:\n\n```typescript\ndescribe(\"E2E\", () => {\n  let prisma: PrismaClient;\n\n  beforeEach(async () => {\n    const factory = new MyAdapterFactory({ url: TEST_DB_URL });\n    prisma = new PrismaClient({ adapter: factory });\n  });\n\n  test(\"CRUD operations\", async () => {\n    const user = await prisma.user.create({ data: { name: \"Alice\" } });\n    expect(user.id).toBeGreaterThan(0);\n\n    const found = await prisma.user.findUnique({ where: { id: user.id } });\n    expect(found?.name).toBe(\"Alice\");\n  });\n\n  test(\"transactions roll back on error\", async () => {\n    await expect(\n      prisma.$transaction(async (tx) => {\n        await tx.user.create({ data: { name: \"Bob\" } });\n        throw new Error(\"Rollback!\");\n      }),\n    ).rejects.toThrow();\n\n    expect(await prisma.user.count()).toBe(0);\n  });\n});\n```\n\n## Usage Example\n\n```typescript\nimport { PrismaClient } from \"./generated/prisma/client\";\nimport { MyAdapterFactory } from \"@my-org/adapter-mydb\";\n\nconst factory = new MyAdapterFactory({\n  url: process.env.DATABASE_URL!,\n});\n\nconst prisma = new PrismaClient({ adapter: factory });\n\n// Use prisma normally\nconst users = await prisma.user.findMany();\n```\n\n## Checklist\n\nBefore considering the adapter complete:\n\n- [ ] `SqlMigrationAwareDriverAdapterFactory` implemented with `connect()` and `connectToShadowDb()`\n- [ ] `SqlDriverAdapter` implements `queryRaw`, `executeRaw`, `executeScript`, `startTransaction`, `dispose`\n- [ ] `Transaction` implements `queryRaw`, `executeRaw`, `commit`, `rollback` with `options: { usePhantomQuery: false }`\n- [ ] `commit()` and `rollback()` are lifecycle hooks only (no SQL issued)\n- [ ] `startTransaction` issues `BEGIN` (depth 1) or `SAVEPOINT sp_N` (nested)\n- [ ] Argument mapping handles: string→int, string→bigint, string→float, base64→bytes\n- [ ] Row mapping handles: bigint→string, Date→ISO string, JSON→string\n- [ ] Column types correctly mapped to `ColumnTypeEnum`\n- [ ] Errors wrapped in `DriverAdapterError` with proper `MappedError` kind\n- [ ] Isolation level validation for the target database\n- [ ] Unit tests pass for queryRaw, executeRaw, executeScript, transactions\n- [ ] E2E tests pass with real PrismaClient"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "system",
+          "org": "imagemagick",
+          "name": "imagemagick",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "mysql",
+          "name": "mysql",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "prisma-postgres",
+      "parsed": {
+        "name": "prisma-postgres",
+        "description": "Prisma Postgres setup and operations guidance across Console, create-db CLI, Management API, and Management API SDK. Use when creating Prisma Postgres databases, working in Prisma Console, provisioning with create-db/create-pg/create-postgres, or integrating programmatic provisioning with service tokens or OAuth.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Prisma Postgres\n\nGuidance for creating, managing, and integrating Prisma Postgres across interactive and programmatic workflows.\n\n## When to Apply\n\nReference this skill when:\n- Setting up Prisma Postgres from Prisma Console\n- Provisioning instant temporary databases with `create-db`\n- Managing Prisma Postgres resources via Management API\n- Using `@prisma/management-api-sdk` in TypeScript/JavaScript\n- Handling claim URLs, connection strings, regions, and auth flows\n\n## Rule Categories by Priority\n\n| Priority | Category | Impact | Prefix |\n|----------|----------|--------|--------|\n| 1 | CLI Provisioning | CRITICAL | `create-db-cli` |\n| 2 | Management API | CRITICAL | `management-api` |\n| 3 | Management API SDK | HIGH | `management-api-sdk` |\n| 4 | Console and Connections | HIGH | `console-and-connections` |\n\n## Quick Reference\n\n- `create-db-cli` - instant databases and CLI options\n- `management-api` - service token and OAuth API workflows\n- `management-api-sdk` - typed SDK usage with token storage\n- `console-and-connections` - Console operations and connection setup\n\n## Core Workflows\n\n### 1. Console-first workflow\n\nUse Prisma Console for manual setup and operations:\n\n- Open `https://console.prisma.io`\n- Create/select workspace and project\n- Use Studio in the project sidebar to view/edit data\n- Retrieve direct connection details from the project UI\n\n### 2. Quick provisioning with create-db\n\nUse `create-db` when you need a database immediately:\n\n```bash\nnpx create-db@latest\n```\n\nAliases:\n\n```bash\nnpx create-pg@latest\nnpx create-postgres@latest\n```\n\nFor app integrations, you can also use the programmatic API (`create()` / `regions()`) from the `create-db` npm package.\n\nTemporary databases auto-delete after ~24 hours unless claimed.\n\n### 3. Programmatic provisioning with Management API\n\nUse API endpoints on:\n\n```text\nhttps://api.prisma.io/v1\n```\n\nExplore the schema and endpoints using:\n\n- OpenAPI docs: `https://api.prisma.io/v1/doc`\n- Swagger Editor: `https://api.prisma.io/v1/swagger-editor`\n\nAuth options:\n\n- Service token (workspace server-to-server)\n- OAuth 2.0 (act on behalf of users)\n\n### 4. Type-safe integration with Management API SDK\n\nInstall and use:\n\n```bash\nnpm install @prisma/management-api-sdk\n```\n\nUse `createManagementApiClient` for existing tokens, or `createManagementApiSdk` for OAuth + token refresh.\n\n## Rule Files\n\nDetailed guidance lives in:\n\n```\nreferences/console-and-connections.md\nreferences/create-db-cli.md\nreferences/management-api.md\nreferences/management-api-sdk.md\n```\n\n## How to Use\n\nStart with `references/create-db-cli.md` for fast setup, then switch to `references/management-api.md` or `references/management-api-sdk.md` when you need programmatic provisioning."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "create-db@latest",
+          "name": "create-db@latest",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "create-pg@latest",
+          "name": "create-pg@latest",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "create-postgres@latest",
+          "name": "create-postgres@latest",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "prisma",
+          "name": "@prisma/management-api-sdk",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "prisma-upgrade-v7",
+      "parsed": {
+        "name": "prisma-upgrade-v7",
+        "description": "Complete migration guide from Prisma ORM v6 to v7 covering all breaking changes. Use when upgrading Prisma versions, encountering v7 errors, or migrating existing projects. Triggers on \"upgrade to prisma 7\", \"prisma 7 migration\", \"prisma-client generator\", \"driver adapter required\".",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Upgrade to Prisma ORM 7\n\nComplete guide for migrating from Prisma ORM v6 to v7. This upgrade introduces significant breaking changes including ESM-only support, required driver adapters, and a new configuration system.\n\n## When to Apply\n\nReference this skill when:\n- Upgrading from Prisma v6 to v7\n- Updating to the `prisma-client` generator\n- Setting up driver adapters\n- Configuring `prisma.config.ts`\n- Fixing import errors after upgrade\n\n## Rule Categories by Priority\n\n| Priority | Category | Impact | Prefix |\n|----------|----------|--------|--------|\n| 1 | Schema Migration | CRITICAL | `schema-changes` |\n| 2 | Database Connectivity | CRITICAL | `driver-adapters` |\n| 3 | Module System | CRITICAL | `esm-support` |\n| 4 | Config and Env | HIGH | `prisma-config`, `env-variables` |\n| 5 | Removed Features | HIGH | `removed-features` |\n| 6 | Accelerate | HIGH | `accelerate-users` |\n\n## Quick Reference\n\n- `schema-changes` - generator and output migration for Prisma v7\n- `driver-adapters` - required adapter installation and client wiring\n- `esm-support` - package/module requirements for ESM\n- `prisma-config` - creating and using `prisma.config.ts`\n- `env-variables` - explicit environment loading\n- `removed-features` - removed middleware, metrics, and flags\n- `accelerate-users` - migration notes for Accelerate users\n\n## Important Notes\n\n- **MongoDB not yet supported in v7** - Continue using v6 for MongoDB\n- **Node.js 20.19.0+** required\n- **TypeScript 5.4.0+** required\n\n## Upgrade Steps Overview\n\n1. Update packages to v7\n2. Configure ESM in package.json\n3. Update TypeScript configuration\n4. Update schema generator block\n5. Create prisma.config.ts\n6. Install and configure driver adapter\n7. Update Prisma Client imports\n8. Update client instantiation\n9. Remove deprecated code (middleware, env vars)\n10. Run generate and test\n\n## Quick Upgrade Commands\n\n```bash\n# Update packages\nnpm install @prisma/client@7\nnpm install -D prisma@7\n\n# Install driver adapter (PostgreSQL example)\nnpm install @prisma/adapter-pg\n\n# Install dotenv for env loading\nnpm install dotenv\n\n# Regenerate client\nnpx prisma generate\n```\n\n## Breaking Changes Summary\n\n| Change | v6 | v7 |\n|--------|----|----|\n| Module format | CommonJS | ESM only |\n| Generator provider | `prisma-client-js` | `prisma-client` |\n| Output path | Auto (node_modules) | Required explicit |\n| Driver adapters | Optional | Required |\n| Config file | `.env` + schema | `prisma.config.ts` |\n| Env loading | Automatic | Manual (dotenv) |\n| Middleware | `$use()` | Client Extensions |\n| Metrics | Preview feature | Removed |\n\n## Rule Files\n\nDetailed migration guides for each breaking change:\n\n```\nreferences/esm-support.md        - ESM module configuration\nreferences/schema-changes.md     - Generator and schema updates\nreferences/driver-adapters.md    - Required driver adapter setup\nreferences/prisma-config.md      - New configuration file\nreferences/env-variables.md      - Environment variable loading\nreferences/removed-features.md   - Middleware, metrics, and CLI flags\nreferences/accelerate-users.md   - Special handling for Accelerate\n```\n\n## Step-by-Step Migration\n\n### 1. Update package.json for ESM\n\n```json\n{\n  \"type\": \"module\"\n}\n```\n\n### 2. Update tsconfig.json\n\n```json\n{\n  \"compilerOptions\": {\n    \"module\": \"ESNext\",\n    \"moduleResolution\": \"bundler\",\n    \"target\": \"ES2023\",\n    \"strict\": true,\n    \"esModuleInterop\": true\n  }\n}\n```\n\n### 3. Update schema.prisma\n\n```prisma\n// Before (v6)\ngenerator client {\n  provider = \"prisma-client-js\"\n}\n\n// After (v7)\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../generated\"\n}\n```\n\n### 4. Create prisma.config.ts\n\n```typescript\nimport 'dotenv/config'\nimport { defineConfig, env } from 'prisma/config'\n\nexport default defineConfig({\n  schema: 'prisma/schema.prisma',\n  migrations: {\n    path: 'prisma/migrations',\n  },\n  datasource: {\n    url: env('DATABASE_URL'),\n  },\n})\n```\n\n### 5. Install driver adapter\n\n```bash\n# PostgreSQL\nnpm install @prisma/adapter-pg\n\n# MySQL\nnpm install @prisma/adapter-mariadb mariadb\n\n# SQLite\nnpm install @prisma/adapter-better-sqlite3\n\n# Prisma Postgres\nnpm install @prisma/adapter-ppg @prisma/ppg\n\n# Neon\nnpm install @prisma/adapter-neon\n```\n\n### 6. Update client instantiation\n\n```typescript\n// Before (v6)\nimport { PrismaClient } from '@prisma/client'\nconst prisma = new PrismaClient()\n\n// After (v7)\nimport { PrismaClient } from '../generated/client'\nimport { PrismaPg } from '@prisma/adapter-pg'\n\nconst adapter = new PrismaPg({\n  connectionString: process.env.DATABASE_URL\n})\nconst prisma = new PrismaClient({ adapter })\n```\n\n### 7. Run migrations and generate\n\n```bash\nnpx prisma generate\nnpx prisma migrate dev  # if needed\n```\n\n## Troubleshooting\n\n### \"Cannot find module\" errors\n- Check `output` path in generator block matches import path\n- Ensure `prisma generate` ran successfully\n\n### SSL certificate errors\n- Add `ssl: { rejectUnauthorized: false }` to adapter config\n- Or properly configure SSL certificates\n\n### Connection timeout issues\n- Driver adapters use different pool defaults\n- Configure pool settings explicitly on the adapter\n\n## Resources\n\n- [Official v7 Upgrade Guide](https://www.prisma.io/docs/orm/more/upgrade-guides/upgrading-versions/upgrading-to-prisma-7)\n- [Driver Adapters Documentation](https://www.prisma.io/docs/orm/overview/databases/database-drivers)\n- [Prisma Config Reference](https://www.prisma.io/docs/orm/reference/prisma-config-reference)\n\n## How to Use\n\nFollow `references/schema-changes.md` and `references/driver-adapters.md` first, then apply the remaining reference files based on your project setup."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "postgresql",
+          "name": "postgresql",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "mysql",
+          "name": "mysql",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "mongodb",
+          "name": "mongodb",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "prisma",
+          "name": "@prisma/client@7",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "prisma@7",
+          "name": "prisma@7",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "prisma",
+          "name": "@prisma/adapter-pg",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "dotenv",
+          "name": "dotenv",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "prisma",
+          "name": "prisma",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "prisma",
+          "name": "@prisma/adapter-mariadb",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "prisma",
+          "name": "@prisma/adapter-better-sqlite3",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "prisma",
+          "name": "@prisma/adapter-ppg",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "prisma",
+          "name": "@prisma/adapter-neon",
+          "detectedFrom": "instructions"
+        }
+      ]
+    }
+  ]
+}

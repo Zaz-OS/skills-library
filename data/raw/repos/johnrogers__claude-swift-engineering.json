@@ -1,0 +1,342 @@
+{
+  "source": "johnrogers/claude-swift-engineering",
+  "repoUrl": "https://github.com/johnrogers/claude-swift-engineering",
+  "skills": [
+    {
+      "skillId": "composable-architecture",
+      "parsed": {
+        "name": "composable-architecture",
+        "description": "Use when building features with TCA (The Composable Architecture), structuring reducers, managing state, handling effects, navigation, or testing TCA features. Covers @Reducer, Store, Effect, TestStore, reducer composition, and TCA patterns.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# The Composable Architecture (TCA)\n\nTCA provides architecture for building complex, testable features through composable reducers, centralized state management, and side effect handling. The core principle: predictable state evolution with clear dependencies and testable effects.\n\n## Reference Loading Guide\n\n**ALWAYS load reference files if there is even a small chance the content may be required.** It's better to have the context than to miss a pattern or make a mistake.\n\n| Reference | Load When |\n|-----------|-----------|\n| **[Reducer Structure](references/reducer-structure.md)** | Creating new reducers, setting up `@Reducer`, `State`, `Action`, or `@ViewAction` |\n| **[Views - Binding](references/views-binding.md)** | Using `@Bindable`, two-way bindings, `store.send()`, or `.onAppear`/`.task` |\n| **[Views - Composition](references/views-composition.md)** | Using `ForEach` with stores, scoping to child features, or optional children |\n| **[Navigation - Basics](references/navigation-basics.md)** | Setting up `NavigationStack`, path reducers, pushing/popping, or programmatic dismiss |\n| **[Navigation - Advanced](references/navigation-advanced.md)** | Deep linking, recursive navigation, or combining NavigationStack with sheets |\n| **[Shared State](references/shared-state.md)** | Using `@Shared`, `.appStorage`, `.withLock`, or sharing state between features |\n| **[Dependencies](references/dependencies.md)** | Creating `@DependencyClient`, using `@Dependency`, or setting up test dependencies |\n| **[Effects](references/effects.md)** | Using `.run`, `.send`, `.merge`, timers, effect cancellation, or async work |\n| **[Presentation](references/presentation.md)** | Using `@Presents`, `AlertState`, sheets, popovers, or the Destination pattern |\n| **[Testing - Fundamentals](references/testing-fundamentals.md)** | Setting up test suites, `makeStore` helpers, or understanding Equatable requirements |\n| **[Testing - Patterns](references/testing-patterns.md)** | Testing actions, state changes, dependencies, errors, or presentations |\n| **[Testing - Advanced](references/testing-advanced.md)** | Using `TestClock`, keypath matching, `exhaustivity = .off`, or time-based tests |\n| **[Testing - Utilities](references/testing-utilities.md)** | Test data factories, `LockIsolated`, `ConfirmationDialogState` testing, or `@Shared` testing |\n| **[Performance](references/performance.md)** | Optimizing state updates, high-frequency actions, memory, or store scoping |\n\n## Common Mistakes\n\n1. **Over-modularizing features** — Breaking features into too many small reducers makes state management harder and adds composition overhead. Keep related state and actions together unless there's genuine reuse.\n\n2. **Mismanaging effect lifetimes** — Forgetting to cancel effects when state changes leads to stale data, duplicate requests, or race conditions. Use `.concatenate` for sequential effects and `.cancel` when appropriate.\n\n3. **Navigation state in wrong places** — Putting navigation state in child reducers instead of parent causes unnecessary view reloads and state inconsistencies. Navigation state belongs in the feature that owns the navigation structure.\n\n4. **Testing without TestStore exhaustivity** — Skipping TestStore assertions for \"simple\" effects or \"obvious\" state changes means you miss bugs. Use exhaustivity checking religiously; it catches regressions early.\n\n5. **Mixing async/await with Effects incorrectly** — Converting async/await to `.run` effects without proper cancellation or error handling loses isolation guarantees. Wrap async operations carefully in `.run` with `yield` statements."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "foundation-models",
+      "parsed": {
+        "name": "foundation-models",
+        "description": "Use when implementing on-device AI with Apple's Foundation Models framework (iOS 26+), building summarization/extraction/classification features, or using @Generable for type-safe structured output.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Foundation Models\n\nApple's on-device AI framework providing access to a 3B parameter language model for summarization, extraction, classification, and content generation. Runs entirely on-device with no network required.\n\n## Overview\n\nFoundation Models enable intelligent text processing directly on device without server round-trips, user data sharing, or network dependencies. The core principle: leverage on-device AI for specific, contained tasks (not for general knowledge).\n\n## Reference Loading Guide\n\n**ALWAYS load reference files if there is even a small chance the content may be required.** It's better to have the context than to miss a pattern or make a mistake.\n\n| Reference | Load When |\n|-----------|-----------|\n| **[Getting Started](references/getting-started.md)** | Setting up LanguageModelSession, checking availability, basic prompts |\n| **[Structured Output](references/structured-output.md)** | Using `@Generable` for type-safe responses, `@Guide` constraints |\n| **[Tool Calling](references/tool-calling.md)** | Integrating external data (weather, contacts, MapKit) via Tool protocol |\n| **[Streaming](references/streaming.md)** | AsyncSequence for progressive UI updates, PartiallyGenerated types |\n| **[Troubleshooting](references/troubleshooting.md)** | Context overflow, guardrails, errors, anti-patterns |\n\n## Core Workflow\n\n1. Check availability with `SystemLanguageModel.default.availability`\n2. Create `LanguageModelSession` with optional instructions\n3. Choose output type: plain String or @Generable struct\n4. Use streaming for long generations (>1 second)\n5. Handle errors: context overflow, guardrails, unsupported language\n\n## Model Capabilities\n\n| Use Case | Foundation Models? | Alternative |\n|----------|-------------------|-------------|\n| Summarization | Yes | - |\n| Extraction (key info) | Yes | - |\n| Classification | Yes | - |\n| Content tagging | Yes (built-in adapter) | - |\n| World knowledge | No | ChatGPT, Claude, Gemini |\n| Complex reasoning | No | Server LLMs |\n\n## Platform Requirements\n\n- iOS 26+, macOS 26+, iPadOS 26+, visionOS 26+\n- Apple Intelligence-enabled device (iPhone 15 Pro+, M1+ iPad/Mac)\n- User opted into Apple Intelligence\n\n## Common Mistakes\n\n1. **Using Foundation Models for world knowledge** — The 3B model is trained for on-device tasks only. It won't know current events, specific facts, or \"who is X\". Use ChatGPT/Claude for that. Keep prompts to: summarizing user's own content, extracting info, classifying text.\n\n2. **Blocking the main thread** — LanguageModelSession calls must run on a background thread or async context. Blocking the main thread locks UI. Always use `Task { }` or background queue.\n\n3. **Ignoring context overflow** — The model has finite context. If the user pastes a 50KB document, it will fail silently or truncate. Check input length and trim/truncate proactively.\n\n4. **Forgetting to check availability** — Not all devices support Foundation Models. Check `SystemLanguageModel.default.availability` before using. Graceful degradation is required.\n\n5. **Ignoring guardrails** — The model won't answer harmful queries. Instead of fighting it, design prompts that respect safety guidelines. Rephrasing requests usually works."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "generating-swift-package-docs",
+      "parsed": {
+        "name": "generating-swift-package-docs",
+        "description": "Use when encountering unfamiliar import statements, exploring dependency APIs, or when user asks \"what's import X\" or \"what does X do\". Generates on-demand API documentation for Swift package dependencies.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Swift Package Documentation Generator\n\nGenerates API documentation for Swift package dependencies on-demand, extracting symbol information from Xcode's DerivedData to answer \"what does this library do?\"\n\n## Overview\n\nWhen exploring unfamiliar dependencies, generate their documentation automatically instead of guessing from code. This tool uses `interfazzle` to extract symbol information from compiled modules.\n\n## How to Use\n\nWhen asked about an unfamiliar Swift module import:\n\n1. Run: `./scripts/generate_docs.py \"<module_name>\" \"<path_to.xcodeproj>\"`\n2. Script outputs path to cached documentation file\n3. Read the file and provide relevant information\n\nPrerequisites: Project must be built once (DerivedData exists), `interfazzle` CLI installed.\n\nSee [reference.md](reference.md) for error handling and details."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "scripts"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "grdb",
+      "parsed": {
+        "name": "grdb",
+        "description": "Use when writing raw SQL with GRDB, complex joins across 4+ tables, window functions, ValueObservation for reactive queries, or dropping down from SQLiteData for performance. Direct SQLite access for iOS/macOS with type-safe queries and migrations.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# GRDB\n\nDirect SQLite access using [GRDB.swift](https://github.com/groue/GRDB.swift) - type-safe Swift wrapper with full SQLite power when you need it.\n\n## Reference Loading Guide\n\n**ALWAYS load reference files if there is even a small chance the content may be required.** It's better to have the context than to miss a pattern or make a mistake.\n\n| Reference | Load When |\n|-----------|-----------|\n| **[Getting Started](references/getting-started.md)** | Setting up DatabaseQueue or DatabasePool |\n| **[Queries](references/queries.md)** | Writing raw SQL, Record types, type-safe queries |\n| **[Value Observation](references/value-observation.md)** | Reactive queries, SwiftUI integration |\n| **[Migrations](references/migrations.md)** | DatabaseMigrator, schema evolution |\n| **[Performance](references/performance.md)** | EXPLAIN QUERY PLAN, indexing, profiling |\n\n## When to Use GRDB vs SQLiteData\n\n| Scenario | Use |\n|----------|-----|\n| Type-safe @Table models | SQLiteData |\n| CloudKit sync needed | SQLiteData |\n| Complex joins (4+ tables) | GRDB |\n| Window functions (ROW_NUMBER, RANK) | GRDB |\n| Performance-critical raw SQL | GRDB |\n| Reactive queries (ValueObservation) | GRDB |\n\n## Core Workflow\n\n1. Choose DatabaseQueue (single connection) or DatabasePool (concurrent reads)\n2. Define migrations with DatabaseMigrator\n3. Create Record types (Codable, FetchableRecord, PersistableRecord)\n4. Write queries with raw SQL or QueryInterface\n5. Use ValueObservation for reactive updates\n\n## Requirements\n\n- iOS 13+, macOS 10.15+\n- Swift 5.7+\n- GRDB.swift 6.0+\n\n## Common Mistakes\n\n1. **Performance assumptions without EXPLAIN PLAN** — Assuming your query is fast or slow without checking `EXPLAIN QUERY PLAN` is guessing. Always profile queries with EXPLAIN before optimizing.\n\n2. **Missing indexes on WHERE clauses** — Queries filtering on non-indexed columns scan the entire table. Index any column used in WHERE, JOIN, or ORDER BY clauses for large tables.\n\n3. **Improper migration ordering** — Running migrations out of order or skipping intermediate versions breaks schema consistency. Always apply migrations sequentially; never jump versions.\n\n4. **Record conformance shortcuts** — Not conforming Record types to `PersistableRecord` or `FetchableRecord` correctly leads to silent data loss or deserialization failures. Always implement all required protocols correctly.\n\n5. **ValueObservation without proper cleanup** — Forgetting to cancel ValueObservation when views disappear causes memory leaks and stale data subscriptions. Store the cancellable and clean up in deinit."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "haptics",
+      "parsed": {
+        "name": "haptics",
+        "description": "Use when adding haptic feedback for user confirmations (button presses, toggles, purchases), error notifications, or custom tactile patterns (Core Haptics). Covers UIFeedbackGenerator and CHHapticEngine patterns.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Haptics\n\nHaptic feedback provides tactile confirmation of user actions and system events. When designed thoughtfully, haptics transform interfaces from functional to delightful.\n\n## Overview\n\nHaptics should enhance interactions, not dominate them. The core principle: haptic feedback is like sound design—every haptic should have purpose (confirmation, error, warning), timing (immediate or delayed), and restraint (less is more).\n\n## Reference Loading Guide\n\n**ALWAYS load reference files if there is even a small chance the content may be required.** It's better to have the context than to miss a pattern or make a mistake.\n\n| Reference | Load When |\n|-----------|-----------|\n| **[UIFeedbackGenerator](references/uifeedbackgenerator.md)** | Using simple impact/selection/notification haptics |\n| **[Core Haptics](references/core-haptics.md)** | Creating custom patterns with CHHapticEngine |\n| **[AHAP Patterns](references/ahap-patterns.md)** | Working with Apple Haptic Audio Pattern files |\n| **[Design Principles](references/design-principles.md)** | Applying Causality, Harmony, Utility framework |\n\n## Core Workflow\n\n1. **Choose complexity level**: Simple (UIFeedbackGenerator) vs Custom (Core Haptics)\n2. **For simple haptics**: Use UIImpactFeedbackGenerator, UISelectionFeedbackGenerator, or UINotificationFeedbackGenerator\n3. **For custom patterns**: Create CHHapticEngine, define CHHapticEvents, build CHHapticPattern\n4. **Prepare before triggering**: Call `prepare()` to reduce latency\n5. **Apply design principles**: Ensure Causality (timing), Harmony (multimodal), Utility (meaningful)\n\n## System Requirements\n\n- **iOS 10+** for UIFeedbackGenerator\n- **iOS 13+** for Core Haptics (CHHapticEngine)\n- **iPhone 8+** for Core Haptics hardware support\n- **Physical device required** - haptics cannot be tested in Simulator\n\n## Common Mistakes\n\n1. **Haptic feedback on every action** — Every button doesn't need haptics. Reserve haptics for critical confirmations (purchase, delete, settings change). Over-haptics are annoying and drain battery.\n\n2. **Triggering haptics on main thread blocks** — Long haptic patterns can freeze UI briefly. Use background threads or async for Core Haptics `prepare()` calls to prevent jank.\n\n3. **Haptic without audio/visual feedback** — Relying ONLY on haptics means deaf or deaf-blind users miss feedback. Always pair haptics with sound or visual response.\n\n4. **Ignoring haptic settings** — Some users disable haptics system-wide. Check `UIFeedbackGenerator.isHapticFeedbackEnabled` before triggering. Graceful degradation is required.\n\n5. **AHAP file errors silently** — Invalid AHAP files fail silently without errors. Test with Xcode's haptic designer and validate file syntax before shipping.\n\n6. **Forgetting battery impact** — Continuous haptic patterns (progress bars, loading states) drain battery fast. Use haptics for state changes only, not ongoing feedback."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "ios-26-platform",
+      "parsed": {
+        "name": "ios-26-platform",
+        "description": "Use when implementing iOS 26 features (Liquid Glass, new SwiftUI APIs, WebView, Chart3D), deploying iOS 26+ apps, or supporting backward compatibility with iOS 17/18.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# iOS 26 Platform\n\niOS 26 introduces Liquid Glass, Apple's next-generation material design system that dynamically bends light, moves organically, and adapts automatically across all platforms.\n\n## Overview\n\niOS 26 modernizes UI with new materials (Liquid Glass), SwiftUI APIs (WebView, Chart3D, @Animatable), and advanced features (@BackoffAnimation, free-form windows). The core principle: modern UI gets updated automatically at compile time; most Liquid Glass benefits are \"free\" from recompiling with Xcode 26.\n\n## Reference Loading Guide\n\n**ALWAYS load reference files if there is even a small chance the content may be required.** It's better to have the context than to miss a pattern or make a mistake.\n\n| Reference | Load When |\n|-----------|-----------|\n| **[Liquid Glass](references/liquid-glass.md)** | Implementing glass effects, choosing Regular vs Clear variants, or understanding visual properties |\n| **[Automatic Adoption](references/automatic-adoption.md)** | Understanding what iOS 26 changes automatically vs what requires code |\n| **[SwiftUI APIs](references/swiftui-apis.md)** | Using WebView, Chart3D, `@Animatable`, AttributedString, or new view modifiers |\n| **[Toolbar & Navigation](references/toolbar-navigation.md)** | Customizing toolbars with spacers, morphing, glass button styles, or search |\n| **[Backward Compatibility](references/backward-compat.md)** | Supporting iOS 17/18 alongside iOS 26, or using UIDesignRequiresCompatibility |\n\n## Core Workflow\n\n1. **Check deployment target** — iOS 26+ required for Liquid Glass\n2. **Recompile with Xcode 26** — Standard controls get glass automatically\n3. **Identify navigation layer** — Apply glass to tab bars, toolbars, navigation (not content)\n4. **Choose variant** — Regular (95% of cases) or Clear (media-rich backgrounds only)\n5. **Add @available guards** — For backward compatibility with iOS 17/18\n6. **Test accessibility** — Verify Reduce Transparency, Increase Contrast, Reduce Motion\n\n## Common Mistakes\n\n1. **Ignoring backward compatibility** — Targeting iOS 26+ without `@available` guards breaks iOS 17/18 support. Always use `if #available(iOS 26, *)` for Liquid Glass or new APIs.\n\n2. **Over-using glass effect** — Applying glass to content areas, not just navigation, creates visual noise. Glass works for: tab bars, toolbars, sheets, navigation. NOT for content areas.\n\n3. **Animation performance issues** — Liquid Glass animations can be expensive. Respect Reduce Motion accessibility setting and profile with Instruments 26 before shipping.\n\n4. **Assuming Clear variant looks good** — Clear is for media-rich backgrounds only (photos, video). Regular variant is correct 95% of the time. Only use Clear if you explicitly need the ultra-transparency.\n\n5. **Not testing on actual devices** — Simulator rendering differs from hardware. Test glass effects on iPhone 15 Pro, iPad, and Mac to verify visual quality.\n\n6. **Using old UIView patterns with new glass** — Mixing UIView-based navigation with iOS 26 glass creates inconsistent appearances. Migrate fully to SwiftUI or wrap carefully with UIViewRepresentable."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "ios-hig",
+      "parsed": {
+        "name": "ios-hig",
+        "description": "Use when designing iOS interfaces, implementing accessibility (VoiceOver, Dynamic Type), handling dark mode, ensuring adequate touch targets, providing animation/haptic feedback, or requesting user permissions. Apple Human Interface Guidelines for iOS compliance.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# iOS Human Interface Guidelines\n\nApple's Human Interface Guidelines define the visual language, interaction patterns, and accessibility standards that make iOS apps feel native and intuitive. The core principle: clarity and consistency through thoughtful design.\n\n## Reference Loading Guide\n\n**ALWAYS load reference files if there is even a small chance the content may be required.** It's better to have the context than to miss a pattern or make a mistake.\n\n| Reference | Load When |\n|-----------|-----------|\n| **[Interaction](references/interaction.md)** | Touch targets, navigation, layout, hierarchy, or gesture patterns |\n| **[Content](references/content.md)** | Empty states, writing copy, typography, or placeholder text |\n| **[Visual Design](references/visual-design.md)** | Colors, materials, contrast, dark mode, or SF Symbols |\n| **[Accessibility](references/accessibility.md)** | VoiceOver, Dynamic Type, Reduce Motion, or accessibility labels |\n| **[Feedback](references/feedback.md)** | Animations, haptics, loading states, or error messages |\n| **[Performance](references/performance-platform.md)** | Responsiveness, system components, or app launch |\n| **[Privacy](references/privacy-permissions.md)** | Permission requests, data handling, or privacy-sensitive APIs |\n\n## Common Mistakes\n\n1. **Touch targets smaller than 44x44 points** — Buttons and interactive elements must be at least 44x44 points (iOS) to accommodate thumbs. Smaller targets cause frustrated users and accessibility failures.\n\n2. **Ignoring Dynamic Type constraints** — Text with fixed sizes doesn't respect user accessibility settings. Use Dynamic Type sizes, test with Large or Extra Large settings, and avoid hardcoded font sizes.\n\n3. **Insufficient color contrast in dark mode** — Colors that work in light mode may fail accessibility in dark mode. Test with Reduce Contrast accessibility setting enabled for both modes.\n\n4. **Over-animating transitions** — Animations that feel smooth at 60fps can trigger motion sickness in users with vestibular issues. Respect Reduce Motion settings and keep animations under 300ms.\n\n5. **Missing VoiceOver labels on custom controls** — Custom buttons, toggles, or interactive views need `.accessibilityLabel()` and `.accessibilityHint()` or they're completely unusable to screen reader users.\n\n6. **Haptic overuse** — Every action does NOT need haptic feedback. Reserve haptics for confirmations (purchase, critical action) and errors. Excessive haptics are annoying and drain battery."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "localization",
+      "parsed": {
+        "name": "localization",
+        "description": "Use when implementing internationalization (i18n), String Catalogs, pluralization, or right-to-left layout support. Covers modern localization workflows with Xcode String Catalogs and LocalizedStringKey patterns.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Localization\n\nModern iOS localization using String Catalogs (.xcstrings) for managing translations, plural forms, and locale-aware content. Supports SwiftUI's LocalizedStringKey and String(localized:) APIs.\n\n## Reference Loading Guide\n\n**ALWAYS load reference files if there is even a small chance the content may be required.** It's better to have the context than to miss a pattern or make a mistake.\n\n| Reference | Load When |\n|-----------|-----------|\n| **[String Catalogs](references/string-catalogs.md)** | Setting up or using Xcode 15+ String Catalogs |\n| **[Pluralization](references/pluralization.md)** | Handling plural forms, stringsdict migration |\n| **[Formatting](references/formatting.md)** | Date, number, currency locale-aware formatting |\n| **[RTL Support](references/rtl-support.md)** | Right-to-left layouts, semantic directions |\n\n## Core Workflow\n\n1. Create String Catalog in Xcode (File > New > String Catalog)\n2. Mark strings with `String(localized:comment:)` or use SwiftUI's automatic extraction\n3. Add plural variants in String Catalog editor where needed\n4. Test with pseudo-localization (Scheme > Run > Options > App Language)\n5. Export for translation (File > Export Localizations)\n\n## Key Patterns\n\n```swift\n// SwiftUI - automatic localization\nText(\"Welcome\")\nButton(\"Continue\") { }\n\n// Explicit localization with context\nlet title = String(localized: \"Settings\", comment: \"Navigation title\")\n\n// Deferred localization for custom views\nstruct CardView: View {\n    let title: LocalizedStringResource\n    var body: some View { Text(title) }\n}\n```\n\n## Build Settings\n\n- **Use Compiler to Extract Swift Strings**: Yes\n- **Localization Prefers String Catalogs**: Yes\n\n## Common Mistakes\n\n1. **Forgetting String Catalog in Build Phases** — Adding String Catalog but forgetting to check \"Localize\" in File Inspector means it's not embedded. Always verify in Build Phases > Copy Bundle Resources.\n\n2. **Pseudo-localization not tested** — Not running your app with pseudo-localization (German/Chinese pseudo-locale) means you miss text overflow and RTL issues. Always test with pseudo-localization before translation.\n\n3. **Hardcoded strings anywhere** — Even one hardcoded string outside the String Catalog breaks extraction and automation. Use `String(localized:)` everywhere or use `LocalizedStringResource` for deferred localization.\n\n4. **Context loss in translations** — Providing no comment for translators means they guess context and get it wrong. Add comments explaining where the string appears and what it means.\n\n5. **RTL layouts not tested** — Assuming LTR layout works for RTL languages (Arabic, Hebrew) fails miserably. Test with system language set to Arabic and verify semantic directions are used."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "modern-swift",
+      "parsed": {
+        "name": "modern-swift",
+        "description": "Use when writing async/await code, enabling strict concurrency, fixing Sendable errors, migrating from completion handlers, managing shared state with actors, or using Task/TaskGroup for concurrency.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Modern Swift (6.2+)\n\nSwift 6.2 introduces strict compile-time concurrency checking with async/await, actors, and Sendable constraints that prevent data races at compile time instead of runtime. This is the foundation of safe concurrent Swift.\n\n## Overview\n\nModern Swift replaces older concurrency patterns (completion handlers, DispatchQueue, locks) with compiler-enforced safety. The core principle: if it compiles with strict concurrency enabled, it cannot have data races.\n\n## Quick Reference\n\n| Need | Use | NOT |\n|------|-----|-----|\n| Async operation | `async/await` | Completion handlers |\n| Main thread work | `@MainActor` | `DispatchQueue.main` |\n| Shared mutable state | `actor` | Locks, serial queues |\n| Parallel tasks | `TaskGroup` | `DispatchGroup` |\n| Thread safety | `Sendable` | `@unchecked` everywhere |\n\n## Core Workflow\n\nWhen writing async Swift code:\n1. Mark async functions with `async`, call with `await`\n2. Apply `@MainActor` to view models and UI-updating code\n3. Use `actor` instead of locks for shared mutable state\n4. Check `Task.isCancelled` or call `Task.checkCancellation()` in loops\n5. Enable strict concurrency in Package.swift for compile-time safety\n\n## Reference Loading Guide\n\n**ALWAYS load reference files if there is even a small chance the content may be required.** It's better to have the context than to miss a pattern or make a mistake.\n\n| Reference | Load When |\n|-----------|-----------|\n| **[Concurrency Essentials](references/concurrency-essentials.md)** | Writing async code, converting completion handlers, using `await` |\n| **[Swift 6 Concurrency](references/swift6-concurrency.md)** | Using `@concurrent`, `nonisolated(unsafe)`, or actor patterns |\n| **[Task Groups](references/task-groups.md)** | Running multiple async operations in parallel |\n| **[Task Cancellation](references/task-cancellation.md)** | Implementing long-running or cancellable operations |\n| **[Strict Concurrency](references/strict-concurrency.md)** | Enabling Swift 6 strict mode or fixing Sendable errors |\n| **[Macros](references/macros.md)** | Using or understanding Swift macros like `@Observable` |\n| **[Modern Attributes](references/modern-attributes.md)** | Migrating legacy code or using `@preconcurrency`, `@backDeployed` |\n| **[Migration Patterns](references/migration-patterns.md)** | Modernizing delegate patterns or UIKit views |\n\n## Common Mistakes\n\n1. **`@unchecked Sendable` as a quick fix** — Using `@unchecked Sendable` to silence compiler errors means you've opted out of safety. If the error persists after `@unchecked`, your code has a potential data race. Fix the underlying issue instead.\n\n2. **Missing `await` at call sites** — Forgetting `await` when calling async functions is a compiler error, but checking `Task.isCancelled` in a loop without calling `Task.checkCancellation()` silently ignores cancellation.\n\n3. **Capturing `self` in async blocks without `weak`** — Holding a strong reference to `self` in a long-running async task prevents deinit. Always use `[weak self]` in closures or use `.task` which auto-manages the lifecycle.\n\n4. **Not checking task cancellation** — Long-running operations should regularly check `Task.isCancelled` or call `Task.checkCancellation()`, otherwise cancellation signals are ignored.\n\n5. **Forgetting `@MainActor` on UI code and test suites** — Main test struct and view models that update `@Published` properties need `@MainActor`. Forgetting it silently allows cross-thread mutations. Apply `@MainActor` to: view models, view structs, main test structs, and any type that touches UI.\n\n6. **Actor re-entrancy surprises** — `await` inside an actor method can release the lock temporarily. Another task may modify actor state. Design actor methods assuming state can change between `await` points."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "sqlite-data",
+      "parsed": {
+        "name": "sqlite-data",
+        "description": "Use when working with SQLiteData library (@Table, @FetchAll, @FetchOne macros) for SQLite persistence, queries, writes, migrations, or CloudKit private database sync.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# SQLite Data\n\nSQLiteData provides type-safe SQLite access through Swift macros, simplifying database modeling and queries while handling CloudKit sync, migrations, and async patterns automatically.\n\n## Reference Loading Guide\n\n**ALWAYS load reference files if there is even a small chance the content may be required.** It's better to have the context than to miss a pattern or make a mistake.\n\n| Reference | Load When |\n|-----------|-----------|\n| **[Table Models](references/models.md)** | Defining tables with `@Table`, setting up primary keys, columns, or enums |\n| **[Queries - Basics](references/queries-basics.md)** | Using `@FetchAll`, `@FetchOne`, `@Selection`, filtering, ordering, or joins |\n| **[Queries - Advanced](references/queries-advanced.md)** | Using `@Fetch` with `FetchKeyRequest`, dynamic queries, recursive CTEs, or direct reads |\n| **[Writes](references/writes.md)** | Inserting, updating, upserting, deleting records, or managing transactions |\n| **[Views - SwiftUI](references/views-swiftui.md)** | Using `@FetchAll`/`@FetchOne` in SwiftUI views, `@Observable` models, or animations |\n| **[Views - Integration](references/views-integration.md)** | UIKit integration, dynamic query loading, TCA integration, or `observe {}` |\n| **[Migrations](references/migrations.md)** | Creating database migrations with `DatabaseMigrator` or `#sql()` macro |\n| **[CloudKit Sync](references/cloudkit.md)** | Setting up CloudKit private database sync, sharing, or sync delegates |\n| **[Dependencies](references/dependencies.md)** | Injecting database/sync engine via `@Dependency`, bootstrap patterns, or TCA integration |\n| **[Testing](references/testing.md)** | Setting up test databases, seeding data, or writing assertions for SQLite code |\n| **[Advanced - Queries](references/advanced-queries.md)** | Implementing triggers, custom database functions, or full-text search (FTS5) |\n| **[Advanced - Optimization](references/advanced-optimization.md)** | Performance tuning, indexes, custom aggregates, JSON aggregation, or self-joins |\n| **[Schema Composition](references/schema-composition.md)** | Using `@Selection` column groups, single-table inheritance, or database views |\n\n## Core Workflow\n\nWhen working with SQLiteData:\n1. Define table models with `@Table` macro\n2. Use `@FetchAll`/`@FetchOne` property wrappers in views or `@Observable` models\n3. Access database via `@Dependency(\\.defaultDatabase)`\n4. Perform writes in `database.write { }` transactions\n5. Set up migrations before first use\n\n## Common Mistakes\n\n1. **N+1 query patterns** — Loading records one-by-one in a loop (e.g., fetching user then fetching all their posts separately) kills performance. Use joins or batch fetches instead.\n\n2. **Missing migrations on schema changes** — Modifying `@Table` without creating a migration causes crashes at runtime. Always create migrations for schema changes before deploying.\n\n3. **Improper transaction handling** — Long-running transactions outside of `database.write { }` block can cause deadlocks or data loss. Keep write blocks short and focused.\n\n4. **Ignoring CloudKit sync delegates** — Setting up CloudKit sync without implementing `SyncDelegate` means you miss error handling and conflict resolution. Implement all delegate methods for production.\n\n5. **Over-fetching in SwiftUI views** — Using `@FetchAll` without filtering/limiting can load thousands of records, freezing the UI. Use predicates, limits, and sorting to keep in-memory footprint small."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "storekit",
+      "parsed": {
+        "name": "storekit",
+        "description": "Use when implementing in-app purchases, StoreKit 2 subscriptions, consumables, non-consumables, or transaction handling. Covers testing-first workflow with .storekit configuration, StoreManager architecture, and transaction verification.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# StoreKit\n\nStoreKit 2 patterns for implementing in-app purchases with async/await APIs, automatic verification, and SwiftUI integration.\n\n## Reference Loading Guide\n\n**ALWAYS load reference files if there is even a small chance the content may be required.** It's better to have the context than to miss a pattern or make a mistake.\n\n| Reference | Load When |\n|-----------|-----------|\n| **[Getting Started](references/getting-started.md)** | Setting up `.storekit` configuration file, testing-first workflow |\n| **[Products](references/products.md)** | Loading products, product types, purchasing with `Product.purchase()` |\n| **[Subscriptions](references/subscriptions.md)** | Auto-renewable subscriptions, subscription groups, offers, renewal tracking |\n| **[Transactions](references/transactions.md)** | Transaction listener, verification, finishing transactions, restore purchases |\n| **[StoreKit Views](references/storekit-views.md)** | ProductView, SubscriptionStoreView, SubscriptionOfferView in SwiftUI |\n\n## Core Workflow\n\n1. Create `.storekit` configuration file first (before any code)\n2. Test purchases locally in Xcode simulator\n3. Implement centralized `StoreManager` with `@MainActor`\n4. Set up `Transaction.updates` listener at app launch\n5. Display products with `ProductView` or custom UI\n6. Always call `transaction.finish()` after granting entitlements\n\n## Essential Architecture\n\n```swift\n@MainActor\nfinal class StoreManager: ObservableObject {\n    @Published private(set) var products: [Product] = []\n    @Published private(set) var purchasedProductIDs: Set<String> = []\n    private var transactionListener: Task<Void, Never>?\n\n    init() {\n        transactionListener = listenForTransactions()\n        Task { await loadProducts() }\n    }\n}\n```\n\n## Common Mistakes\n\n1. **Missing `.finish()` calls on transactions** — Forgetting to call `transaction.finish()` after granting entitlements causes transactions to never complete. The user won't see their purchase reflected. Always call `finish()`.\n\n2. **Unsafe StoreManager state** — Shared `StoreManager` without `@MainActor` can have race conditions. Multiple async tasks can update `@Published` properties concurrently, corrupting state. Use `@MainActor` for thread safety.\n\n3. **No transaction listener at app launch** — Not setting up `Transaction.updates` listener means app crashes or misses refunded/canceled purchases. Listen for transactions immediately in `@main`, not when user taps purchase button.\n\n4. **Hardcoded product IDs** — Hardcoded IDs make testing and localization hard. Use configuration files or environment variables for product IDs. Same applies to prices (fetch from App Store, don't hardcode).\n\n5. **Ignoring verification failures** — App Store verification fails silently sometimes. Not checking verification status means accepting unverified transactions (security risk). Always verify before granting entitlements."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "swift-diagnostics",
+      "parsed": {
+        "name": "swift-diagnostics",
+        "description": "Use when debugging NavigationStack issues (not responding, unexpected pops, crashes), build failures (SPM resolution, \"No such module\", hanging builds), or memory problems (retain cycles, leaks, deinit not called). Systematic diagnostic workflows for iOS/macOS.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Swift Diagnostics\n\nSystematic debugging workflows for iOS/macOS development. These patterns help identify root causes in minutes rather than hours by following structured diagnostic approaches.\n\n## Reference Loading Guide\n\n**ALWAYS load reference files if there is even a small chance the content may be required.** It's better to have the context than to miss a pattern or make a mistake.\n\n| Reference | Load When |\n|-----------|-----------|\n| **[Navigation](references/navigation.md)** | NavigationStack not responding, unexpected pops, deep link failures |\n| **[Build Issues](references/build-issues.md)** | SPM resolution, \"No such module\", dependency conflicts |\n| **[Memory](references/memory.md)** | Retain cycles, memory growth, deinit not called |\n| **[Build Performance](references/build-performance.md)** | Slow builds, Derived Data issues, Xcode hangs |\n| **[Xcode Debugging](references/xcode-debugging.md)** | LLDB commands, breakpoints, view debugging |\n\n## Core Workflow\n\n1. **Identify symptom category** - Navigation, build, memory, or performance\n2. **Load the relevant reference** - Each has diagnostic decision trees\n3. **Run mandatory first checks** - Before changing any code\n4. **Follow the decision tree** - Reach diagnosis in 2-5 minutes\n5. **Apply fix and verify** - One fix at a time, test each\n\n## Key Principle\n\n80% of \"mysterious\" issues stem from predictable patterns:\n- Navigation: Path state management or destination placement\n- Build: Stale caches or dependency resolution\n- Memory: Timer/observer leaks or closure captures\n- Performance: Environment problems, not code bugs\n\nDiagnose systematically. Never guess.\n\n## Common Mistakes\n\n1. **Skipping mandatory first checks** — Jumping straight to code changes before running diagnostics (clean build, restart simulator, restart Xcode) means you'll chase ghosts. Always start with the mandatory checks.\n\n2. **Changing multiple things at once** — \"Let me delete DerivedData AND restart simulator AND kill Xcode\" means you can't isolate which fix actually worked. Change one variable at a time.\n\n3. **Assuming you know the cause** — \"NavigationStack stopped working, must be my reducer\" — actually it was stale DerivedData. Diagnostic trees prevent assumptions. Follow the tree, don't guess.\n\n4. **Missing memory basics** — Calling `deinit` not being called is a retain cycle, but beginners often blame architecture. Use Instruments to verify leaks before refactoring. Data, not intuition.\n\n5. **Not isolating the problem** — Testing with your whole app complicates diagnosis. Create a minimal reproducible example with just the problematic feature. Isolation reveals root causes."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "swift-networking",
+      "parsed": {
+        "name": "swift-networking",
+        "description": "Use when implementing Network.framework connections (NWConnection, NetworkConnection), debugging connection failures, migrating from sockets/URLSession streams, or handling network transitions. Covers UDP/TCP patterns, structured concurrency networking (iOS 26+), and common anti-patterns.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Swift Networking\n\nNetwork.framework is Apple's modern networking API for TCP/UDP connections, replacing BSD sockets with smart connection establishment, user-space networking, and seamless mobility handling.\n\n## Reference Loading Guide\n\n**ALWAYS load reference files if there is even a small chance the content may be required.** It's better to have the context than to miss a pattern or make a mistake.\n\n| Reference | Load When |\n|-----------|-----------|\n| **[Getting Started](references/getting-started.md)** | Setting up NWConnection for TCP/UDP, choosing between APIs |\n| **[Connection States](references/connection-states.md)** | Handling `.waiting`, `.ready`, `.failed` transitions |\n| **[iOS 26+ Networking](references/ios26-networking.md)** | Using NetworkConnection with async/await, TLV framing, Coder protocol |\n| **[Migration Guide](references/migration.md)** | Moving from sockets, CFSocket, SCNetworkReachability, URLSession |\n| **[Troubleshooting](references/troubleshooting.md)** | Debugging timeouts, TLS failures, connection issues |\n\n## Core Workflow\n\n1. Choose transport (TCP/UDP/QUIC) based on use case\n2. Create NWConnection (iOS 12+) or NetworkConnection (iOS 26+)\n3. Set up state handler for connection lifecycle\n4. Start connection on appropriate queue\n5. Send/receive data with proper error handling\n6. Handle network transitions (WiFi to cellular)\n\n## When to Use Network.framework vs URLSession\n\n- **URLSession**: HTTP, HTTPS, WebSocket, simple TCP/TLS streams\n- **Network.framework**: UDP, custom protocols, low-level control, peer-to-peer, gaming\n\n## Common Mistakes\n\n1. **Ignoring state handlers** — Creating an NWConnection without a state change handler means you never learn when it's ready or failed. Always implement the state handler first.\n\n2. **Blocking the main thread** — Never call `receive()` on the main queue. Use a background DispatchQueue or Task for all network operations.\n\n3. **Wrong queue selection** — Using the wrong queue (UI queue for network work, or serial queue for concurrent reads) causes deadlocks or silent failures. Always explicit your queue choice.\n\n4. **Not handling network transitions** — WiFi/cellular switches or network loss aren't always detected automatically. Implement viability checks and state monitoring for robust apps.\n\n5. **Improper error recovery** — Network errors need retry logic with backoff. Immediately failing on transient errors (timeouts, temporary loss) creates poor UX."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "swift-style",
+      "parsed": {
+        "name": "swift-style",
+        "description": "Swift code style conventions for clean, readable code. Use when writing Swift code to ensure consistent formatting, naming, organization, and idiomatic patterns.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Swift Style Guide\n\nCode style conventions for clean, readable Swift code.\n\n## Core Principles\n\n**Clarity > Brevity > Consistency**\n\nCode should compile without warnings.\n\n## Naming\n\n- `UpperCamelCase` — Types, protocols\n- `lowerCamelCase` — Everything else\n- Clarity at call site\n- No abbreviations except universal (URL, ID)\n\n```swift\n// Preferred\nlet maximumWidgetCount = 100\nfunc fetchUser(byID id: String) -> User\n```\n\n## Golden Path\n\nLeft-hand margin is the happy path. Don't nest `if` statements.\n\n```swift\n// Preferred\nfunc process(value: Int?) throws -> Result {\n    guard let value = value else {\n        throw ProcessError.nilValue\n    }\n    guard value > 0 else {\n        throw ProcessError.invalidValue\n    }\n    return compute(value)\n}\n```\n\n## Code Organization\n\nUse extensions and MARK comments:\n\n```swift\nclass MyViewController: UIViewController {\n    // Core implementation\n}\n\n// MARK: - UITableViewDataSource\nextension MyViewController: UITableViewDataSource { }\n```\n\n## Spacing\n\n- Braces open on same line, close on new line\n- One blank line between methods\n- Colon: no space before, one space after\n\n## Self\n\nAvoid `self` unless required by compiler.\n\n```swift\n// Preferred\nfunc configure() {\n    backgroundColor = .systemBackground\n}\n```\n\n## Computed Properties\n\nOmit `get` for read-only:\n\n```swift\nvar diameter: Double {\n    radius * 2\n}\n```\n\n## Closures\n\nTrailing closure only for single closure parameter.\n\n## Type Inference\n\nLet compiler infer when clear. For empty collections, use type annotation:\n\n```swift\nvar names: [String] = []\n```\n\n## Syntactic Sugar\n\n```swift\n// Preferred\nvar items: [String]\nvar cache: [String: Int]\nvar name: String?\n```\n\n## Access Control\n\n- `private` over `fileprivate`\n- Don't add `internal` (it's the default)\n- Access control as leading specifier\n\n## Memory Management\n\n```swift\nresource.request().onComplete { [weak self] response in\n    guard let self else { return }\n    self.updateModel(response)\n}\n```\n\n## Comments\n\n- Explain **why**, not what\n- Use `//` or `///`, avoid `/* */`\n- Keep up-to-date or delete\n\n## Constants\n\nUse case-less enum for namespacing:\n\n```swift\nenum Math {\n    static let pi = 3.14159\n}\n```\n\n## Common Mistakes\n\n1. **Abbreviations beyond URL, ID, UUID** — Abbreviations like `cfg`, `mgr`, `ctx`, `desc` hurt readability. Spell them out: `configuration`, `manager`, `context`, `description`. The three exceptions are URL, ID, UUID.\n\n2. **Nested guard/if statements** — Deep nesting makes code hard to follow. Use early returns and guards to keep the happy path left-aligned.\n\n3. **Inconsistent self usage** — Either always omit `self` (preferred) or always use it. Mixing makes code scanning harder and confuses capture semantics.\n\n4. **Overly generic type names** — `Manager`, `Handler`, `Helper`, `Coordinator` are too vague. Names should explain responsibility: `PaymentProcessor`, `EventDispatcher`, `ImageCache`, `NavigationCoordinator`.\n\n5. **Implied access control** — Don't skip access control. Explicit `private`, `public` helps future maintainers understand module boundaries. `internal` is default, so omit it."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "swift-testing",
+      "parsed": {
+        "name": "swift-testing",
+        "description": "Use when writing tests with Swift Testing (@Test,",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Swift Testing Framework\n\nModern testing with Swift Testing framework. No XCTest.\n\n## Overview\n\nSwift Testing replaces XCTest with a modern macro-based approach that's more concise, has better async support, and runs tests in parallel by default. The core principle: if you learned XCTest, unlearn it—Swift Testing works differently.\n\n## References\n\n- [Apple Documentation](https://developer.apple.com/documentation/testing)\n- [Migration Guide](https://steipete.me/posts/2025/migrating-700-tests-to-swift-testing)\n\n## Core Concepts\n\n### Assertions\n\n| Macro | Use Case |\n|-------|----------|\n| `#expect(expression)` | Soft check — continues on failure. Use for most assertions. |\n| `#require(expression)` | Hard check — stops test on failure. Use for preconditions only. |\n\n### Optional Unwrapping\n\n```swift\nlet user = try #require(await fetchUser(id: \"123\"))\n#expect(user.id == \"123\")\n```\n\n## Test Structure\n\n```swift\nimport Testing\n@testable import YourModule\n\n@Suite\nstruct FeatureTests {\n    let sut: FeatureType\n    \n    init() throws {\n        sut = FeatureType()\n    }\n    \n    @Test(\"Description of behavior\")\n    func testBehavior() {\n        #expect(sut.someProperty == expected)\n    }\n}\n```\n\n## Assertion Conversions\n\n| XCTest | Swift Testing |\n|--------|---------------|\n| `XCTAssert(expr)` | `#expect(expr)` |\n| `XCTAssertEqual(a, b)` | `#expect(a == b)` |\n| `XCTAssertNil(a)` | `#expect(a == nil)` |\n| `XCTAssertNotNil(a)` | `#expect(a != nil)` |\n| `try XCTUnwrap(a)` | `try #require(a)` |\n| `XCTAssertThrowsError` | `#expect(throws: ErrorType.self) { }` |\n| `XCTAssertNoThrow` | `#expect(throws: Never.self) { }` |\n\n## Error Testing\n\n```swift\n#expect(throws: (any Error).self) { try riskyOperation() }\n#expect(throws: NetworkError.self) { try fetch() }\n#expect(throws: NetworkError.timeout) { try fetch() }\n#expect(throws: Never.self) { try safeOperation() }\n```\n\n## Parameterized Tests\n\n```swift\n@Test(\"Validates inputs\", arguments: zip(\n    [\"a\", \"b\", \"c\"],\n    [1, 2, 3]\n))\nfunc testInputs(input: String, expected: Int) {\n    #expect(process(input) == expected)\n}\n```\n\n**Warning:** Multiple collections WITHOUT zip creates Cartesian product.\n\n## Async Testing\n\n```swift\n@Test func testAsync() async throws {\n    let result = try await fetchData()\n    #expect(!result.isEmpty)\n}\n```\n\n### Confirmations\n\n```swift\n@Test func testCallback() async {\n    await confirmation(\"callback received\") { confirm in\n        let sut = SomeType { confirm() }\n        sut.triggerCallback()\n    }\n}\n```\n\n## Tags\n\n```swift\nextension Tag {\n    @Tag static var fast: Self\n    @Tag static var networking: Self\n}\n\n@Test(.tags(.fast, .networking))\nfunc testNetworkCall() { }\n```\n\n## Common Pitfalls\n\n1. **Overusing `#require`** — Use `#expect` for most checks\n2. **Forgetting state isolation** — Each test gets a NEW instance\n3. **Accidental Cartesian product** — Always use `zip` for paired inputs\n4. **Not using `.serialized`** — Apply for thread-unsafe legacy tests\n\n## Common Mistakes\n\n1. **Overusing `#require`** — `#require` is for preconditions only. Using it for normal assertions means the test stops at first failure instead of reporting all failures. Use `#expect` for assertions, `#require` only when subsequent assertions depend on the value.\n\n2. **Cartesian product bugs** — `@Test(arguments: [a, b], [c, d])` creates 4 combinations, not 2. Always use `zip` to pair arguments correctly: `arguments: zip([a, b], [c, d])`.\n\n3. **Forgetting state isolation** — Swift Testing creates a new test instance per test method. BUT shared state between tests (static variables, singletons) still leak. Use dependency injection or clean up singletons between tests.\n\n4. **Parallel test conflicts** — Swift Testing runs tests in parallel by default. Tests touching shared files, databases, or singletons will interfere. Use `.serialized` or isolation strategies.\n\n5. **Not using `async` naturally** — Wrapping async operations in `Task { }` defeats the purpose. Use `async/await` directly in test function signature: `@Test func testAsync() async throws { }`.\n\n6. **Confirmation misuse** — `confirmation` is for verifying callbacks were called. Using it for assertions is wrong. Use `#expect` for assertions, `confirmation` for callback counts."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "swiftui-advanced",
+      "parsed": {
+        "name": "swiftui-advanced",
+        "description": "Use when implementing gesture composition (simultaneous, sequenced, exclusive), adaptive layouts (ViewThatFits, AnyLayout, size classes), or choosing architecture patterns (MVVM vs TCA vs vanilla, State-as-Bridge). Covers advanced SwiftUI patterns beyond basic views.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# SwiftUI Advanced\n\nAdvanced SwiftUI patterns for gesture composition, adaptive layouts, architecture decisions, and performance optimization.\n\n## Reference Loading Guide\n\n**ALWAYS load reference files if there is even a small chance the content may be required.** It's better to have the context than to miss a pattern or make a mistake.\n\n| Reference | Load When |\n|-----------|-----------|\n| **[Gestures](references/gestures.md)** | Composing multiple gestures, GestureState, custom recognizers |\n| **[Adaptive Layout](references/adaptive-layout.md)** | ViewThatFits, AnyLayout, size classes, iOS 26 free-form windows |\n| **[Architecture](references/architecture.md)** | MVVM vs TCA decision, State-as-Bridge, property wrapper selection |\n| **[Performance](references/performance.md)** | Instruments 26, view body optimization, unnecessary updates |\n\n## Core Workflow\n\n1. **Identify pattern category** from user's question\n2. **Load relevant reference** for detailed patterns and code examples\n3. **Apply pattern** following the decision trees and anti-patterns\n4. **Verify** using provided checklists or profiling guidance\n\n## Decision Trees\n\n### Gesture Composition\n- Both gestures at same time? -> `.simultaneously`\n- One must complete before next? -> `.sequenced`\n- Only one should win? -> `.exclusively`\n\n### Layout Adaptation\n- Pick best-fitting variant? -> `ViewThatFits`\n- Animated H/V switch? -> `AnyLayout`\n- Need actual dimensions? -> `onGeometryChange`\n\n### Architecture Selection\n- Small app, Apple patterns? -> @Observable + State-as-Bridge\n- Complex presentation logic? -> MVVM with @Observable\n- Rigorous testability needed? -> TCA\n\n## Common Mistakes\n\n1. **Gesture composition order matters** — `.simultaneously` and `.sequenced` have different trigger timing. Swapping them silently changes behavior. Understand gesture semantics before using.\n\n2. **ViewThatFits over-used** — ViewThatFits remeasures on every view change. For animated H/V switches, use `AnyLayout` instead. Use ViewThatFits only for static variant selection.\n\n3. **onGeometryChange triggering unnecessary updates** — Reading geometry changes geometry, which triggers updates, which changes geometry... circular. Use `.onGeometryChange` only with proper state management to avoid loops.\n\n4. **Architecture mismatch mid-project** — Starting with @Observable + State-as-Bridge then realizing you need TCA is expensive. Choose architecture upfront based on complexity (small app = @Observable, complex = TCA).\n\n5. **Ignoring view body optimization** — Computing expensive calculations in view body repeatedly kills performance. Move calculations to properties or models. Profile with Instruments 26 before optimizing prematurely."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "swiftui-patterns",
+      "parsed": {
+        "name": "swiftui-patterns",
+        "description": "Use when implementing iOS 17+ SwiftUI patterns: @Observable/@Bindable, MVVM architecture, NavigationStack, lazy loading, UIKit interop, accessibility (VoiceOver/Dynamic Type), async operations (.task/.refreshable), or migrating from ObservableObject/@StateObject.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# SwiftUI Patterns (iOS 17+)\n\nSwiftUI 17+ removes ObservableObject boilerplate with @Observable, simplifies environment injection with @Environment, and introduces task-based async patterns. The core principle: use Apple's modern APIs instead of reactive libraries.\n\n## Overview\n\n## Quick Reference\n\n| Need | Use (iOS 17+) | NOT |\n|------|---------------|-----|\n| Observable model | `@Observable` | `ObservableObject` |\n| Published property | Regular property | `@Published` |\n| Own state | `@State` | `@StateObject` |\n| Passed model (binding) | `@Bindable` | `@ObservedObject` |\n| Environment injection | `environment(_:)` | `environmentObject(_:)` |\n| Environment access | `@Environment(Type.self)` | `@EnvironmentObject` |\n| Async on appear | `.task { }` | `.onAppear { Task {} }` |\n| Value change | `onChange(of:initial:_:)` | `onChange(of:perform:)` |\n\n## Core Workflow\n\n1. Use `@Observable` for model classes (no @Published needed)\n2. Use `@State` for view-owned models, `@Bindable` for passed models\n3. Use `.task { }` for async work (auto-cancels on disappear)\n4. Use `NavigationStack` with `NavigationPath` for programmatic navigation\n5. Apply `.accessibilityLabel()` and `.accessibilityHint()` to interactive elements\n\n## Reference Loading Guide\n\n**ALWAYS load reference files if there is even a small chance the content may be required.** It's better to have the context than to miss a pattern or make a mistake.\n\n| Reference | Load When |\n|-----------|-----------|\n| **[Observable](references/observable.md)** | Creating new `@Observable` model classes |\n| **[State Management](references/state-management.md)** | Deciding between `@State`, `@Bindable`, `@Environment` |\n| **[Environment](references/environment.md)** | Injecting dependencies into view hierarchy |\n| **[View Modifiers](references/view-modifiers.md)** | Using `onChange`, `task`, or iOS 17+ modifiers |\n| **[Migration Guide](references/migration-guide.md)** | Updating iOS 16 code to iOS 17+ |\n| **[MVVM Observable](references/mvvm-observable.md)** | Setting up view model architecture |\n| **[Navigation](references/navigation.md)** | Programmatic or deep-link navigation |\n| **[Performance](references/performance.md)** | Lists with 100+ items or excessive re-renders |\n| **[UIKit Interop](references/uikit-interop.md)** | Wrapping UIKit components (WKWebView, PHPicker) |\n| **[Accessibility](references/accessibility.md)** | VoiceOver, Dynamic Type, accessibility actions |\n| **[Async Patterns](references/async-patterns.md)** | Loading states, refresh, background tasks |\n| **[Composition](references/composition.md)** | Reusable view modifiers or complex conditional UI |\n\n## Common Mistakes\n\n1. **Over-using `@Bindable` for passed models** — Creating `@Bindable` for every property causes unnecessary view reloads. Use `@Bindable` only for mutable model properties that need two-way binding. Read-only computed properties should use regular properties.\n\n2. **State placement errors** — Putting model state in the view instead of a dedicated `@Observable` model causes view logic to become tangled. Always separate model and view concerns.\n\n3. **NavigationPath state corruption** — Mutating `NavigationPath` incorrectly can leave it in inconsistent state. Use `navigationDestination(for:destination:)` with proper state management to avoid path corruption.\n\n4. **Missing `.task` cancellation** — `.task` handles cancellation on disappear automatically, but nested Tasks don't. Complex async flows need explicit cancellation tracking to avoid zombie tasks.\n\n5. **Ignoring environment invalidation** — Changing environment values at parent doesn't invalidate child views automatically. Use `@Environment` consistently and understand when re-renders happen based on observation.\n\n6. **UIKit interop memory leaks** — `UIViewRepresentable` and `UIViewControllerRepresentable` can leak if delegate cycles aren't broken. Weak references and explicit cleanup are required."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    }
+  ]
+}

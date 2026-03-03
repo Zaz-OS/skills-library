@@ -1,0 +1,257 @@
+{
+  "source": "dotneet/claude-code-marketplace",
+  "repoUrl": "https://github.com/dotneet/claude-code-marketplace",
+  "skills": [
+    {
+      "skillId": "call-claude",
+      "parsed": {
+        "name": "call-claude",
+        "description": "Call claude to perform a task.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Call claude to perform a task\n\nCall claude to perform a task.\n\n## Checking for the Existence of claude\n\n```bash\n# Check if claude is installed. Exit code 0 means success, 1 means failure.\n# If not installed, skip the subsequent steps of the skill.\nwhich claude\nif [ $? -ne 0 ]; then\n  echo \"claude is not installed\"\nfi\n```\n\n## Requesting a Task to claude\n\nThis task may take a long time. If the timeout value of the Bash tool can be set, please specify the maximum timeout value.\n\n```bash\nclaude -p --dangerously-skip-permissions <<EOT\n{task_description}\nEOT\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "call-codex",
+      "parsed": {
+        "name": "call-codex",
+        "description": "Call codex to perform a task.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Call codex to perform a task\n\nCall codex to perform a task.\n\n## Checking for the Existence of codex\n\n```bash\n# Check if codex is installed. Exit code 0 means success, 1 means failure.\n# If not installed, skip the subsequent steps of the skill.\nwhich codex\nif [ $? -ne 0 ]; then\n  echo \"codex is not installed\"\nfi\n```\n\n## Requesting a Task to codex\n\nThis task may take a long time. If the timeout value of the Bash tool can be set, please specify the maximum timeout value.\n\n```bash\ncodex exec --sandbox danger-full-access <<EOT\n{task_description}\nEOT\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "call-cursor-agent",
+      "parsed": {
+        "name": "call-cursor-agent",
+        "description": "Call cursor-agent to perform a task.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Call cursor-agent to perform a task\n\nThis skill requests a task to cursor-agent.\n\n## Checking for the Existence of cursor-agent\n\n```bash\n# Check if cursor-agent is installed. Exit code 0 means success, 1 means failure.\n# If not installed, skip the subsequent steps of the skill.\nwhich cursor-agent\nif [ $? -ne 0 ]; then\n  echo \"cursor-agent is not installed\"\nfi\n```\n\n## Requesting a Task to cursor-agent\n\n```bash\n# If the model is not specified, the default model is composer-1.\nmodel=composer-1\ncursor-agent --model=$model <<EOT\n{task_description}\nEOT\n```"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "suggest-agent-rules",
+      "parsed": {
+        "name": "suggest-agent-rules",
+        "description": "Suggest agent rules analyzing the session history and the current repository.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Suggest Agent Rules\n\nあなたは「このリポジトリ専用のCoding Agentルール」を設計するテックリードです。\n以下の情報を根拠に、エージェントが将来の作業で迷わず高品質に動けるよう、実務的で検証可能なルールを提案してください。\n\n## セッション情報へのアクセス\n\n### セッションファイルの場所\n\n| Agent | Path | File Format |\n|-------|------|-------------|\n| Claude Code | `~/.claude/projects/<project-path-encoded>/` | `<UUID>.jsonl` |\n| Codex CLI | `~/.codex/sessions/YYYY/MM/DD/` | `rollout-<datetime>-<UUID>.jsonl` |\n\n**プロジェクトパスのエンコード**: `/Users/username/projects/myapp` → `-Users-username-projects-myapp`\n\n### 提供ツール\n\nこのスキルでは以下のツールを利用できます（`tools/`ディレクトリ参照）:\n\n1. **list-sessions.sh** - セッション一覧を取得\n   ```bash\n   ./tools/list-sessions.sh -p /path/to/project -n 10\n   ```\n\n2. **analyze-session.sh** - 単一セッションを詳細分析\n   ```bash\n   ./tools/analyze-session.sh <session-file> --all\n   ```\n   オプション: `--summary`, `--user-messages`, `--tools`, `--errors`, `--preferences`\n\n3. **extract-patterns.sh** - 複数セッションからパターンを抽出\n   ```bash\n   ./tools/extract-patterns.sh -p /path/to/project -n 5\n   ```\n\n### セッションデータ構造の詳細\n\n詳細は `references/session-structure.md` を参照。主要なポイント:\n\n- **Claude Code**: `parentUuid`/`uuid`で会話ツリーを構築、`type`フィールドで`user`/`assistant`を判別\n- **message.content**: `thinking`, `text`, `tool_use`, `tool_result`のブロックを含む\n- **サブエージェント**: `<session-uuid>/subagents/agent-<id>.jsonl`に保存、`isSidechain: true`\n\n### セッション解析で抽出すべき情報\n\n1. **ユーザーの明示的な指示・好み** - 「必ず〜」「〜しないで」などのパターン\n2. **繰り返し発生した手戻り** - エラー→修正の連続パターン\n3. **よく使用されるツールとファイル** - 作業パターンの把握\n4. **エラーパターン** - tool_resultでのエラー応答\n\n## 利用できる情報源（優先順）\n1. Agentのセッション履歴（直近の指示・好み・繰り返し発生した手戻り・決定事項）\n   - 上記ツールを使用してセッションデータを分析\n2. 現在のリポジトリの内容（README/CONTRIBUTING/ディレクトリ構造/設定ファイル/CI設定/テスト構成）\n3. ローカルGit履歴（コミットメッセージ規約・変更頻度の高い領域・リバート/ホットフィックス傾向）\n4. GitHub履歴（PR/Issue/レビューコメントの傾向、指摘が多い論点、CI落ちパターン）\n   - `gh` が使えるなら `gh pr list/view`, `gh issue list/view` 等を用いて良い\n   - 使えない場合はローカルで取れる範囲（git log等）で推定し、不確実性を明示する\n\n## ゴール\n- “一般論”ではなく **このリポジトリ固有の** ルールにする\n- ルールは「守れば成果が上がる」ものだけに絞り、過剰に増やさない\n- すべてのルールに **根拠** と **確認方法（verify）** を付ける\n- 不明点は断定せず、最小の追加調査で確かめる手順を添える\n\n---\n\n## 作業手順（必ずこの順で）\n### 1) リポジトリ概観の把握\n- 主要言語/フレームワーク/ビルドツール/パッケージマネージャを推定\n- ルート直下、`README` / `CONTRIBUTING` / `CODEOWNERS` / `Makefile` / `package.json` / `pyproject.toml` / `go.mod` / `Cargo.toml` / `.github/workflows` 等を優先して確認\n- 既に「ルール」「コーディング規約」「レビュー観点」があるならそれを最優先で尊重（重複ルールは作らない）\n\n### 2) 失敗パターン・手戻りパターンの抽出\n- セッション履歴：繰り返し注意された点、好み（例：テスト先行、差分最小、ログ方針、命名規約）を抽出\n- Git/PR/レビュー：同じ種類の指摘が複数回出る領域を優先（lint、境界条件、例外、型、N+1、依存更新、Migration等）\n\n### 3) “エージェント向け”に翻訳してルール化\n- 人間向け規約を、エージェントが実行できる行動（Do/Don’t）へ落とす\n- ルールは次のいずれかに分類する：\n  - 安全（破壊的操作・秘密情報・本番影響）\n  - 変更方針（差分最小、リファクタ範囲、互換性、移行）\n  - 品質（テスト、静的解析、型、例外、境界条件）\n  - リポジトリ慣習（命名、ディレクトリ、レイヤー、依存、ログ）\n  - PR運用（粒度、説明、チェックリスト、レビュー対応）\n\n### 4) ルールの優先度付け\n- 最重要（Must）: 破ると事故/大幅手戻りになる\n- 重要（Should）: 品質や速度に効く\n- 任意（Could）: 余裕がある時に\n\n---\n\n## 出力フォーマット（厳守）\n以下の順番でMarkdownを出力してください。\n\n### A. リポジトリの前提（短く）\n- 推定スタック / 実行すべき基本コマンド（分かる範囲）\n- CIの主要チェック（分かる範囲）\n- 不明点（あれば）\n\n### B. 観測された傾向（箇条書き・最大10個）\n- セッション履歴由来 / Git由来 / PRレビュー由来 を区別して書く\n\n### C. 提案ルール（最大12個、優先度順）\n各ルールは必ず次のテンプレで書く：\n\n- **[Priority: Must/Should/Could] ルール名（短く）**\n  - **Rule:**（エージェントが取るべき行動を命令形で。曖昧語を避ける）\n  - **Why (evidence):**（観測された根拠。ファイル名/設定/レビュー傾向など。推測なら推測と明記）\n  - **Verify:**（実行コマンド、見るべきファイル、CIで確認、再現手順のいずれか）\n  - **Scope:**（常に/特定条件のとき。例：DB変更時、API変更時、依存更新時）\n  - **Confidence:**（High/Medium/Low）\n\n### D. “貼り付け用”の最終ルール本文\n- `.claude/agent-rules.md` 等に貼れる体裁で、Cのルールを簡潔版に再掲する\n- 余計な解説は入れず、Do/Don’t中心にする\n\n---\n\n## 制約・禁止事項\n- リポジトリで確認できないコマンドや規約を断定しない（例：存在しない `npm test` を推奨しない）\n- 破壊的操作（reset/force push/大量削除/マイグレーション適用等）は “事前確認ルール” を必ず含める\n- 秘密情報（鍵、トークン、顧客情報）を出力しない。ログや設定値を貼る場合はマスキングする\n- ルール数は増やしすぎない（最大12）。必要なら「次点ルール（Optional）」として別枠にする\n\n---\n\n## Usage\nこのSkillは次のタイミングで使う：\n- 初回オンボーディング時\n- レビュー指摘が増えたとき\n- リファクタや大規模移行の前\n- CI/運用ルールが変わったとき\n\n実行後、出力の「貼り付け用ルール本文」をリポジトリの所定ファイルに反映して運用する。"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "system",
+          "org": "rust",
+          "name": "cargo",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "google-calendar",
+      "parsed": {
+        "name": "google-calendar",
+        "description": "Accesses the Google Calendar and Tasks API. Use this skill to view or manage calendars, events, schedules, or Google tasks.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Google Calendar + Tasks Access\n\n## Quick start\n\n- Create a Google Cloud OAuth client (Desktop app) and save the credentials JSON to `~/.config/google-calendar/credentials.json`.\n- Install dependencies (venv recommended):\n  ```bash\n  python3 -m venv ~/.config/google-calendar/venv\n  ~/.config/google-calendar/venv/bin/pip install -r <skill_dir>/scripts/requirements.txt\n  ```\n- Authenticate and store a token:\n  - Calendar only:\n    - `<skill_dir>/scripts/gcal-auth`\n  - Tasks only:\n    - `<skill_dir>/scripts/gcal-auth --scopes https://www.googleapis.com/auth/tasks`\n  - Calendar + Tasks (single token):\n    - `<skill_dir>/scripts/gcal-auth --scopes https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/tasks`\n- Call the API:\n  - `<skill_dir>/scripts/gcal list-calendars`\n\n## Credentials and tokens\n\n- Credentials are expected at `~/.config/google-calendar/credentials.json` by default.\n- Tokens are stored at `~/.config/google-calendar/token.json` by default.\n- Use `--token` or `GCAL_TOKEN_PATH` to switch accounts or isolate environments.\n\n## Date/time rules\n\n- Use RFC3339 for timed events (e.g., `2026-01-22T10:00:00-08:00`).\n- Use `YYYY-MM-DD` for all-day events and set `end` to the next day (exclusive).\n- Set `--time-zone` when the datetime has no offset.\n\n## Common commands\n\n- List calendars:\n  - `<skill_dir>/scripts/gcal list-calendars`\n- List events:\n  - `<skill_dir>/scripts/gcal list-events --calendar-id primary --time-min 2026-01-22T00:00:00-08:00 --time-max 2026-01-22T23:59:59-08:00`\n- Search events:\n  - `<skill_dir>/scripts/gcal list-events --calendar-id primary --q \"standup\" --time-min ... --time-max ...`\n- Create event (simple):\n  - `<skill_dir>/scripts/gcal create-event --calendar-id primary --summary \"Review\" --start 2026-01-22T10:00:00-08:00 --end 2026-01-22T11:00:00-08:00`\n- Update event (simple):\n  - `<skill_dir>/scripts/gcal update-event --calendar-id primary --event-id <id> --summary \"New title\"`\n- Delete event:\n  - `<skill_dir>/scripts/gcal delete-event --calendar-id primary --event-id <id>`\n- Free/busy:\n  - `<skill_dir>/scripts/gcal freebusy --calendars primary,team@company.com --time-min ... --time-max ...`\n- List task lists:\n  - `<skill_dir>/scripts/gcal list-tasklists`\n- List tasks:\n  - `<skill_dir>/scripts/gcal list-tasks --tasklist <tasklist_id>`\n- Create task:\n  - `<skill_dir>/scripts/gcal create-task --tasklist <tasklist_id> --title \"Buy milk\" --due 2026-01-22T10:00:00-08:00`\n- Update task:\n  - `<skill_dir>/scripts/gcal update-task --tasklist <tasklist_id> --task-id <id> --notes \"Bring receipt\"`\n- Delete task:\n  - `<skill_dir>/scripts/gcal delete-task --tasklist <tasklist_id> --task-id <id>`\n\n## Advanced usage\n\n- Use `call` to hit any Calendar API endpoint:\n  - `<skill_dir>/scripts/gcal call GET /users/me/calendarList`\n  - `<skill_dir>/scripts/gcal call POST /calendars/primary/events --body-file /path/to/event.json`\n- Use `--body-file` or `--body` (JSON string) for complex payloads (attendees, recurrence, conferenceData).\n- Run multiple accounts by using different token files with `--token`.\n\n## Safety\n\n- Confirm intent before creating, updating, or deleting events.\n- Keep OAuth credentials and token files out of git."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "pip",
+          "name": "pip",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "pip",
+          "name": "pipx",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "prompt-improver",
+      "parsed": {
+        "name": "prompt-improver",
+        "description": "A skill for improving prompts by applying general LLM/agent best practices. When the user provides a prompt, this skill outputs an improved version, identifies missing information, and provides specific improvement points. Use when the user asks to \"improve this prompt\", \"review this prompt\", or \"make this prompt better\".",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Prompt Improver\n\n## Overview\n\nA skill that analyzes and improves prompts based on general LLM/agent best practices. It focuses on verifiability, clear scope, explicit constraints, and context economy so the agent can execute with minimal back-and-forth.\n\nIf you are running in Claude Code, also read `references/claude.md` and apply the additional Claude-specific techniques.\nIf you are running in Codex CLI, also read `references/codex.md` and apply the additional Codex-specific techniques.\n\nWhen the input is a document that instructs an agent (e.g., plan files, AGENTS.md, system instruction docs), treat the document as the improvement target; identify issues and propose concrete improvements, and include a revised draft when helpful.\n\n## Workflow\n\n### Step 0: Classify Task and Complexity\n\nClassify the task and decide whether an explicit exploration/planning phase should be recommended:\n\n- Task type: bugfix, feature, refactor, research, UI/visual, docs, ops\n- Complexity: single-file/small change vs multi-file/uncertain impact\n- Risk: data safety, security, compatibility, performance\n- Input type: prompt vs agent-instruction document (plan files, AGENTS.md, system instruction docs)\n\nIf the task is complex or ambiguous, the improved prompt should explicitly request an exploration/planning phase before implementation.\n\n### Step 1: Analyze the Prompt\n\nAnalyze the user-provided prompt from the following perspectives:\n\n1. **Verifiability**: Does it include means for Claude to verify its own work?\n2. **Specificity**: Are files, scenarios, and constraints clearly specified?\n3. **Context**: Is necessary background information provided?\n4. **Scope**: Is the task scope appropriately defined?\n5. **Expected Outcome**: Are success criteria clear?\n6. **Constraints**: Are language/runtime versions, dependencies, security, or compatibility requirements specified?\n7. **Context Economy**: Is the prompt concise and focused, without unnecessary information?\n8. **Execution Preference**: Is it clear whether the model should implement, propose, or just analyze?\n\n### Step 2: Identify Issues\n\nCheck for the following anti-patterns:\n\n| Anti-pattern | Description |\n|--------------|-------------|\n| Vague instructions | Lacks specificity like \"make it better\" or \"improve it\" |\n| No verification method | Missing tests, screenshots, or expected output |\n| No verification commands | Missing how to run tests or check outputs |\n| Overly broad scope | Asking for too many things at once |\n| Insufficient context | Missing file paths, error messages, or references to existing patterns |\n| Symptom-only description | Not requesting investigation of root cause |\n| Missing constraints | No environment, dependency, or compatibility requirements |\n| No exploration/planning cue | Complex tasks not asking for exploration/planning first |\n| Context bloat | Unnecessary details that increase token usage |\n| Ambiguous deliverable | Unclear whether to plan, implement, or only analyze |\n| Unclear response format | Missing brevity/structure expectations |\n\n### Step 3: Create Improved Prompt\n\nApply best practices to create an improved version:\n\n#### Add Verifiability\n```\nBefore: \"implement a function that validates email addresses\"\nAfter: \"write a validateEmail function. test cases: user@example.com is true, invalid is false, user@.com is false. run the tests after implementing\"\n```\n\n#### Add Specific Context\n```\nBefore: \"fix the login bug\"\nAfter: \"users report that login fails after session timeout. check the auth flow in src/auth/, especially token refresh. write a failing test that reproduces the issue, then fix it\"\n```\n\n#### Add Reference to Existing Patterns\n```\nBefore: \"add a calendar widget\"\nAfter: \"look at how existing widgets are implemented on the home page to understand the patterns. HotDogWidget.php is a good example. follow the pattern to implement a new calendar widget with month selection and pagination\"\n```\n\n#### Add Context Economy\n```\nBefore: \"here is a long unrelated history ... fix the dropdown\"\nAfter: \"fix the dropdown in src/ui/Dropdown.tsx. issue: keyboard navigation skips items. keep the prompt focused; omit unrelated history\"\n```\n\n#### Add Rich Context Inputs\n```\nBefore: \"build fails\"\nAfter: \"build fails with this error: [paste error]. run the smallest relevant test command. if needed, read the build script and package config\"\n```\n\n#### Add Explicit Exploration/Planning When Needed\n```\nBefore: \"refactor auth to support OAuth\"\nAfter: \"first explore src/auth and summarize current flow, then propose a plan. after approval, implement with tests\"\n```\n\nWhen information is missing, include explicit questions inside the improved prompt and do not assume defaults.\n\n#### Example: Bugfix\n```\nBefore: \"search is broken\"\nAfter: \"users report search returns empty results for queries with hyphens. reproduce in src/search/. paste the error log if any. write a failing test for 'foo-bar' returning results, fix the root cause, run: pnpm test --filter search\"\n```\n\n#### Example: UI/Visual\n```\nBefore: \"make the dashboard look better\"\nAfter: \"implement the attached screenshot for the dashboard header in src/ui/DashboardHeader.tsx. match spacing and typography. take a new screenshot and list any differences. run: pnpm lint\"\n```\n\n#### Example: Refactor\n```\nBefore: \"clean up the auth code\"\nAfter: \"inspect src/auth and list duplication hotspots. propose a refactor plan scoped to one module. after approval, remove duplication without changing behavior. add a targeted test if coverage is missing. run the smallest relevant test command\"\n```\n\n#### Example: Research\n```\nBefore: \"why is this API slow?\"\nAfter: \"explore request flow around src/api/. summarize likely bottlenecks with evidence (logs, timings). propose 2-3 hypotheses and what data is needed to confirm. do not implement yet. if needed, ask for access to profiling output\"\n```\n\n#### Example: Ops\n```\nBefore: \"deployment failed\"\nAfter: \"deploy fails with error: [paste log]. identify the failing step in scripts/deploy.sh and related CI config. suggest a fix and a rollback plan. run: ./scripts/deploy.sh --dry-run (if available)\"\n```\n\n#### Example: Docs\n```\nBefore: \"update the README\"\nAfter: \"update README.md to include install + dev steps based on existing scripts. keep it concise. confirm commands exist and match actual scripts\"\n```\n\n### Step 4: Output Format\n\nOutput in the following format:\n\n```markdown\n## Prompt Analysis\n\n### Original Prompt\n[User-provided prompt]\n\n### Issues\n- [Issue 1 and its impact]\n- [Issue 2 and its impact]\n...\n\n### Missing Information (Questions to Ask)\nThe following questions should be answered to make the prompt more effective:\n- [Question 1] (Why it is needed)\n- [Question 2] (Why it is needed)\n...\n\n### Verification Plan\n- Commands to run (tests, build, lint, screenshots)\n- Expected results or acceptance criteria\n\n### Exploration/Planning Recommendation\n- Recommend exploration/planning first? [Yes/No] and why\n\n### Execution Preference\n- Implement now / propose plan only / analyze only\n- Any constraints on response length or format\n\n### Improved Prompt\n[The improved prompt]\n\n### Document Improvement Suggestions (if applicable)\n- [Issue and concrete improvement for the instruction document]\n- [Issue and concrete improvement for the instruction document]\n\n### Revised Document (optional)\n[A revised draft of the instruction document when helpful]\n\n### Improved Prompt Template (optional)\nUse this as a fill-in template if the user wants a reusable prompt format:\n```\n[Task]\n- Goal:\n- Target files/paths (@...):\n- Constraints (runtime/version/deps/security/compat):\n- Context (symptom, logs, repro, links):\n\n[Verification]\n- Commands:\n- Expected results:\n- UI checks (screenshots/visual diffs):\n\n[Exploration/Planning]\n- Do exploration/planning first? (Yes/No) + reason:\n\n[Execution Preference]\n- Implement now / plan only / analyze only\n- Output format (concise report, patch summary, checklist, etc.)\n```\n\n### Short Prompt Template (optional)\nUse this when the user wants the shortest effective prompt:\n```\nGoal: ...\nTargets: path1/path2\nContext: symptom + repro + logs\nConstraints: runtime/deps/compat\nVerify: command + expected result\nExplore/Plan: yes/no (why)\nExecute: implement / plan only / analyze only\nOutput: concise format\n```\n\n### Improvement Points\n1. [Explanation of improvement 1]\n2. [Explanation of improvement 2]\n...\n\n### Additional Recommendations (optional)\n- [Whether to do exploration/planning first]\n- [Whether to parallelize or delegate investigation]\n- [Whether preliminary research is needed]\n- [Ways to reduce context usage]\n```\n\n## Reference: Best Practices Checklist\n\nBest practices to reference when improving prompts:\n\n### Provide Verification Methods\n- Include test cases\n- Specify expected output\n- For UI changes, request screenshot comparison\n- Add \"run the tests\" or \"verify the build succeeds\"\n- Include explicit commands to run\n\n### Explore → Plan → Implement Order\n- Use an exploration/planning phase first for complex tasks\n- Create a plan before implementation\n- Small fixes don't need a formal plan\n- When uncertain, ask clarifying questions before coding\n\n### Include Specific Context\n- Paste error messages\n- Specify existing patterns\n- Clarify edge cases\n- State environment constraints (runtime, language versions, dependencies)\n\n### Use Rich Inputs\n- Paste logs and stack traces\n- Provide URLs for docs or API references\n- Attach or paste large text outputs when needed\n\n### Manage Context Window\n- Keep prompts concise and focused\n- Remove unrelated history or speculation\n- Ask for missing info instead of guessing\n\n### Leverage Parallelism/Delegation\n- For research tasks: request parallel investigation or summaries\n- For code review: request an independent review pass\n- Keeps the main task focused\n\n### Patterns to Avoid\n- Vague instructions like \"make it better\" or \"improve it\"\n- Implementation requests without verification methods\n- Multiple unrelated tasks at once\n- Requesting changes to files not yet read\n- Large context dumps with no clear signal"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    },
+    {
+      "skillId": "context7",
+      "parsed": {
+        "name": "context7",
+        "description": "A skill for retrieving the latest library documentation using Context7. Use when the user asks about how to use a library, requests code examples, or instructs to \"use context7\". Prevents hallucinations based on outdated training data and provides up-to-date API information.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Context7\n\n## Overview\n\nContext7 is a service that provides LLMs with the latest library documentation. It prevents hallucinations from outdated training data or non-existent APIs, enabling retrieval of version-specific accurate documentation and code examples.\n\n## When to Use\n\nUse this skill in the following cases:\n\n1. **Explicit instruction**: When the user instructs \"use context7\" or \"check the latest documentation\"\n2. **Library usage questions**: When asked about how to use a specific library's API, hooks, or functions\n3. **Code example requests**: When asked for code examples using a specific library\n4. **Version-specific information**: When library information for a specific version is needed\n5. **Uncertain API information**: When your knowledge might be outdated and latest information verification is needed\n\n## Workflow\n\n### Step 1: Resolve Library ID\n\nFirst, obtain the Context7 ID for the target library.\n\n**API call:**\n```bash\ncurl \"https://context7.com/api/v2/libs/search?libraryName=LIBRARY_NAME&query=CONTEXT_QUERY\" \\\n  -H \"Authorization: Bearer $CONTEXT7_API_KEY\"\n```\n\n**Example:**\n```bash\n# Search for React library\ncurl \"https://context7.com/api/v2/libs/search?libraryName=react&query=hooks\" \\\n  -H \"Authorization: Bearer $CONTEXT7_API_KEY\"\n```\n\n**Criteria for selecting from response:**\n- `trustScore`: Trust score (higher is better)\n- `totalSnippets`: Number of available documents (more means richer information)\n- `versions`: Verify that the required version is included\n\n### Step 2: Retrieve Documentation\n\nUse the resolved library ID to retrieve specific documentation.\n\n**API call:**\n```bash\ncurl \"https://context7.com/api/v2/context?libraryId=LIBRARY_ID&query=SPECIFIC_QUERY\" \\\n  -H \"Authorization: Bearer $CONTEXT7_API_KEY\"\n```\n\n**Example:**\n```bash\n# Retrieve information about React's useEffect\ncurl \"https://context7.com/api/v2/context?libraryId=/facebook/react&query=useEffect cleanup function\" \\\n  -H \"Authorization: Bearer $CONTEXT7_API_KEY\"\n```\n\n**Query best practices:**\n- Use specific queries (\"useEffect cleanup function\" rather than \"hooks\")\n- Be clear about the purpose (\"authentication middleware\", \"form validation\", etc.)\n\n### Step 3: Respond to User\n\nRespond to the user's question based on the retrieved documentation.\n\n**Information to include in the response:**\n- Retrieved code examples\n- API explanations\n- Documentation source URLs (for reference)\n\n## Examples\n\n### Example 1: React Hook Usage\n\n**User:** \"How do I write a cleanup function with React's useEffect?\"\n\n**Execution steps:**\n1. Library search: `libraryName=react`, `query=useEffect cleanup`\n2. Documentation retrieval: `libraryId=/facebook/react`, `query=useEffect cleanup function`\n3. Respond with the latest code examples and best practices\n\n### Example 2: Next.js Routing\n\n**User:** \"Use context7 to show me how to implement authentication middleware with Next.js App Router\"\n\n**Execution steps:**\n1. Library search: `libraryName=next.js`, `query=middleware authentication`\n2. Documentation retrieval: `libraryId=/vercel/next.js`, `query=middleware authentication route protection`\n3. Respond with the latest App Router compatible middleware implementation\n\n### Example 3: Multiple Libraries Combination\n\n**User:** \"How to create a button component using TailwindCSS and shadcn/ui\"\n\n**Execution steps:**\n1. Resolve IDs for each library\n2. Retrieve documentation for both\n3. Respond with a combined implementation example\n\n## Error Handling\n\n| Error | Solution |\n|-------|----------|\n| 404 (Not Found) | Search again with a different library name (e.g., \"nextjs\" → \"next.js\") |\n| 429 (Rate Limit) | Wait a moment and retry |\n| Empty response | Retry with a more general query |\n\n## Resources\n\nFor detailed API specifications, see `references/api_reference.md`.\n\n- Endpoint details\n- Response field descriptions\n- Rate limit information\n- Error code list"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "perplexity-search",
+      "parsed": {
+        "name": "perplexity-search",
+        "description": "A skill for performing web searches, research, and reasoning using the Perplexity API. Handles real-time web information retrieval, deep research analysis, and advanced reasoning tasks. Use when the user asks for web searches, research, or says things like \"look up\", \"search for\", \"latest information\", \"research\", or \"analyze\".",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Perplexity Search Skill\n\nA skill for executing real-time web searches and research using the Perplexity API.\n\n## Purpose\n\nThis skill provides the following capabilities:\n\n1. **perplexity_ask** - Answer general questions (using sonar-pro model)\n2. **perplexity_research** - Deep research and comprehensive reports (using sonar-deep-research model)\n3. **perplexity_reason** - Advanced reasoning and analysis (using sonar-reasoning-pro model)\n4. **perplexity_search** - Retrieve web search results\n\n## When to Use\n\nUse this skill in the following situations:\n\n- User needs up-to-date information\n- Received a question requiring web search\n- Asked to perform deep research or investigation\n- Complex analysis or reasoning is required\n- Keywords like \"look up\", \"search for\", \"latest...\" are included\n\n## Prerequisites\n\n- `PERPLEXITY_API_KEY` environment variable must be set\n- Internet connection must be available\n\n## Usage\n\n### Basic Usage\n\nUse the `scripts/perplexity_api.py` script to call the API.\n\n```bash\n# General questions (ask)\npython3 scripts/perplexity_api.py ask \"your question\"\n\n# Deep research (research)\npython3 scripts/perplexity_api.py research \"research topic\"\n\n# Advanced reasoning (reason)\npython3 scripts/perplexity_api.py reason \"reasoning task\"\n\n# Web search (search)\npython3 scripts/perplexity_api.py search \"search query\" [--max-results 10] [--country JP]\n```\n\n### Command Options\n\n#### ask / research / reason\n- First argument: question, research topic, or reasoning task\n- `--strip-thinking`: Remove `<think>...</think>` tags to save context tokens (research/reason only)\n\n#### search\n- First argument: search query\n- `--max-results`: Maximum number of results to return (1-20, default: 10)\n- `--max-tokens-per-page`: Maximum tokens per page (256-2048, default: 1024)\n- `--country`: ISO code for regional results (e.g., JP, US, GB)\n\n## Workflow\n\n### Standard Search Flow\n\n1. Analyze the user's question and select the appropriate tool\n   - Simple questions → `ask`\n   - Deep research → `research`\n   - Complex analysis → `reason`\n   - Information gathering → `search`\n\n2. Execute the script to call the API\n\n3. Present results to the user, citing sources when available\n\n### Tool Selection Guidelines\n\n| Use Case | Tool | Description |\n|----------|------|-------------|\n| Current weather, news | ask | When quick answers are needed |\n| Technical topic research | research | When comprehensive analysis is needed |\n| Complex problem analysis | reason | When logical reasoning is needed |\n| Collecting sources | search | When URLs or snippets are needed |\n\n## API Details\n\nFor detailed API specifications, see `references/api_reference.md`.\n\n## Troubleshooting\n\n- **API Key Error**: Verify the `PERPLEXITY_API_KEY` environment variable\n- **Timeout**: Increase `PERPLEXITY_TIMEOUT_MS` (default: 300000ms)\n- **Proxy Issues**: Set `PERPLEXITY_PROXY` or `HTTPS_PROXY`"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": true,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "pip",
+          "org": "python",
+          "name": "python",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "pip",
+          "org": "python3",
+          "name": "python3",
+          "detectedFrom": "scripts"
+        }
+      ]
+    },
+    {
+      "skillId": "code-modularization-evaluator",
+      "parsed": {
+        "name": "code-modularization-evaluator",
+        "description": "Evaluate and improve code modularization using the Balanced Coupling Model. Analyzes coupling strength, connascence types, and distance to identify refactoring opportunities and architectural improvements. Use when reviewing code architecture, refactoring modules, or designing new systems.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {
+          "version": "1.0.0"
+        },
+        "body": "# Code Modularization Evaluator\n\nEvaluate code modularization using the Balanced Coupling Model from Vlad Khononov's \"Balancing Coupling in Software Design.\" This skill helps identify problematic coupling patterns and provides actionable refactoring guidance.\n\n## Core Principle\n\n**Coupling is not inherently bad—misdesigned coupling is bad.** The goal is balanced coupling, not zero coupling. \n\nThe fundamental formula:\n\n```\nMODULARITY = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY\n```\n\nA system achieves modularity when:\n- High integration strength components are close together (same module/service)\n- Low integration strength components can be far apart (different services)\n- Low volatility components can tolerate coupling mismatches\n\n## The Three Dimensions of Coupling\n\nAlways evaluate coupling across these three dimensions: \n\n### 1. Integration Strength (What knowledge is shared?)\n\nFrom strongest (worst) to weakest (best):\n\n| Level | Type | Description | Example |\n|-------|------|-------------|---------|\n| 1 | **Intrusive** | Using non-public interfaces | Direct database access to another service, reflection on private fields |\n| 2 | **Functional** | Sharing business logic/rules | Same validation duplicated in two places, order-dependent operations |\n| 3 | **Model** | Sharing domain models | Two services using identical entity definitions |\n| 4 | **Contract** | Only explicit interfaces | Well-designed APIs, DTOs, protocols |\n\n### 2. Distance (How far does knowledge travel?)\n\nFrom closest to most distant:\n1. Methods within same class\n2. Classes within same file\n3. Classes in same namespace/package\n4. Modules in different namespaces\n5. Separate services/microservices\n6. Services owned by different teams\n7. Different systems/organizations \n\n### 3. Volatility (How often will it change?)\n\nUse Domain-Driven Design subdomain classification:\n- **Core subdomains**: High volatility (competitive advantage, frequent changes)\n- **Supporting subdomains**: Low volatility (necessary but not differentiating)\n- **Generic subdomains**: Low volatility (solved problems, stable)\n\n## Decision Framework\n\nWhen evaluating code, apply this matrix:\n\n| Integration Strength | Distance | Result |\n|---------------------|----------|--------|\n| **High** | **High** | ❌ COMPLEXITY (Distributed monolith) |\n| **Low** | **Low** | ❌ COMPLEXITY (Unnecessary abstraction) |\n| **High** | **Low** | ✅ MODULARITY (Related things together) |\n| **Low** | **High** | ✅ MODULARITY (Independent components apart) |\n\n**Exception**: If volatility is LOW, coupling mismatches are acceptable. \n\n## Connascence Analysis\n\nUse connascence to identify specific coupling types. See `references/connascence-types.md` for detailed examples.\n\n### Static Connascence (Compile-time, easier to fix)\nOrdered weakest to strongest:\n1. **Name (CoN)**: Components agree on names\n2. **Type (CoT)**: Components agree on types\n3. **Meaning (CoM)**: Components agree on value meanings (magic numbers)\n4. **Position (CoP)**: Components agree on order of values\n5. **Algorithm (CoA)**: Components share algorithm logic \n\n### Dynamic Connascence (Runtime, harder to detect)\nOrdered weakest to strongest:\n6. **Execution (CoE)**: Order of method calls matters\n7. **Timing (CoTm)**: Timing of execution matters\n8. **Value (CoV)**: Multiple values must change together\n9. **Identity (CoI)**: Must reference same instance \n\n### Connascence Rules\n1. Minimize overall connascence\n2. Minimize connascence crossing module boundaries\n3. Maximize connascence within module boundaries\n4. Convert stronger connascence to weaker forms\n5. As distance increases, connascence should weaken\n\n## Evaluation Checklist\n\nWhen analyzing code, check for:\n\n### Red Flags (Immediate Action Required)\n- [ ] Direct database access to another service's data (Intrusive coupling)\n- [ ] Reflection to access private fields\n- [ ] Business logic duplicated across services\n- [ ] Microservices requiring synchronized deployments\n- [ ] CBO (Coupling Between Objects) > 14 for a class\n- [ ] Instability index 0.3-0.7 for frequently-changing modules\n- [ ] Circular dependencies between modules\n\n### Warning Signs (Investigate Further)\n- [ ] Magic numbers/values shared between components (CoM)\n- [ ] Position-dependent parameters in APIs (CoP)\n- [ ] Algorithm logic duplicated in multiple places (CoA)\n- [ ] Methods must be called in specific order (CoE)\n- [ ] Long method chains: `a.b().c().d()` (Law of Demeter violation)\n- [ ] Classes with \"Manager\", \"Helper\", \"Utility\" doing too much\n\n### Healthy Patterns\n- [x] Contract-based integration between services\n- [x] DTOs that truly abstract internal models\n- [x] High cohesion within modules\n- [x] Single responsibility per class\n- [x] Dependency injection for external dependencies\n\n## Refactoring Strategies\n\n### By Integration Strength Problem\n\n**Intrusive → Contract Coupling**:\n1. Identify all direct dependencies on implementation details\n2. Define explicit interface/contract\n3. Create adapter layer\n4. Route all access through adapter\n\n**Functional → Model Coupling**:\n1. Extract shared business logic to dedicated module\n2. Define clear ownership\n3. Consume via explicit dependency\n\n**Model → Contract Coupling**:\n1. Create integration-specific DTOs\n2. Map between internal models and DTOs at boundaries\n3. Version contracts independently of models\n\n### By Connascence Type\n\n| From | To | Technique |\n|------|-----|-----------|\n| CoM (Meaning) | CoN (Name) | Replace magic values with named constants/enums |\n| CoP (Position) | CoN (Name) | Use named parameters, builder pattern, or parameter objects |\n| CoA (Algorithm) | CoN (Name) | Extract algorithm to single location, reference by name |\n| CoT (Type) | CoN (Name) | Use duck typing or interfaces |\n| CoE (Execution) | Explicit | Use state machines, builder pattern, or constructor injection |\n| CoI (Identity) | Explicit | Use dependency injection with explicit wiring |\n\n### By Distance Problem\n\n**High Strength + High Distance** (Distributed Monolith):\n- Option A: Reduce distance—merge services/modules\n- Option B: Reduce strength—introduce contracts, async messaging\n\n**Low Strength + Low Distance** (Over-abstraction):\n- Remove unnecessary abstraction layers\n- Inline overly generic code\n- Combine closely-related classes\n\n## Analysis Workflow\n\nWhen asked to evaluate code modularization:\n\n1. **Map the component structure**\n   - Identify modules, services, classes\n   - Draw dependency graph\n\n2. **Assess Integration Strength**\n   - For each dependency, classify: Intrusive/Functional/Model/Contract\n   - Flag high-strength cross-boundary dependencies\n\n3. **Measure Distance**\n   - Note component locations (same file → different systems)\n   - Identify team/ownership boundaries\n\n4. **Evaluate Volatility**\n   - Classify each component's subdomain type\n   - Note historically frequently-changed areas\n\n5. **Apply the formula**\n   - Check: Does strength match distance appropriately?\n   - Does volatility excuse any mismatches?\n\n6. **Identify Connascence**\n   - Scan for specific connascence types\n   - Prioritize: high strength + low locality + high degree\n\n7. **Recommend actions**\n   - Prioritize by impact and effort\n   - Provide specific refactoring techniques\n\n## Output Format\n\nStructure your evaluation as:\n```markdown\n## Modularization Assessment\n\n### Summary\n[Brief overview of coupling health]\n\n### Component Map\n[Describe module/service structure]\n\n### Coupling Analysis\n| Component Pair | Strength | Distance | Volatility | Balance |\n|---------------|----------|----------|------------|---------|\n| A → B         | Model    | High     | High       | ❌      |\n\n### Connascence Issues\n1. [Specific connascence type]: [Location] - [Impact]\n\n### Recommendations\n1. **Priority 1**: [Action] - [Rationale]\n2. **Priority 2**: [Action] - [Rationale]\n\n### Refactoring Plan\n[Step-by-step approach for highest-priority item]\n```\n\n## References\n\n- For detailed connascence examples: see `references/connascence-types.md`\n- For coupling metrics: see `references/coupling-metrics.md`\n- For refactoring patterns: see `references/refactoring-patterns.md`\n\n## Limitations\n\n- Cannot assess runtime behavior without execution context\n- Volatility assessment requires domain knowledge\n- Team/organizational distance requires project context\n- Historical change frequency not available from static analysis alone"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "system",
+          "org": "imagemagick",
+          "name": "imagemagick",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "typescript-react-reviewer",
+      "parsed": {
+        "name": "typescript-react-reviewer",
+        "description": "Expert code reviewer for TypeScript + React 19 applications. Use when reviewing React code, identifying anti-patterns, evaluating state management, or assessing code maintainability. Triggers: code review requests, PR reviews, React architecture evaluation, identifying code smells, TypeScript type safety checks, useEffect abuse detection, state management review.",
+        "compatibility": null,
+        "license": null,
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# TypeScript + React 19 Code Review Expert\n\nExpert code reviewer with deep knowledge of React 19's new features, TypeScript best practices, state management patterns, and common anti-patterns.\n\n## Review Priority Levels\n\n### 🚫 Critical (Block Merge)\n\nThese issues cause bugs, memory leaks, or architectural problems:\n\n| Issue | Why It's Critical |\n|-------|-------------------|\n| `useEffect` for derived state | Extra render cycle, sync bugs |\n| Missing cleanup in `useEffect` | Memory leaks |\n| Direct state mutation (`.push()`, `.splice()`) | Silent update failures |\n| Conditional hook calls | Breaks Rules of Hooks |\n| `key={index}` in dynamic lists | State corruption on reorder |\n| `any` type without justification | Type safety bypass |\n| `useFormStatus` in same component as `<form>` | Always returns false (React 19 bug) |\n| Promise created inside render with `use()` | Infinite loop |\n\n### ⚠️ High Priority\n\n| Issue | Impact |\n|-------|--------|\n| Incomplete dependency arrays | Stale closures, missing updates |\n| Props typed as `any` | Runtime errors |\n| Unjustified `useMemo`/`useCallback` | Unnecessary complexity |\n| Missing Error Boundaries | Poor error UX |\n| Controlled input initialized with `undefined` | React warning |\n\n### 📝 Architecture/Style\n\n| Issue | Recommendation |\n|-------|----------------|\n| Component > 300 lines | Split into smaller components |\n| Prop drilling > 2-3 levels | Use composition or context |\n| State far from usage | Colocate state |\n| Custom hooks without `use` prefix | Follow naming convention |\n\n## Quick Detection Patterns\n\n### useEffect Abuse (Most Common Anti-Pattern)\n\n```typescript\n// ❌ WRONG: Derived state in useEffect\nconst [firstName, setFirstName] = useState('');\nconst [fullName, setFullName] = useState('');\nuseEffect(() => {\n  setFullName(firstName + ' ' + lastName);\n}, [firstName, lastName]);\n\n// ✅ CORRECT: Compute during render\nconst fullName = firstName + ' ' + lastName;\n```\n\n```typescript\n// ❌ WRONG: Event logic in useEffect\nuseEffect(() => {\n  if (product.isInCart) showNotification('Added!');\n}, [product]);\n\n// ✅ CORRECT: Logic in event handler\nfunction handleAddToCart() {\n  addToCart(product);\n  showNotification('Added!');\n}\n```\n\n### React 19 Hook Mistakes\n\n```typescript\n// ❌ WRONG: useFormStatus in form component (always returns false)\nfunction Form() {\n  const { pending } = useFormStatus();\n  return <form action={submit}><button disabled={pending}>Send</button></form>;\n}\n\n// ✅ CORRECT: useFormStatus in child component\nfunction SubmitButton() {\n  const { pending } = useFormStatus();\n  return <button type=\"submit\" disabled={pending}>Send</button>;\n}\nfunction Form() {\n  return <form action={submit}><SubmitButton /></form>;\n}\n```\n\n```typescript\n// ❌ WRONG: Promise created in render (infinite loop)\nfunction Component() {\n  const data = use(fetch('/api/data')); // New promise every render!\n}\n\n// ✅ CORRECT: Promise from props or state\nfunction Component({ dataPromise }: { dataPromise: Promise<Data> }) {\n  const data = use(dataPromise);\n}\n```\n\n### State Mutation Detection\n\n```typescript\n// ❌ WRONG: Mutations (no re-render)\nitems.push(newItem);\nsetItems(items);\n\narr[i] = newValue;\nsetArr(arr);\n\n// ✅ CORRECT: Immutable updates\nsetItems([...items, newItem]);\nsetArr(arr.map((x, idx) => idx === i ? newValue : x));\n```\n\n### TypeScript Red Flags\n\n```typescript\n// ❌ Red flags to catch\nconst data: any = response;           // Unsafe any\nconst items = arr[10];                // Missing undefined check\nconst App: React.FC<Props> = () => {}; // Discouraged pattern\n\n// ✅ Preferred patterns\nconst data: ResponseType = response;\nconst items = arr[10]; // with noUncheckedIndexedAccess\nconst App = ({ prop }: Props) => {};  // Explicit props\n```\n\n## Review Workflow\n\n1. **Scan for critical issues first** - Check for the patterns in \"Critical (Block Merge)\" section\n2. **Check React 19 usage** - See [react19-patterns.md](references/react19-patterns.md) for new API patterns\n3. **Evaluate state management** - Is state colocated? Server state vs client state separation?\n4. **Assess TypeScript safety** - Generic components, discriminated unions, strict config\n5. **Review for maintainability** - Component size, hook design, folder structure\n\n## Reference Documents\n\nFor detailed patterns and examples:\n\n- **[react19-patterns.md](references/react19-patterns.md)** - React 19 new hooks (useActionState, useOptimistic, use), Server/Client Component boundaries\n- **[antipatterns.md](references/antipatterns.md)** - Comprehensive anti-pattern catalog with fixes\n- **[checklist.md](references/checklist.md)** - Full code review checklist for thorough reviews\n\n## State Management Quick Guide\n\n| Data Type | Solution |\n|-----------|----------|\n| Server/async data | TanStack Query (never copy to local state) |\n| Simple global UI state | Zustand (~1KB, no Provider) |\n| Fine-grained derived state | Jotai (~2.4KB) |\n| Component-local state | useState/useReducer |\n| Form state | React 19 useActionState |\n\n### TanStack Query Anti-Pattern\n\n```typescript\n// ❌ NEVER copy server data to local state\nconst { data } = useQuery({ queryKey: ['todos'], queryFn: fetchTodos });\nconst [todos, setTodos] = useState([]);\nuseEffect(() => setTodos(data), [data]);\n\n// ✅ Query IS the source of truth\nconst { data: todos } = useQuery({ queryKey: ['todos'], queryFn: fetchTodos });\n```\n\n## TypeScript Config Recommendations\n\n```json\n{\n  \"compilerOptions\": {\n    \"strict\": true,\n    \"noUncheckedIndexedAccess\": true,\n    \"noImplicitReturns\": true,\n    \"exactOptionalPropertyTypes\": true\n  }\n}\n```\n\n`noUncheckedIndexedAccess` is critical - it catches `arr[i]` returning undefined.\n\n## Immediate Red Flags\n\nWhen reviewing, flag these immediately:\n\n| Pattern | Problem | Fix |\n|---------|---------|-----|\n| `eslint-disable react-hooks/exhaustive-deps` | Hides stale closure bugs | Refactor logic |\n| Component defined inside component | Remounts every render | Move outside |\n| `useState(undefined)` for inputs | Uncontrolled warning | Use empty string |\n| `React.FC` with generics | Generic inference breaks | Use explicit props |\n| Barrel files (`index.ts`) in app code | Bundle bloat, circular deps | Direct imports |"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": []
+    }
+  ]
+}

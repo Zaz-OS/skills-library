@@ -1,0 +1,50 @@
+{
+  "source": "astrolicious/agent-skills",
+  "repoUrl": "https://github.com/astrolicious/agent-skills",
+  "skills": [
+    {
+      "skillId": "astro",
+      "parsed": {
+        "name": "astro",
+        "description": "Skill for using Astro projects. Includes CLI commands, project structure, core config options, and adapters. Use this skill when the user needs to work with Astro or when the user mentions Astro.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Astro Usage Guide\n\n**Always consult [docs.astro.build](https://docs.astro.build) for code examples and latest API.**\n\nAstro is the web framework for content-driven websites.\n\n---\n\n## Quick Reference\n\n### File Location\nCLI looks for `astro.config.js`, `astro.config.mjs`, `astro.config.cjs`, and `astro.config.ts` in: `./`. Use `--config` for custom path.\n\n### CLI Commands\n\n- `npx astro dev` -  Start the development server.\n- `npx astro build` - Build your project and write it to disk.\n- `npx astro check` - Check your project for errors.\n- `npx astro add` - Add an integration.\n- `npmx astro sync` - Generate TypeScript types for all Astro modules.\n\n**Re-run after adding/changing plugins.**\n\n### Project Structure\n\nAstro leverages an opinionated folder layout for your project. Every Astro project root should include some directories and files. Reference [project structure docs](https://docs.astro.build/en/basics/project-structure).\n\n- `src/*` - Your project source code (components, pages, styles, images, etc.)\n- `src/pages` - Required sub-directory in your Astro project. Without it, your site will have no pages or routes!\n- `src/components` - It is common to group and organize all of your project components together in this folder. This is a common convention in Astro projects, but it is not required. Feel free to organize your components however you like!\n- `src/layouts` - Just like `src/components`, this directory is a common convention but not required.\n- `src/styles` - It is a common convention to store your CSS or Sass files here, but this is not required. As long as your styles live somewhere in the src/ directory and are imported correctly, Astro will handle and optimize them.\n- `public/*` - Your non-code, unprocessed assets (fonts, icons, etc.). The files in this folder will be copied into the build folder untouched, and then your site will be built.\n- `package.json` - A project manifest.\n- `astro.config.{js,mjs,cjs,ts}` - An Astro configuration file. (recommended)\n- `tsconfig.json` - A TypeScript configuration file. (recommended)\n\n---\n\n## Core Config Options\n\n| Option | Notes |\n|--------|-------|\n| `site` | Your final, deployed URL. Astro uses this full URL to generate your sitemap and canonical URLs in your final build. |\n\n---\n\n## Adapters\n\nDeploy to your favorite server, serverless, or edge host with build adapters. Use an adapter to enable on-demand rendering in your Astro project.\n\n**Add [Node.js](https://docs.astro.build/en/guides/integrations-guide/node) adapter using astro add:**\n```\nnpx astro add node --yes\n```\n\n**Add [Cloudflare](https://docs.astro.build/en/guides/integrations-guide/cloudflare) adapter using astro add:**\n```\nnpx astro add cloudflare --yes\n```\n\n**Add [Netlify](https://docs.astro.build/en/guides/integrations-guide/netlify) adapter using astro add:**\n```\nnpx astro add netlify --yes\n```\n\n**Add [Vercel](https://docs.astro.build/en/guides/integrations-guide/vercel) adapter using astro add:**\n```\nnpx astro add vercel --yes\n```\n\n[Other Community adapters](https://astro.build/integrations/2/?search=&categories%5B%5D=adapters)\n\n## Resources\n\n- [Docs](https://docs.astro.build)\n- [Config Reference](https://docs.astro.build/en/reference/configuration-reference/)\n- [llms.txt](https://docs.astro.build/llms.txt)\n- [GitHub](https://github.com/withastro/astro)"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": false,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "vercel",
+          "name": "vercel-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "service",
+          "org": "netlify",
+          "name": "netlify-cli",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "astro",
+          "name": "astro",
+          "detectedFrom": "instructions"
+        }
+      ]
+    }
+  ]
+}

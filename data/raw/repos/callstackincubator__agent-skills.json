@@ -1,0 +1,114 @@
+{
+  "source": "callstackincubator/agent-skills",
+  "repoUrl": "https://github.com/callstackincubator/agent-skills",
+  "skills": [
+    {
+      "skillId": "github",
+      "parsed": {
+        "name": "github",
+        "description": "GitHub patterns using gh CLI for pull requests, stacked PRs, code review, branching strategies, and repository automation. Use when working with GitHub PRs, merging strategies, or repository management tasks.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# GitHub Patterns\n\n## Tools\n\nUse `gh` CLI for all GitHub operations. Prefer CLI over GitHub MCP servers for lower context usage.\n\n## Quick Commands\n\n```bash\n# Create a PR from the current branch\ngh pr create --title \"feat: add feature\" --body \"Description\"\n\n# Squash-merge a PR\ngh pr merge <PR_NUMBER> --squash --title \"feat: add feature (#<PR_NUMBER>)\"\n\n# View PR status and checks\ngh pr status\ngh pr checks <PR_NUMBER>\n```\n\n## Stacked PR Workflow Summary\n\nWhen merging a chain of stacked PRs (each targeting the previous branch):\n\n1. **Merge the first PR** into main via squash merge\n2. **For each subsequent PR**: rebase onto main, update base to main, then squash merge\n3. **On conflicts**: stop and ask the user to resolve manually\n\n```bash\n# Rebase next PR's branch onto main, excluding already-merged commits\ngit rebase --onto origin/main <old-base-branch> <next-branch>\ngit push --force-with-lease origin <next-branch>\ngh pr edit <N> --base main\ngh pr merge <N> --squash --title \"<PR title> (#N)\"\n```\n\nSee [stacked-pr-workflow.md][stacked-pr-workflow] for full step-by-step details.\n\n## Quick Reference\n\n| File                                          | Description                                              |\n| --------------------------------------------- | -------------------------------------------------------- |\n| [stacked-pr-workflow.md][stacked-pr-workflow] | Merge stacked PRs into main as individual squash commits |\n\n## Problem → Skill Mapping\n\n| Problem                   | Start With                                    |\n| ------------------------- | --------------------------------------------- |\n| Merge stacked PRs cleanly | [stacked-pr-workflow.md][stacked-pr-workflow] |\n\n[stacked-pr-workflow]: references/stacked-pr-workflow.md"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "system",
+          "org": "git",
+          "name": "git",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "react-native-best-practices",
+      "parsed": {
+        "name": "react-native-best-practices",
+        "description": "Provides React Native performance optimization guidelines for FPS, TTI, bundle size, memory leaks, re-renders, and animations. Applies to tasks involving Hermes optimization, JS thread blocking, bridge overhead, FlashList, native modules, or debugging jank and frame drops.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# React Native Best Practices\n\n## Overview\n\nPerformance optimization guide for React Native applications, covering JavaScript/React, Native (iOS/Android), and bundling optimizations. Based on Callstack's \"Ultimate Guide to React Native Optimization\".\n\n## Skill Format\n\nEach reference file follows a hybrid format for fast lookup and deep understanding:\n\n- **Quick Pattern**: Incorrect/Correct code snippets for immediate pattern matching\n- **Quick Command**: Shell commands for process/measurement skills\n- **Quick Config**: Configuration snippets for setup-focused skills\n- **Quick Reference**: Summary tables for conceptual skills\n- **Deep Dive**: Full context with When to Use, Prerequisites, Step-by-Step, Common Pitfalls\n\n**Impact ratings**: CRITICAL (fix immediately), HIGH (significant improvement), MEDIUM (worthwhile optimization)\n\n## When to Apply\n\nReference these guidelines when:\n- Debugging slow/janky UI or animations\n- Investigating memory leaks (JS or native)\n- Optimizing app startup time (TTI)\n- Reducing bundle or app size\n- Writing native modules (Turbo Modules)\n- Profiling React Native performance\n- Reviewing React Native code for performance\n\n## Priority-Ordered Guidelines\n\n| Priority | Category | Impact | Prefix |\n|----------|----------|--------|--------|\n| 1 | FPS & Re-renders | CRITICAL | `js-*` |\n| 2 | Bundle Size | CRITICAL | `bundle-*` |\n| 3 | TTI Optimization | HIGH | `native-*`, `bundle-*` |\n| 4 | Native Performance | HIGH | `native-*` |\n| 5 | Memory Management | MEDIUM-HIGH | `js-*`, `native-*` |\n| 6 | Animations | MEDIUM | `js-*` |\n\n## Quick Reference\n\n### Optimization Workflow\n\nFollow this cycle for any performance issue: **Measure → Optimize → Re-measure → Validate**\n\n1. **Measure**: Capture baseline metrics (FPS, TTI, bundle size) before changes\n2. **Optimize**: Apply the targeted fix from the relevant reference\n3. **Re-measure**: Run the same measurement to get updated metrics\n4. **Validate**: Confirm improvement (e.g., FPS 45→60, TTI 3.2s→1.8s, bundle 2.1MB→1.6MB)\n\nIf metrics did not improve, revert and try the next suggested fix.\n\n### Critical: FPS & Re-renders\n\n**Profile first:**\n```bash\n# Open React Native DevTools\n# Press 'j' in Metro, or shake device → \"Open DevTools\"\n```\n\n**Common fixes:**\n- Replace ScrollView with FlatList/FlashList for lists\n- Use React Compiler for automatic memoization\n- Use atomic state (Jotai/Zustand) to reduce re-renders\n- Use `useDeferredValue` for expensive computations\n\n### Critical: Bundle Size\n\n**Analyze bundle:**\n```bash\nnpx react-native bundle \\\n  --entry-file index.js \\\n  --bundle-output output.js \\\n  --platform ios \\\n  --sourcemap-output output.js.map \\\n  --dev false --minify true\n\nnpx source-map-explorer output.js --no-border-checks\n```\n\n**Verify improvement after optimization:**\n```bash\n# Record baseline size before changes\nls -lh output.js  # e.g., Before: 2.1 MB\n\n# After applying fixes, re-bundle and compare\nnpx react-native bundle --entry-file index.js --bundle-output output.js \\\n  --platform ios --dev false --minify true\nls -lh output.js  # e.g., After: 1.6 MB  (24% reduction)\n```\n\n**Common fixes:**\n- Avoid barrel imports (import directly from source)\n- Remove unnecessary Intl polyfills (Hermes has native support)\n- Enable tree shaking (Expo SDK 52+ or Re.Pack)\n- Enable R8 for Android native code shrinking\n\n### High: TTI Optimization\n\n**Measure TTI:**\n- Use `react-native-performance` for markers\n- Only measure cold starts (exclude warm/hot/prewarm)\n\n**Common fixes:**\n- Disable JS bundle compression on Android (enables Hermes mmap)\n- Use native navigation (react-native-screens)\n- Preload commonly-used expensive screens before navigating to them\n\n### High: Native Performance\n\n**Profile native:**\n- iOS: Xcode Instruments → Time Profiler\n- Android: Android Studio → CPU Profiler\n\n**Common fixes:**\n- Use background threads for heavy native work\n- Prefer async over sync Turbo Module methods\n- Use C++ for cross-platform performance-critical code\n\n## References\n\nFull documentation with code examples in [references/][references]:\n\n### JavaScript/React (`js-*`)\n\n| File | Impact | Description |\n|------|--------|-------------|\n| [js-lists-flatlist-flashlist.md][js-lists-flatlist-flashlist] | CRITICAL | Replace ScrollView with virtualized lists |\n| [js-profile-react.md][js-profile-react] | MEDIUM | React DevTools profiling |\n| [js-measure-fps.md][js-measure-fps] | HIGH | FPS monitoring and measurement |\n| [js-memory-leaks.md][js-memory-leaks] | MEDIUM | JS memory leak hunting |\n| [js-atomic-state.md][js-atomic-state] | HIGH | Jotai/Zustand patterns |\n| [js-concurrent-react.md][js-concurrent-react] | HIGH | useDeferredValue, useTransition |\n| [js-react-compiler.md][js-react-compiler] | HIGH | Automatic memoization |\n| [js-animations-reanimated.md][js-animations-reanimated] | MEDIUM | Reanimated worklets |\n| [js-uncontrolled-components.md][js-uncontrolled-components] | HIGH | TextInput optimization |\n\n### Native (`native-*`)\n\n| File | Impact | Description |\n|------|--------|-------------|\n| [native-turbo-modules.md][native-turbo-modules] | HIGH | Building fast native modules |\n| [native-sdks-over-polyfills.md][native-sdks-over-polyfills] | HIGH | Native vs JS libraries |\n| [native-measure-tti.md][native-measure-tti] | HIGH | TTI measurement setup |\n| [native-threading-model.md][native-threading-model] | HIGH | Turbo Module threads |\n| [native-profiling.md][native-profiling] | MEDIUM | Xcode/Android Studio profiling |\n| [native-platform-setup.md][native-platform-setup] | MEDIUM | iOS/Android tooling guide |\n| [native-view-flattening.md][native-view-flattening] | MEDIUM | View hierarchy debugging |\n| [native-memory-patterns.md][native-memory-patterns] | MEDIUM | C++/Swift/Kotlin memory |\n| [native-memory-leaks.md][native-memory-leaks] | MEDIUM | Native memory leak hunting |\n| [native-android-16kb-alignment.md][native-android-16kb-alignment] | CRITICAL | Third-party library alignment for Google Play |\n\n### Bundling (`bundle-*`)\n\n| File | Impact | Description |\n|------|--------|-------------|\n| [bundle-barrel-exports.md][bundle-barrel-exports] | CRITICAL | Avoid barrel imports |\n| [bundle-analyze-js.md][bundle-analyze-js] | CRITICAL | JS bundle visualization |\n| [bundle-tree-shaking.md][bundle-tree-shaking] | HIGH | Dead code elimination |\n| [bundle-analyze-app.md][bundle-analyze-app] | HIGH | App size analysis |\n| [bundle-r8-android.md][bundle-r8-android] | HIGH | Android code shrinking |\n| [bundle-hermes-mmap.md][bundle-hermes-mmap] | HIGH | Disable bundle compression |\n| [bundle-native-assets.md][bundle-native-assets] | HIGH | Asset catalog setup |\n| [bundle-library-size.md][bundle-library-size] | MEDIUM | Evaluate dependencies |\n| [bundle-code-splitting.md][bundle-code-splitting] | MEDIUM | Re.Pack code splitting |\n\n\n## Searching References\n\n```bash\n# Find patterns by keyword\ngrep -l \"reanimated\" references/\ngrep -l \"flatlist\" references/\ngrep -l \"memory\" references/\ngrep -l \"profil\" references/\ngrep -l \"tti\" references/\ngrep -l \"bundle\" references/\n```\n\n## Problem → Skill Mapping\n\n| Problem | Start With |\n|---------|------------|\n| App feels slow/janky | [js-measure-fps.md][js-measure-fps] → [js-profile-react.md][js-profile-react] |\n| Too many re-renders | [js-profile-react.md][js-profile-react] → [js-react-compiler.md][js-react-compiler] |\n| Slow startup (TTI) | [native-measure-tti.md][native-measure-tti] → [bundle-analyze-js.md][bundle-analyze-js] |\n| Large app size | [bundle-analyze-app.md][bundle-analyze-app] → [bundle-r8-android.md][bundle-r8-android] |\n| Memory growing | [js-memory-leaks.md][js-memory-leaks] or [native-memory-leaks.md][native-memory-leaks] |\n| Animation drops frames | [js-animations-reanimated.md][js-animations-reanimated] |\n| List scroll jank | [js-lists-flatlist-flashlist.md][js-lists-flatlist-flashlist] |\n| TextInput lag | [js-uncontrolled-components.md][js-uncontrolled-components] |\n| Native module slow | [native-turbo-modules.md][native-turbo-modules] → [native-threading-model.md][native-threading-model] |\n| Native library alignment issue | [native-android-16kb-alignment.md][native-android-16kb-alignment] |\n\n[references]: references/\n[js-lists-flatlist-flashlist]: references/js-lists-flatlist-flashlist.md\n[js-profile-react]: references/js-profile-react.md\n[js-measure-fps]: references/js-measure-fps.md\n[js-memory-leaks]: references/js-memory-leaks.md\n[js-atomic-state]: references/js-atomic-state.md\n[js-concurrent-react]: references/js-concurrent-react.md\n[js-react-compiler]: references/js-react-compiler.md\n[js-animations-reanimated]: references/js-animations-reanimated.md\n[js-uncontrolled-components]: references/js-uncontrolled-components.md\n[native-turbo-modules]: references/native-turbo-modules.md\n[native-sdks-over-polyfills]: references/native-sdks-over-polyfills.md\n[native-measure-tti]: references/native-measure-tti.md\n[native-threading-model]: references/native-threading-model.md\n[native-profiling]: references/native-profiling.md\n[native-platform-setup]: references/native-platform-setup.md\n[native-view-flattening]: references/native-view-flattening.md\n[native-memory-patterns]: references/native-memory-patterns.md\n[native-memory-leaks]: references/native-memory-leaks.md\n[native-android-16kb-alignment]: references/native-android-16kb-alignment.md\n[bundle-barrel-exports]: references/bundle-barrel-exports.md\n[bundle-analyze-js]: references/bundle-analyze-js.md\n[bundle-tree-shaking]: references/bundle-tree-shaking.md\n[bundle-analyze-app]: references/bundle-analyze-app.md\n[bundle-r8-android]: references/bundle-r8-android.md\n[bundle-hermes-mmap]: references/bundle-hermes-mmap.md\n[bundle-native-assets]: references/bundle-native-assets.md\n[bundle-library-size]: references/bundle-library-size.md\n[bundle-code-splitting]: references/bundle-code-splitting.md\n\n## Attribution\n\nBased on \"The Ultimate Guide to React Native Optimization\" by Callstack."
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "react-native",
+          "name": "react-native",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "source-map-explorer",
+          "name": "source-map-explorer",
+          "detectedFrom": "instructions"
+        }
+      ]
+    },
+    {
+      "skillId": "upgrading-react-native",
+      "parsed": {
+        "name": "upgrading-react-native",
+        "description": "Upgrades React Native apps to newer versions by applying rn-diff-purge template diffs, updating package.json dependencies, migrating native iOS and Android configuration, resolving CocoaPods and Gradle changes, and handling breaking API updates. Use when upgrading React Native, bumping RN version, updating from RN 0.x to 0.y, or migrating Expo SDK alongside a React Native upgrade.",
+        "compatibility": null,
+        "license": "MIT",
+        "allowedTools": [],
+        "metadata": {},
+        "body": "# Upgrading React Native\n\n## Overview\n\nCovers the full React Native upgrade workflow: template diffs via Upgrade Helper, dependency updates, Expo SDK steps, and common pitfalls.\n\n## Typical Upgrade Sequence\n\n1. **Route**: Choose the right upgrade path via [upgrading-react-native.md][upgrading-react-native]\n2. **Diff**: Fetch the canonical template diff using Upgrade Helper via [upgrade-helper-core.md][upgrade-helper-core]\n3. **Dependencies**: Assess and update third-party packages via [upgrading-dependencies.md][upgrading-dependencies]\n4. **React**: Align React version if upgraded via [react.md][react]\n5. **Expo** (if applicable): Apply Expo SDK layer via [expo-sdk-upgrade.md][expo-sdk-upgrade]\n6. **Verify**: Run post-upgrade checks via [upgrade-verification.md][upgrade-verification]\n\n```bash\n# Quick start: detect current version and fetch diff\nnpm pkg get dependencies.react-native --prefix \"$APP_DIR\"\nnpm view react-native dist-tags.latest\n\n# Example: upgrading from 0.76.9 to 0.78.2\n# 1. Fetch the template diff\ncurl -L -f -o /tmp/rn-diff.diff \\\n  \"https://raw.githubusercontent.com/react-native-community/rn-diff-purge/diffs/diffs/0.76.9..0.78.2.diff\" \\\n  && echo \"Diff downloaded OK\" || echo \"ERROR: diff not found, check versions\"\n# 2. Review changed files\ngrep -n \"^diff --git\" /tmp/rn-diff.diff\n# 3. Update package.json, apply native changes, then install + rebuild\nnpm install --prefix \"$APP_DIR\"\ncd \"$APP_DIR/ios\" && pod install\n# 4. Validate: both platforms must build successfully\nnpx react-native build-android --mode debug --no-packager\nxcodebuild -workspace \"$APP_DIR/ios/App.xcworkspace\" -scheme App -sdk iphonesimulator build\n```\n\n## When to Apply\n\nReference these guidelines when:\n- Moving a React Native app to a newer version\n- Reconciling native config changes from Upgrade Helper\n- Validating release notes for breaking changes\n\n## Quick Reference\n\n| File | Description |\n|------|-------------|\n| [upgrading-react-native.md][upgrading-react-native] | Router: choose the right upgrade path |\n| [upgrade-helper-core.md][upgrade-helper-core] | Core Upgrade Helper workflow and reliability gates |\n| [upgrading-dependencies.md][upgrading-dependencies] | Dependency compatibility checks and migration planning |\n| [react.md][react] | React and React 19 upgrade alignment rules |\n| [expo-sdk-upgrade.md][expo-sdk-upgrade] | Expo SDK-specific upgrade layer (conditional) |\n| [upgrade-verification.md][upgrade-verification] | Manual post-upgrade verification checklist |\n| [monorepo-singlerepo-targeting.md][monorepo-singlerepo-targeting] | Monorepo and single-repo app targeting and command scoping |\n\n## Problem → Skill Mapping\n\n| Problem | Start With |\n|---------|------------|\n| Need to upgrade React Native | [upgrade-helper-core.md][upgrade-helper-core] |\n| Need dependency risk triage and migration options | [upgrading-dependencies.md][upgrading-dependencies] |\n| Need React/React 19 package alignment | [react.md][react] |\n| Need workflow routing first | [upgrading-react-native.md][upgrading-react-native] |\n| Need Expo SDK-specific steps | [expo-sdk-upgrade.md][expo-sdk-upgrade] |\n| Need manual regression validation | [upgrade-verification.md][upgrade-verification] |\n| Need repo/app command scoping | [monorepo-singlerepo-targeting.md][monorepo-singlerepo-targeting] |\n\n[upgrading-react-native]: references/upgrading-react-native.md\n[upgrade-helper-core]: references/upgrade-helper-core.md\n[upgrading-dependencies]: references/upgrading-dependencies.md\n[react]: references/react.md\n[expo-sdk-upgrade]: references/expo-sdk-upgrade.md\n[upgrade-verification]: references/upgrade-verification.md\n[monorepo-singlerepo-targeting]: references/monorepo-singlerepo-targeting.md"
+      },
+      "contentType": {
+        "hasInstructions": true,
+        "hasScripts": false,
+        "hasReferences": true,
+        "hasAssets": false
+      },
+      "dependencies": [
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npm",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "npm",
+          "name": "npx",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "system",
+          "org": "curl",
+          "name": "curl",
+          "detectedFrom": "instructions"
+        },
+        {
+          "type": "npm",
+          "org": "react-native",
+          "name": "react-native",
+          "detectedFrom": "instructions"
+        }
+      ]
+    }
+  ]
+}
