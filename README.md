@@ -58,17 +58,6 @@ The pipeline runs in 4 stages:
 3. **Enrich** — fetches GitHub stars via API (with etag caching)
 4. **Build** — merges all data into `skills.json`, `dependencies.json`, `llms.txt`, and search index
 
-## Catalog Stats
-
-| Metric | Count |
-|--------|-------|
-| Total skills | 5,959 |
-| Source repos | 100 |
-| Standalone (no deps) | 2,429 |
-| With dependencies | 3,530 |
-| With scripts | 442 |
-| With references | 1,298 |
-
 ## API Endpoints
 
 The static site exposes these endpoints:
