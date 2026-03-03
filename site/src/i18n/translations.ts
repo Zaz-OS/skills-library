@@ -242,10 +242,11 @@ export const translations: Record<Locale, Record<string, any>> = {
       jsonDesc: "Prefer to fetch data directly? The catalog is also available as static JSON endpoints:",
     },
     footer: {
-      sponsoredBy: "Sponsored by",
+      sponsoredBy: "Maintained by",
       tagline: "— your company's AI-native OS.",
       sourcedFrom: "Skills sourced from",
       updatedDaily: "Updated daily",
+      openSource: "Open source",
     },
     langSwitcher: {
       label: "EN",
@@ -492,10 +493,11 @@ export const translations: Record<Locale, Record<string, any>> = {
       jsonDesc: "Prefere buscar dados diretamente? O catálogo também está disponível como endpoints JSON estáticos:",
     },
     footer: {
-      sponsoredBy: "Patrocinado por",
+      sponsoredBy: "Mantido por",
       tagline: "— o OS AI-native da sua empresa.",
       sourcedFrom: "Skills de",
       updatedDaily: "Atualizado diariamente",
+      openSource: "Open source",
     },
     langSwitcher: {
       label: "PT",
