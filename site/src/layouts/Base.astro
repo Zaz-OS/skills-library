@@ -37,6 +37,7 @@ const altPath = getLocalizedPath(Astro.url.pathname.replace(/^\/pt-br/, '') || '
           <span class="font-display font-semibold text-lg tracking-tight">{t.header.brand}</span>
         </a>
         <nav class="flex items-center gap-5 text-sm text-ink-muted">
+          <a href={getLocalizedPath('/what-are-skills', lang)} class="hover:text-ink transition-colors hidden sm:inline">{t.header.whatAreSkills}</a>
           <a href="/llms.txt" class="hover:text-ink transition-colors hidden sm:inline">{t.header.forAgents}</a>
           <a href={getLocalizedPath('/mcp', lang)} class="hover:text-ink transition-colors hidden sm:inline">{t.header.mcp}</a>
           <a href={altPath} class="px-2.5 py-1 rounded-md border border-sand-200 bg-white text-xs font-mono text-sand-600 hover:border-sand-300 hover:text-ink transition-colors">

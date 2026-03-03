@@ -162,12 +162,22 @@ export async function scrapeSkillsSh(): Promise<ScrapedSkill[]> {
   let skills = extractSkillsFromHtml(html);
   console.log(`Extracted ${skills.length} skills from HTML`);
 
-  // Fallback: use npx skills find
-  if (skills.length === 0) {
-    console.log("HTML extraction failed, falling back to npx skills find...");
-    skills = await fallbackNpxFind();
+  // Always supplement with npx skills find (HTML only returns the initial page)
+  console.log("Supplementing with npx skills find...");
+  const npxSkills = await fallbackNpxFind();
+  console.log(`Found ${npxSkills.length} skills via npx skills find`);
+
+  // Merge: HTML skills take priority (have accurate install counts)
+  const seen = new Set(skills.map((s) => `${s.source}/${s.skillId}`));
+  for (const s of npxSkills) {
+    const key = `${s.source}/${s.skillId}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      skills.push(s);
+    }
   }
 
+  console.log(`Total after merge: ${skills.length} skills`);
   return skills;
 }
 

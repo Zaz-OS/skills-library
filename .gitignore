@@ -9,3 +9,4 @@ chats/
 .env.local
 media/
 data/
+deploy.log
