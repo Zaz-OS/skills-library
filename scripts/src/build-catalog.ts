@@ -1,3 +1,4 @@
+// @deprecated — Replaced by D1 database + Worker REST API (D1 migration). Will be removed once D1 migration is confirmed stable.
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";

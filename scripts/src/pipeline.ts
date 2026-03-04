@@ -2,9 +2,7 @@ import { mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { scrapeSkillsSh } from "./scrape-skills-sh.js";
-import { processRepos } from "./process-repos.js";
-import { enrichWithGithub } from "./enrich.js";
-import { buildCatalog, writeCatalog } from "./build-catalog.js";
+import { syncToD1 } from "./sync-d1.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, "../../data/raw");
@@ -20,23 +18,13 @@ async function run() {
   const scrapedSkills = await scrapeSkillsSh();
   console.log(`Found ${scrapedSkills.length} skills\n`);
 
-  // Step 2: Process repos
-  console.log("--- Step 2: Processing source repos ---");
-  const repos = await processRepos(scrapedSkills);
-  console.log(`Processed ${repos.length} repos\n`);
-
-  // Step 3: Enrich with GitHub data
-  console.log("--- Step 3: Enriching with GitHub data ---");
-  const githubMeta = await enrichWithGithub(repos);
-  console.log(`Enriched ${Object.keys(githubMeta).length} repos\n`);
-
-  // Step 4: Build catalog
-  console.log("--- Step 4: Building catalog ---");
-  const catalog = buildCatalog(scrapedSkills, repos, githubMeta);
-  writeCatalog(catalog);
+  // Step 2: Sync to D1
+  console.log("--- Step 2: Syncing to D1 ---");
+  await syncToD1(scrapedSkills);
+  console.log("");
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log(`\n=== Pipeline complete in ${elapsed}s ===`);
+  console.log(`=== Pipeline complete in ${elapsed}s ===`);
 }
 
 run().catch((err) => {

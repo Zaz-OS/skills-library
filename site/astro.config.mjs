@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import tailwind from "@astrojs/tailwind";
+import cloudflare from "@astrojs/cloudflare";
 import { readFileSync } from "node:fs";
 
 // Load .env manually (runs before Vite env loading)
@@ -16,7 +17,7 @@ try {
 export default defineConfig({
   site: "https://skills-library.com",
   integrations: [tailwind()],
-  output: "static",
+  adapter: cloudflare(),
   i18n: {
     defaultLocale: "en",
     locales: ["en", "pt-br"],

@@ -1,3 +1,4 @@
+// @deprecated — Replaced by sync-d1.ts + enrich-batch.ts (D1 migration). Will be removed once D1 migration is confirmed stable.
 import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, rmSync } from "node:fs";
 import { join, dirname } from "node:path";

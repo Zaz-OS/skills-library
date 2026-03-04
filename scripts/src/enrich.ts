@@ -1,3 +1,4 @@
+// @deprecated — Replaced by enrich-batch.ts (D1 migration). Will be removed once D1 migration is confirmed stable.
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";

@@ -6,9 +6,7 @@ on:
   workflow_dispatch: # Manual trigger
 
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: read
 
 concurrency:
   group: update-catalog
@@ -17,7 +15,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -37,20 +35,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Restore previous data
-        run: |
-          git fetch origin data --depth=1 || true
-          if git show-ref --verify --quiet refs/remotes/origin/data; then
-            git checkout origin/data -- data/ || true
-          fi
-
-      - name: Run pipeline
+      - name: Scrape + sync D1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
         run: pnpm --filter @skills-library/scripts start
-
-      - name: Build site
-        run: pnpm --filter @skills-library/site build
 
       - name: Deploy MCP Worker
         working-directory: mcp-worker
@@ -59,35 +49,13 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler deploy
 
-      - name: Commit data to data branch
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Build site
+        env:
+          PUBLIC_API_URL: https://mcp.skills-library.com
+        run: pnpm --filter @skills-library/site build
 
-          # Switch to data branch (create if needed)
-          git checkout -B data
-
-          # Add data files
-          git add data/ --force
-
-          # Commit if there are changes
-          git diff --staged --quiet || git commit -m "Update catalog data $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-
-          git push origin data --force
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site/dist
-
-  deploy:
-    needs: update
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler pages deploy site/dist --project-name=skills-library

@@ -12,8 +12,24 @@ interface Props {
 
 marked.setOptions({ breaks: true, gfm: true });
 
-const { lang, skill, skillBody } = Astro.props;
+const { lang, skill: rawSkill, skillBody } = Astro.props;
 const t = useTranslations(lang);
+
+// Normalize: API returns flat `content` string; legacy JSON has `contentType` object
+const skill = {
+  ...rawSkill,
+  skillId: rawSkill.skillId ?? rawSkill.skill_id ?? "",
+  githubStars: rawSkill.githubStars ?? rawSkill.github_stars ?? rawSkill.stars ?? 0,
+  repoUrl: rawSkill.repoUrl ?? rawSkill.repo_url ?? `https://github.com/${rawSkill.source}`,
+  firstSeen: rawSkill.firstSeen ?? rawSkill.first_seen ?? "",
+  contentType: rawSkill.contentType ?? {
+    hasInstructions: true,
+    hasScripts: (rawSkill.content || "").includes("scripts"),
+    hasReferences: (rawSkill.content || "").includes("references"),
+    hasAssets: (rawSkill.content || "").includes("assets"),
+  },
+  dependencies: rawSkill.dependencies ?? [],
+};
 
 const renderedHtml = skillBody ? await marked.parse(skillBody) : "";
 

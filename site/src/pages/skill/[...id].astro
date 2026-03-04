@@ -1,40 +1,28 @@
 ---
+export const prerender = false;
+
 import SkillPage from '../../components/SkillPage.astro';
 
-export async function getStaticPaths() {
-  let skills: any[] = [];
-  const contentMap = new Map<string, string>();
-  try {
-    const fs = await import("node:fs");
-    const path = await import("node:path");
-    const dataDir = path.join(process.cwd(), "../data");
-    const skillsPath = path.join(dataDir, "skills.json");
-    if (fs.existsSync(skillsPath)) {
-      skills = JSON.parse(fs.readFileSync(skillsPath, "utf-8"));
-    }
+const API_BASE = import.meta.env.PUBLIC_API_URL || "https://mcp.skills-library.com";
+const skillId = Astro.params.id;
 
-    const reposDir = path.join(dataDir, "raw/repos");
-    if (fs.existsSync(reposDir)) {
-      for (const file of fs.readdirSync(reposDir)) {
-        if (!file.endsWith(".json")) continue;
-        try {
-          const repo = JSON.parse(fs.readFileSync(path.join(reposDir, file), "utf-8"));
-          for (const s of repo.skills || []) {
-            if (s.parsed?.body) {
-              contentMap.set(`${repo.source}/${s.skillId}`, s.parsed.body);
-            }
-          }
-        } catch {}
-      }
-    }
-  } catch {}
-
-  return skills.map((skill: any) => ({
-    params: { id: skill.id },
-    props: { skill, skillBody: contentMap.get(skill.id) || "" },
-  }));
+if (!skillId) {
+  return Astro.redirect("/");
 }
 
-const { skill, skillBody } = Astro.props;
+let skill: any = null;
+let skillBody = "";
+
+try {
+  const res = await fetch(`${API_BASE}/api/skill/${skillId}`);
+  if (res.ok) {
+    skill = await res.json();
+    skillBody = skill.body || "";
+  }
+} catch {}
+
+if (!skill) {
+  return new Response(null, { status: 404, headers: { Location: "/" } });
+}
 ---
 <SkillPage lang="en" skill={skill} skillBody={skillBody} />

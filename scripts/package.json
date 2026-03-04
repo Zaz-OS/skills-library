@@ -7,8 +7,9 @@
     "build": "tsc",
     "start": "tsx src/pipeline.ts",
     "scrape": "tsx src/scrape-skills-sh.ts",
+    "sync-d1": "tsx src/sync-d1.ts",
+    "enrich": "tsx src/enrich-batch.ts",
     "process": "tsx src/process-repos.ts",
-    "enrich": "tsx src/enrich.ts",
     "build-catalog": "tsx src/build-catalog.ts"
   },
   "dependencies": {

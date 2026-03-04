@@ -5,5 +5,18 @@
   "compatibility_flags": ["nodejs_compat"],
   "routes": [
     { "pattern": "mcp.skills-library.com", "custom_domain": true }
-  ]
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "skills-library",
+      "database_id": "85b7ba0d-aa97-4509-aee7-dc41dacac947"
+    }
+  ],
+  "triggers": {
+    "crons": ["0 * * * *"]
+  },
+  "vars": {
+    "ENRICH_BATCH_SIZE": "100"
+  }
 }
