@@ -51,18 +51,12 @@ async function queryD1(sql: string, params: any[] = []): Promise<D1ApiResponse> 
 }
 
 async function batchQueryD1(statements: { sql: string; params: any[] }[]): Promise<void> {
-  const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database/${D1_DATABASE_ID}/query`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(statements),
-    },
-  );
-  if (!res.ok) throw new Error(`D1 batch error ${res.status}: ${await res.text()}`);
+  // D1 HTTP API doesn't support array batching — send sequentially
+  // Process in parallel chunks of 5 for speed
+  for (let i = 0; i < statements.length; i += 5) {
+    const chunk = statements.slice(i, i + 5);
+    await Promise.all(chunk.map((stmt) => queryD1(stmt.sql, stmt.params)));
+  }
 }
 
 // ── GitHub API Helpers ───────────────────────────────────────────────

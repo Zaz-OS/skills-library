@@ -535,6 +535,13 @@ async function handleRestApi(
     });
   }
 
+  // POST /api/enrich-now — manual enrichment trigger with detailed response
+  if (path === "/api/enrich-now" && request.method === "POST") {
+    const batchSize = Number(url.searchParams.get("batch") || env.ENRICH_BATCH_SIZE) || 100;
+    const result = await enrichBatch(env.DB, env.GITHUB_TOKEN, batchSize);
+    return jsonResponse(result);
+  }
+
   // GET /api/categories
   if (path === "/api/categories") {
     const categories = await getCategoriesD1(env.DB);
@@ -988,31 +995,44 @@ function detectDepsLight(text: string): { type: string; org: string; name: strin
   return deps;
 }
 
-async function enrichBatch(db: D1Database, token?: string, batchSize = 20): Promise<{ enriched: number; failed: number }> {
-  // Get un-enriched repos
+async function enrichBatch(db: D1Database, token?: string, batchSize = 6): Promise<{ enriched: number; failed: number; skipped: number; errors: string[] }> {
+  // Workers have a 50 subrequest limit. Each repo needs ~3-6 fetches (tree + SKILL.md files + stars).
+  // Safe batch size: ~6 repos per invocation.
+  const safeBatch = Math.min(batchSize, 6);
+
   const reposResult = await db
-    .prepare("SELECT DISTINCT source FROM skills WHERE enriched = 0 LIMIT ?")
-    .bind(batchSize)
+    .prepare("SELECT DISTINCT source FROM skills WHERE enriched = 0 ORDER BY installs DESC LIMIT ?")
+    .bind(safeBatch)
     .all<{ source: string }>();
 
   const repos = reposResult.results.map((r) => r.source);
-  if (repos.length === 0) return { enriched: 0, failed: 0 };
+  if (repos.length === 0) return { enriched: 0, failed: 0, skipped: 0, errors: [] };
 
   let enriched = 0;
   let failed = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+  let subrequestsUsed = 0;
 
   for (const source of repos) {
+    // Stop before hitting the 50 subrequest limit (leave margin)
+    if (subrequestsUsed > 40) {
+      errors.push(`Stopping at ${source}: approaching subrequest limit (${subrequestsUsed} used)`);
+      break;
+    }
+
     try {
       const treeResult = await getRepoTree(source, token);
+      subrequestsUsed += 2; // may try main + master
       if (treeResult === "rate_limited") {
-        // Stop processing — we've hit the rate limit, retry next cron run
-        console.log(`Rate limited at repo ${source}, stopping batch`);
+        const msg = `Rate limited at repo ${source}, stopping batch`;
+        console.log(msg);
+        errors.push(msg);
         break;
       }
       if (treeResult === "not_found") {
-        // Repo doesn't exist or is private — mark enriched to skip permanently
         await db.prepare("UPDATE skills SET enriched = 1 WHERE source = ?").bind(source).run();
-        failed++;
+        skipped++;
         continue;
       }
 
@@ -1044,9 +1064,9 @@ async function enrichBatch(db: D1Database, token?: string, batchSize = 20): Prom
         }
       }
 
-      // Fetch stars
+      // Fetch stars (1 subrequest)
       let stars = 0;
-      if (token) {
+      if (token && subrequestsUsed < 45) {
         try {
           const [owner, name] = source.split("/");
           const gqlRes = await fetch("https://api.github.com/graphql", {
@@ -1054,11 +1074,22 @@ async function enrichBatch(db: D1Database, token?: string, batchSize = 20): Prom
             headers: { Authorization: `bearer ${token}`, "Content-Type": "application/json" },
             body: JSON.stringify({ query: `query { repository(owner: "${owner}", name: "${name}") { stargazerCount } }` }),
           });
+          subrequestsUsed++;
           if (gqlRes.ok) {
             const gql = (await gqlRes.json()) as any;
             stars = gql?.data?.repository?.stargazerCount ?? 0;
           }
         } catch {}
+      }
+
+      // Fetch SKILL.md files — limit to avoid hitting subrequest cap
+      const uniquePaths = [...new Set(skillIdToPath.values())];
+      const mdContents = new Map<string, string>();
+      for (const mdPath of uniquePaths) {
+        if (subrequestsUsed >= 48) break;
+        const content = await fetchRawFile(source, mdPath);
+        subrequestsUsed += 2; // may try main + master fallback
+        if (content) mdContents.set(mdPath, content);
       }
 
       // Process each skill
@@ -1069,17 +1100,14 @@ async function enrichBatch(db: D1Database, token?: string, batchSize = 20): Prom
         let deps: { type: string; org: string; name: string }[] = [];
         let standalone = true;
 
-        if (mdPath) {
-          const content = await fetchRawFile(source, mdPath);
-          if (content) {
-            const parsed = parseSkillMdLight(content);
-            description = parsed.description;
-            body = parsed.body;
+        if (mdPath && mdContents.has(mdPath)) {
+          const parsed = parseSkillMdLight(mdContents.get(mdPath)!);
+          description = parsed.description;
+          body = parsed.body;
 
-            const allText = (parsed.compatibility || "") + " " + parsed.body;
-            deps = detectDepsLight(allText);
-            standalone = deps.length === 0;
-          }
+          const allText = (parsed.compatibility || "") + " " + parsed.body;
+          deps = detectDepsLight(allText);
+          standalone = deps.length === 0;
         }
 
         const text = row.skill_id + " " + description;
@@ -1104,13 +1132,16 @@ async function enrichBatch(db: D1Database, token?: string, batchSize = 20): Prom
 
       enriched++;
     } catch (err) {
-      console.log(`Error enriching ${source}: ${err}`);
+      const msg = `Error enriching ${source}: ${err}`;
+      console.log(msg);
+      errors.push(msg);
+      // Mark as enriched to avoid blocking the queue
+      await db.prepare("UPDATE skills SET enriched = 1 WHERE source = ?").bind(source).run();
       failed++;
-      // Don't mark as enriched on transient errors — will retry next run
     }
   }
 
-  return { enriched, failed };
+  return { enriched, failed, skipped, errors };
 }
 
 // ── Worker Entry ────────────────────────────────────────────────────
@@ -1164,6 +1195,7 @@ export default {
   ): Promise<void> {
     const batchSize = Number(env.ENRICH_BATCH_SIZE) || 20;
     const result = await enrichBatch(env.DB, env.GITHUB_TOKEN, batchSize);
-    console.log(`Enrichment cron: ${result.enriched} enriched, ${result.failed} failed`);
+    console.log(`Enrichment cron: ${result.enriched} enriched, ${result.failed} failed, ${result.skipped} skipped`);
+    if (result.errors.length > 0) console.log(`Errors: ${result.errors.join("; ")}`);
   },
 } satisfies ExportedHandler<Env>;
